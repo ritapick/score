@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý giải đấu Pickleball</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --line: #e5e9ef;
+      --text: #17233a;
+      --muted: #667085;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --sidebar: #0f172a;
+      --sidebar-2: #111827;
+      --radius: 14px;
+      shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 265px;
+      background: linear-gradient(180deg, var(--sidebar), var(--sidebar-2));
+      color: #fff;
+      padding: 20px 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .sidebar .sub {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .menu-item {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      padding: 11px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 5px;
+      transition: 0.18s ease;
+    }
+
+    .menu-item:hover,
+    .menu-item.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .main {
+      flex: 1;
+      padding: 22px 24px 40px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .topbar .meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .badge-muted {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0 0 12px;
+    }
+
+    .stat-card {
+      padding: 18px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      max-height: 650px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 950px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      transition: 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-dark {
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn-light {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 180px 180px 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .filters select,
+    .filters input,
+    td input,
+    td select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    td input[type="time"] {
+      min-width: 110px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .progress > div {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      border-radius: 999px;
+    }
+
+    .group-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .group-team {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #eef2f7;
+      font-size: 13px;
+    }
+
+    .group-team:last-child {
+      border-bottom: none;
+    }
+
+    .bracket {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(260px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .bracket-col h3 {
+      margin-bottom: 12px;
+    }
+
+    .match-card {
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .match-card .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .team-line {
+      font-weight: 700;
+      margin: 4px 0;
+    }
+
+    .score-line {
+      font-size: 20px;
+      font-weight: 900;
+      margin-top: 10px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 16px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(500px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal h3 {
+      margin: 0 0 8px;
+    }
+
+    .modal .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: #475569;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .notice {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .menu-item {
+        width: auto;
+      }
+
+      .grid-2,
+      .bracket {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">🏓 Pickleball Admin</div>
+      <div class="sub">
+        Quản lý giải đấu theo trình 4.75 / 5.25<br />
+        Vòng bảng → Tứ kết → Bán kết → Chung kết
+      </div>
+
+      <button class="menu-item active" data-page="dashboard">Tổng quan</button>
+      <button class="menu-item" data-page="events">Nội dung thi đấu</button>
+      <button class="menu-item" data-page="courts">Sân thi đấu</button>
+      <button class="menu-item" data-page="players">Vận động viên</button>
+      <button class="menu-item" data-page="teams">Đội thi đấu</button>
+      <button class="menu-item" data-page="groups">Xếp bảng</button>
+      <button class="menu-item" data-page="matches">Trận đấu</button>
+      <button class="menu-item" data-page="standings">Bảng xếp hạng</button>
+      <button class="menu-item" data-page="knockout">Knockout</button>
+      <button class="menu-item" data-page="users">Phân quyền</button>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="topbar-title">Tổng quan</h1>
+          <div class="meta" id="topbar-meta"></div>
+        </div>
+        <div>
+          <span class="badge badge-primary">Admin</span>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <section id="page-dashboard" class="page active">
+        <div id="dashboard-cards" class="grid"></div>
+
+        <div class="grid-2">
+          <div class="card" id="dashboard-progress"></div>
+          <div class="card" id="dashboard-quick"></div>
+        </div>
+      </section>
+
+      <!-- Events -->
+      <section id="page-events" class="page">
+        <div class="card">
+          <h2>Nội dung thi đấu</h2>
+          <div class="notice">
+            Trình nội dung đang dùng luật: <b>tổng rating của 2 VĐV không vượt quá giới hạn</b>.
+          </div>
+          <div id="events-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- Courts -->
+      <section id="page-courts" class="page">
+        <div class="card">
+          <h2>Sân thi đấu</h2>
+          <div id="courts-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- Players -->
+      <section id="page-players" class="page">
+        <div class="card">
+          <h2>Vận động viên</h2>
+          <div id="players-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- Teams -->
+      <section id="page-teams" class="page">
+        <div class="card">
+          <h2>Đội thi đấu</h2>
+          <div class="notice">
+            Admin chọn bảng cho từng đội. Sau khi xếp bảng xong, cần sinh lịch vòng bảng.
+          </div>
+          <div id="teams-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- Groups -->
+      <section id="page-groups" class="page">
+        <div class="actions">
+          <button class="btn btn-primary" onclick="regenerateGroupFixtures(); renderAll();">
+            Sinh lại vòng bảng
+          </button>
+          <button class="btn btn-dark" onclick="generateQuarterfinals()">
+            Sinh tứ kết
+          </button>
+        </div>
+
+        <div id="group-cards" class="group-grid"></div>
+      </section>
+
+      <!-- Matches -->
+      <section id="page-matches" class="page">
+        <div class="card filters">
+          <select id="match-stage-filter" onchange="renderMatches()">
+            <option value="all">Tất cả giai đoạn</option>
+            <option value="Vòng bảng">Vòng bảng</option>
+            <option value="Tứ kết">Tứ kết</option>
+            <option value="Bán kết">Bán kết</option>
+            <option value="Chung kết">Chung kết</option>
+          </select>
+
+          <select id="match-status-filter" onchange="renderMatches()">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="scheduled">Đã lên lịch</option>
+            <option value="completed">Hoàn thành</option>
+          </select>
+
+          <input
+            id="match-search"
+            type="text"
+            placeholder="Tìm theo mã trận hoặc tên đội..."
+            oninput="renderMatches()"
+          />
+        </div>
+
+        <div id="matches-table" class="table-wrap"></div>
+      </section>
+
+      <!-- Standings -->
+      <section id="page-standings" class="page">
+        <div id="standings-content"></div>
+      </section>
+
+      <!-- Knockout -->
+      <section id="page-knockout" class="page">
+        <div class="actions">
+          <button class="btn btn-primary" onclick="generateQuarterfinals()">Sinh tứ kết</button>
+          <button class="btn btn-dark" onclick="generateSemifinals()">Sinh bán kết</button>
+          <button class="btn btn-light" onclick="generateFinal()">Sinh chung kết</button>
+        </div>
+
+        <div id="knockout-content"></div>
+      </section>
+
+      <!-- Users -->
+      <section id="page-users" class="page">
+        <div class="card">
+          <h2>Phân quyền</h2>
+          <div class="notice">
+            Đây là giao diện minh họa. Khi chạy thật, phần này sẽ gắn với Supabase Auth và bảng
+            <b>user_roles</b>, <b>tournament_staff</b>.
+          </div>
+          <div id="users-table" class="table-wrap"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal nhập điểm -->
+  <div id="score-modal" class="modal-backdrop">
+    <div class="modal">
+      <h3 id="score-modal-title">Nhập điểm trận đấu</h3>
+      <div class="sub" id="score-modal-sub"></div>
+
+      <div class="modal-grid">
+        <div class="field">
+          <label id="score-home-name">Đội nhà</label>
+          <input id="home-score" type="number" min="0" placeholder="Điểm đội nhà" />
+        </div>
+        <div class="field">
+          <label id="score-away-name">Đội khách</label>
+          <input id="away-score" type="number" min="0" placeholder="Điểm đội khách" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-light" onclick="closeScoreModal()">Hủy</button>
+        <button class="btn btn-primary" onclick="saveScore()">Lưu kết quả</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      tournament: {
+        code: "HN2026",
+        name: "Giải Pickleball Hà Nội 2026",
+        start_date: "2026-09-12",
+        end_date: "2026-09-13",
+        location_name: "Cụm sân Pickleball Center",
+        address: "123 Đường Láng, Hà Nội",
+        default_match_minutes: 45,
+        status: "in_progress"
+      },
+      events: [
+        {
+          id: "e1",
+          code: "DOI475",
+          name: "Đôi trình 4.75",
+          format: "doubles",
+          team_size: 2,
+          rating_limit: 4.75,
+          rating_rule: "max_total",
+          status: "open"
+        },
+        {
+          id: "e2",
+          code: "DOI525",
+          name: "Đôi trình 5.25",
+          format: "doubles",
+          team_size: 2,
+          rating_limit: 5.25,
+          rating_rule: "max_total",
+          status: "open"
+        }
+      ],
+      courts: [
+        { id: "c1", name: "Sân 1", venue_name: "Cụm sân Pickleball Center", display_order: 1 },
+        { id: "c2", name: "Sân 2", venue_name: "Cụm sân Pickleball Center", display_order: 2 },
+        { id: "c3", name: "Sân 3", venue_name: "Cụm sân Pickleball Center", display_order: 3 },
+        { id: "c4", name: "Sân 4", venue_name: "Cụm sân Pickleball Center", display_order: 4 }
+      ],
+      groups: ["A", "B", "C", "D"],
+      players: [],
+      teams: [],
+      matches: [],
+      standings: [],
+      matchSeq: 1,
+      currentMatchId: null
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      bindMenu();
+      initMockData();
+      renderAll();
+    });
+
+    function bindMenu() {
+      document.querySelectorAll(".menu-item").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          showPage(btn.dataset.page);
+        });
+      });
+    }
+
+    function showPage(page) {
+      const titles = {
+        dashboard: "Tổng quan",
+        events: "Nội dung thi đấu",
+        courts: "Sân thi đấu",
+        players: "Vận động viên",
+        teams: "Đội thi đấu",
+        groups: "Xếp bảng",
+        matches: "Trận đấu",
+        standings: "Bảng xếp hạng",
+        knockout: "Knockout",
+        users: "Phân quyền"
+      };
+
+      document.querySelectorAll(".menu-item").forEach((b) => {
+        b.classList.toggle("active", b.dataset.page === page);
+      });
+
+      document.querySelectorAll(".page").forEach((p) => {
+        p.classList.toggle("active", p.id === `page-${page}`);
+      });
+
+      document.getElementById("topbar-title").textContent = titles[page] || "Quản lý giải đấu";
+      renderAll();
+    }
+
+    function initMockData() {
+      state.players = generatePlayers(32);
+      state.teams = generateTeams(16);
+      regenerateGroupFixtures();
+    }
+
+    function generatePlayers(count) {
+      const surnames = ["Nguyễn", "Lê", "Trần", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương"];
+      const mids = ["Văn", "Minh", "Thanh", "Thu", "Hoàng", "Đức", "Xuân", "Ngọc"];
+      const names = ["Nam", "Long", "Hùng", "Tuấn", "Hoa", "Mai", "Đức", "An", "Trung", "Hiếu", "Thảo", "Trang"];
+
+      return Array.from({ length: count }, (_, i) => {
+        const fullName = `${surnames[i % surnames.length]} ${mids[Math.floor(i / surnames.length) % mids.length]} ${names[i % names.length]}`;
+        return {
+          id: `p${i + 1}`,
+          full_name: fullName,
+          gender: i % 3 === 0 ? "female" : "male",
+          skill_rating: Number((2.1 + (i % 6) * 0.05).toFixed(2)),
+          club_name: `Club ${(i % 4) + 1}`
+        };
+      });
+    }
+
+    function generateTeams(count) {
+      const groupMap = ["A", "A", "A", "A", "B", "B", "B", "B", "C", "C", "C", "C", "D", "D", "D", "D"];
+
+      return Array.from({ length: count }, (_, i) => {
+        const p1 = state.players[i * 2];
+        const p2 = state.players[i * 2 + 1];
+        const last1 = p1.full_name.split(" ").pop();
+        const last2 = p2.full_name.split(" ").pop();
+        const total = Number((p1.skill_rating + p2.skill_rating).toFixed(2));
+
+        return {
+          id: `t${i + 1}`,
+          event_id: "e1",
+          name: `Đội ${String(i + 1).padStart(2, "0")} (${last1}/${last2})`,
+          player_names: `${p1.full_name} - ${p2.full_name}`,
+          total_rating: total,
+          group: groupMap[i] || "A",
+          status: "active"
+        };
+      });
+    }
+
+    function allPairs(n) {
+      const arr = [];
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          arr.push([i, j]);
+        }
+      }
+      return arr;
+    }
+
+    function nextMatchCode() {
+      const code = `${state.tournament.code}-${String(state.matchSeq).padStart(4, "0")}`;
+      state.matchSeq += 1;
+      return code;
+    }
+
+    function regenerateGroupFixtures() {
+      state.matches = [];
+      state.matchSeq = 1;
+
+      const times = ["08:00", "08:45", "09:30", "10:15", "11:00", "11:45", "13:00", "13:45"];
+      let idx = 0;
+
+      state.groups.forEach((group) => {
+        const teams = state.teams.filter((t) => t.group === group);
+        if (teams.length < 2) return;
+
+        const pairs = teams.length === 4
+          ? [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]]
+          : allPairs(teams.length);
+
+        pairs.forEach((pair, pairIdx) => {
+          const home = teams[pair[0]];
+          const away = teams[pair[1]];
+          if (!home || !away) return;
+
+          const court = state.courts[idx % state.courts.length].name;
+          const time = times[Math.floor(idx / state.courts.length) % times.length];
+
+          let home_score = 15 - (idx % 4);
+          let away_score = 12 - (idx % 3);
+          if (home_score === away_score) away_score -= 1;
+
+          state.matches.push({
+            id: `m${state.matchSeq}`,
+            match_code: nextMatchCode(),
+            event_code: "DOI475",
+            stage: "Vòng bảng",
+            group,
+            round: Math.floor(pairIdx / 2) + 1,
+            bracket_slot: null,
+            home_team_id: home.id,
+            away_team_id: away.id,
+            court,
+            scheduled_at: `${state.tournament.start_date} ${time}`,
+            duration_minutes: state.tournament.default_match_minutes,
+            status: "completed",
+            home_score,
+            away_score,
+            winner_team_id: home_score > away_score ? home.id : away.id
+          });
+
+          idx += 1;
+        });
+      });
+
+      computeStandings();
+      generateQuarterfinals(false);
+    }
+
+    function computeStandings() {
+      const rows = [];
+
+      state.groups.forEach((group) => {
+        const groupTeams = state.teams.filter((t) => t.group === group);
+
+        const stats = groupTeams.map((team) => ({
+          group,
+          team_id: team.id,
+          team_name: team.name,
+          played: 0,
+          wins: 0,
+          losses: 0,
+          points_for: 0,
+          points_against: 0,
+          diff: 0,
+          points: 0
+        }));
+
+        const map = Object.fromEntries(stats.map((s) => [s.team_id, s]));
+
+        state.matches
+          .filter((m) => m.stage === "Vòng bảng" && m.group === group && m.status === "completed")
+          .forEach((m) => {
+            const home = map[m.home_team_id];
+            const away = map[m.away_team_id];
+            if (!home || !away) return;
+
+            home.played += 1;
+            away.played += 1;
+
+            home.points_for += m.home_score;
+            home.points_against += m.away_score;
+
+            away.points_for += m.away_score;
+            away.points_against += m.home_score;
+
+            if (m.winner_team_id === home.id) {
+              home.wins += 1;
+              home.points += 1;
+              away.losses += 1;
+            } else {
+              away.wins += 1;
+              away.points += 1;
+              home.losses += 1;
+            }
+          });
+
+        stats.forEach((s) => {
+          s.diff = s.points_for - s.points_against;
+        });
+
+        stats.sort((a, b) => {
+          return (
+            b.points - a.points ||
+            b.diff - a.diff ||
+            b.points_for - a.points_for ||
+            a.team_name.localeCompare(b.team_name, "vi")
+          );
+        });
+
+        stats.forEach((s, i) => {
+          s.rank_no = i + 1;
+        });
+
+        rows.push(...stats);
+      });
+
+      state.standings = rows;
+    }
+
+    function generateQuarterfinals(render = true) {
+      state.matches = state.matches.filter((m) => m.stage === "Vòng bảng");
+      state.matchSeq = state.matches.length + 1;
+      computeStandings();
+
+      const top = {};
+
+      for (const g of state.groups) {
+        top[g] = state.standings.filter((s) => s.group === g).slice(0, 2);
+        if (top[g].length < 2) {
+          if (render) alert(`Bảng ${g} chưa đủ kết quả để lấy đội vào tứ kết.`);
+          return;
+        }
+      }
+
+      const pairs = [
+        { home: top.A[0].team_id, away: top.B[1].team_id, note: "Nhất A vs Nhì B" },
+        { home: top.C[0].team_id, away: top.D[1].team_id, note: "Nhất C vs Nhì D" },
+        { home: top.B[0].team_id, away: top.A[1].team_id, note: "Nhất B vs Nhì A" },
+        { home: top.D[0].team_id, away: top.C[1].team_id, note: "Nhất D vs Nhì C" }
+      ];
+
+      pairs.forEach((p, i) => {
+        state.matches.push(createKnockoutMatch("Tứ kết", 1, i + 1, p.home, p.away, p.note));
+      });
+
+      if (render) renderAll();
+    }
+
+    function generateSemifinals() {
+      const qf = [1, 2, 3, 4].map((slot) =>
+        state.matches.find((m) => m.stage === "Tứ kết" && m.bracket_slot === slot)
+      );
+
+      if (qf.some((m) => !m || !m.winner_team_id)) {
+        alert("Chưa có đủ kết quả tứ kết để sinh bán kết.");
+        return;
+      }
+
+      state.matches = state.matches.filter((m) => !["Bán kết", "Chung kết"].includes(m.stage));
+      state.matchSeq = state.matches.length + 1;
+
+      const pairs = [
+        [qf[0].winner_team_id, qf[1].winner_team_id],
+        [qf[2].winner_team_id, qf[3].winner_team_id]
+      ];
+
+      pairs.forEach((p, i) => {
+        state.matches.push(createKnockoutMatch("Bán kết", 2, i + 1, p[0], p[1], `Bán kết ${i + 1}`));
+      });
+
+      renderAll();
+    }
+
+    function generateFinal() {
+      const sf = [1, 2].map((slot) =>
+        state.matches.find((m) => m.stage === "Bán kết" && m.bracket_slot === slot)
+      );
+
+      if (sf.some((m) => !m || !m.winner_team_id)) {
+        alert("Chưa có đủ kết quả bán kết để sinh chung kết.");
+        return;
+      }
+
+      state.matches = state.matches.filter((m) => m.stage !== "Chung kết");
+      state.matchSeq = state.matches.length + 1;
+
+      state.matches.push(
+        createKnockoutMatch("Chung kết", 3, 1, sf[0].winner_team_id, sf[1].winner_team_id, "Chung kết")
+      );
+
+      renderAll();
+    }
+
+    function createKnockoutMatch(stage, round, slot, homeTeamId, awayTeamId, note) {
+      return {
+        id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        match_code: nextMatchCode(),
+        event_code: "DOI475",
+        stage,
+        group: null,
+        round,
+        bracket_slot: slot,
+        home_team_id: homeTeamId,
+        away_team_id: awayTeamId,
+        court: "",
+        scheduled_at: "",
+        duration_minutes: state.tournament.default_match_minutes,
+        status: "scheduled",
+        home_score: null,
+        away_score: null,
+        winner_team_id: null,
+        note
+      };
+    }
+
+    function teamName(teamId) {
+      const team = state.teams.find((t) => t.id === teamId);
+      return team ? team.name : "TBD";
+    }
+
+    function statusLabel(status) {
+      const map = {
+        scheduled: "Đã lên lịch",
+        ready: "Sẵn sàng",
+        live: "Đang đánh",
+        completed: "Hoàn thành",
+        walkover: "Walkover",
+        retired: "Bỏ cuộc",
+        cancelled: "Hủy",
+        postponed: "Hoãn"
+      };
+      return map[status] || status;
+    }
+
+    function statusBadge(status) {
+      const map = {
+        scheduled: "primary",
+        ready: "warning",
+        live: "danger",
+        completed: "success",
+        walkover: "muted",
+        retired: "danger",
+        cancelled: "muted",
+        postponed: "warning"
+      };
+      return `<span class="badge badge-${map[status] || "muted"}">${statusLabel(status)}</span>`;
+    }
+
+    function ratingRuleLabel(rule) {
+      const map = {
+        open: "Không ràng buộc",
+        max_total: "Tổng <= giới hạn",
+        min_total: "Tổng >= giới hạn",
+        exact_total: "Tổng = giới hạn"
+      };
+      return map[rule] || rule;
+    }
+
+    function renderAll() {
+      renderTopbar();
+      renderDashboard();
+      renderEvents();
+      renderCourts();
+      renderPlayers();
+      renderTeams();
+      renderGroups();
+      renderMatches();
+      renderStandings();
+      renderKnockout();
+      renderUsers();
+    }
+
+    function renderTopbar() {
+      document.getElementById("topbar-meta").innerHTML = `
+        ${state.tournament.name} • ${state.tournament.start_date} → ${state.tournament.end_date}<br/>
+        ${state.tournament.location_name} • Mã giải: <b>${state.tournament.code}</b>
+      `;
+    }
+
+    function statCard(label, value) {
+      return `
+        <div class="card stat-card">
+          <div class="stat-label">${label}</div>
+          <div class="stat-value">${value}</div>
+        </div>
+      `;
+    }
+
+    function renderDashboard() {
+      const completed = state.matches.filter((m) => m.status === "completed").length;
+      const scheduled = state.matches.filter((m) => m.status === "scheduled").length;
+      const unscheduled = state.matches.filter((m) => !m.court || !m.scheduled_at).length;
+      const percent = state.matches.length
+        ? Math.round((completed / state.matches.length) * 100)
+        : 0;
+
+      document.getElementById("dashboard-cards").innerHTML = [
+        statCard("Giải đấu", state.tournament.code),
+        statCard("Nội dung", state.events.length),
+        statCard("Đội", state.teams.length),
+        statCard("Sân", state.courts.length),
+        statCard("Tổng trận", state.matches.length),
+        statCard("Hoàn thành", completed)
+      ].join("");
+
+      document.getElementById("dashboard-progress").innerHTML = `
+        <h2>Tiến độ giải</h2>
+        <div class="progress"><div style="width:${percent}%"></div></div>
+        <div class="muted">
+          Đã hoàn thành ${completed}/${state.matches.length} trận (${percent}%).<br/>
+          Còn ${scheduled} trận đã lên lịch. Còn ${unscheduled} trận chưa đủ sân/giờ.
+        </div>
+      `;
+
+      document.getElementById("dashboard-quick").innerHTML = `
+        <h2>Thao tác nhanh</h2>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="showPage('groups')">Xếp bảng</button>
+          <button class="btn btn-dark" onclick="showPage('matches')">Nhập điểm</button>
+          <button class="btn btn-light" onclick="showPage('standings')">Xem xếp hạng</button>
+        </div>
+        <div class="muted">
+          Quy trình: Tạo đội → Xếp bảng → Sinh vòng bảng → Nhập điểm → Sinh tứ kết → Sinh bán kết → Sinh chung kết.
+        </div>
+      `;
+    }
+
+    function renderEvents() {
+      const rows = state.events
+        .map((ev) => {
+          return `
+            <tr>
+              <td>${ev.code}</td>
+              <td>${ev.name}</td>
+              <td>${ev.format}</td>
+              <td>${ev.team_size}</td>
+              <td>${ev.rating_limit ?? "-"}</td>
+              <td>${ratingRuleLabel(ev.rating_rule)}</td>
+              <td><span class="badge badge-success">${ev.status}</span></td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      document.getElementById("events-table").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Mã nội dung</th>
+              <th>Tên nội dung</th>
+              <th>Thể thức</th>
+              <th>Số VĐV/đội</th>
+              <th>Giới hạn trình</th>
+              <th>Luật trình</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>${rows || emptyRow(7)}</tbody>
+        </table>
+      `;
+    }
+
+    function renderCourts() {
+      const rows = state.courts
+        .map((court) => {
+          return `
+            <tr>
+              <td>${court.display_order}</td>
+              <td>${court.name}</td>
+              <td>${court.venue_name}</td>
+              <td><span class="badge badge-success">Đang dùng</span></td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      document.getElementById("courts-table").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Tên sân</th>
+              <th>Cụm sân</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>${rows || emptyRow(4)}</tbody>
+        </table>
+      `;
+    }
+
+    function renderPlayers() {
+      const rows = state.players
+        .map((player) => {
+          return `
+            <tr>
+              <td>${player.id}</td>
+              <td>${player.full_name}</td>
+              <td>${player.gender === "male" ? "Nam" : player.gender === "female" ? "Nữ" : "Khác"}</td>
+              <td>${player.skill_rating.toFixed(2)}</td>
+              <td>${player.club_name}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      document.getElementById("players-table").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Họ tên</th>
+              <th>Giới tính</th>
+              <th>Rating</th>
+              <th>Club</th>
+            </tr>
+          </thead>
+          <tbody>${rows || emptyRow(5)}</tbody>
+        </table>
+      `;
+    }
+
+    function renderTeams() {
+      const rows = state.teams
+        .map((team) => {
+          const ev = state.events.find((e) => e.id === team.event_id) || {};
+          const valid = team.total_rating <= (ev.rating_limit || Infinity);
+
+          const options = state.groups
+            .map((g) => `<option value="${g}" ${team.group === g ? "selected" : ""}>Bảng ${g}</option>`)
+            .join("");
+
+          return `
+            <tr>
+              <td>${team.name}</td>
+              <td>${team.player_names}</td>
+              <td>${team.total_rating.toFixed(2)}</td>
+              <td>
+                ${
+                  valid
+                    ? `<span class="badge badge-success">Hợp lệ</span>`
+                    : `<span class="badge badge-danger">Vượt trình</span>`
+                }
+              </td>
+              <td>
+                <select onchange="assignGroup('${team.id}', this.value)">
+                  ${options}
+                </select>
+              </td>
+              <td>${team.status}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      document.getElementById("teams-table").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Tên đội</th>
+              <th>VĐV</th>
+              <th>Tổng trình</th>
+              <th>Điều kiện trình</th>
+              <th>Bảng</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>${rows || emptyRow(6)}</tbody>
+        </table>
+      `;
+    }
+
+    function assignGroup(teamId, group) {
+      const team = state.teams.find((t) => t.id === teamId);
+      if (!team) return;
+
+      const oldGroup = team.group;
+      const count = state.teams.filter((t) => t.group === group).length;
+
+      if (oldGroup !== group && count >= 4) {
+        alert(`Bảng ${group} đã đủ 4 đội.`);
+        renderAll();
+        return;
+      }
+
+      team.group = group;
+      alert("Đã cập nhật bảng. Nếu lịch đã sinh, hãy bấm 'Sinh lại vòng bảng'.");
+      renderAll();
+    }
+
+    function renderGroups() {
+      const html = state.groups
+        .map((g) => {
+          const teams = state.teams.filter((t) => t.group === g);
+
+          const teamLines = teams.length
+            ? teams
+                .map((team) => {
+                  return `
+                    <div class="group-team">
+                      <div>${team.name}</div>
+                      <div class="muted">${team.total_rating.toFixed(2)}</div>
+                    </div>
+                  `;
+                })
+                .join("")
+            : `<div class="muted">Chưa có đội</div>`;
+
+          return `
+            <div class="card">
+              <h3>Bảng ${g}</h3>
+              <div class="muted" style="margin-bottom:10px">${teams.length}/4 đội</div>
+              ${teamLines}
+            </div>
+          `;
+        })
+        .join("");
+
+      document.getElementById("group-cards").innerHTML = html;
+    }
+
+    function renderMatches() {
+      const stage = document.getElementById("match-stage-filter")?.value || "all";
+      const status = document.getElementById("match-status-filter")?.value || "all";
+      const search = (document.getElementById("match-search")?.value || "").toLowerCase();
+
+      let matches = [...state.matches].sort((a, b) =>
+        a.match_code.localeCompare(b.match_code, "vi")
+      );
+
+      if (stage !== "all") {
+        matches = matches.filter((m) => m.stage === stage);
+      }
+
+      if (status !== "all") {
+        matches = matches.filter((m) => m.status === status);
+      }
+
+      if (search) {
+        matches = matches.filter(
+          (m) =>
+            m.match_code.toLowerCase().includes(search) ||
+            teamName(m.home_team_id).toLowerCase().includes(search) ||
+            teamName(m.away_team_id).toLowerCase().includes(search)
+        );
+      }
+
+      const rows = matches
+        .map((m) => {
+          const courtOptions = [
+            `<option value="">Chưa xếp</option>`,
+            ...state.courts.map(
+              (c) => `<option value="${c.name}" ${m.court === c.name ? "selected" : ""}>${c.name}</option>`
+            )
+          ].join("");
+
+          const timeValue = m.scheduled_at ? m.scheduled_at.split(" ")[1] : "";
+
+          return `
+            <tr>
+              <td><b>${m.match_code}</b></td>
+              <td>${m.stage}${m.group ? ` - Bảng ${m.group}` : ""}</td>
+              <td>${teamName(m.home_team_id)}</td>
+              <td>${teamName(m.away_team_id)}</td>
+              <td>
+                <select onchange="updateMatchCourt('${m.id}', this.value)">
+                  ${courtOptions}
+                </select>
+              </td>
+              <td>
+                <input
+                  type="time"
+                  value="${timeValue}"
+                  onchange="updateMatchTime('${m.id}', this.value)"
+                />
+              </td>
+              <td>
+                ${
+                  m.status === "completed"
+                    ? `<b>${m.home_score} - ${m.away_score}</b>`
+                    : `<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Nhập điểm</button>`
+                }
+              </td>
+              <td>${statusBadge(m.status)}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      document.getElementById("matches-table").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Mã trận</th>
+              <th>Giai đoạn</th>
+              <th>Đội nhà</th>
+              <th>Đội khách</th>
+              <th>Sân</th>
+              <th>Giờ</th>
+              <th>Điểm</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>${rows || emptyRow(8)}</tbody>
+        </table>
+      `;
+    }
+
+    function updateMatchCourt(matchId, courtName) {
+      const match = state.matches.find((m) => m.id === matchId);
+      if (match) {
+        match.court = courtName;
+        renderDashboard();
+      }
+    }
+
+    function updateMatchTime(matchId, time) {
+      const match = state.matches.find((m) => m.id === matchId);
+      if (!match) return;
+
+      match.scheduled_at = time ? `${state.tournament.start_date} ${time}` : "";
+      renderDashboard();
+    }
+
+    function openScoreModal(matchId) {
+      const match = state.matches.find((m) => m.id === matchId);
+      if (!match) return;
+
+      state.currentMatchId = matchId;
+
+      document.getElementById("score-modal-title").textContent = `Nhập điểm: ${match.match_code}`;
+      document.getElementById("score-modal-sub").textContent =
+        `${match.stage}${match.group ? ` - Bảng ${match.group}` : ""}`;
+      document.getElementById("score-home-name").textContent = teamName(match.home_team_id);
+      document.getElementById("score-away-name").textContent = teamName(match.away_team_id);
+      document.getElementById("home-score").value = match.home_score ?? "";
+      document.getElementById("away-score").value = match.away_score ?? "";
+
+      document.getElementById("score-modal").classList.add("show");
+    }
+
+    function closeScoreModal() {
+      state.currentMatchId = null;
+      document.getElementById("score-modal").classList.remove("show");
+    }
+
+    function saveScore() {
+      const match = state.matches.find((m) => m.id === state.currentMatchId);
+      if (!match) return;
+
+      const homeScore = parseInt(document.getElementById("home-score").value, 10);
+      const awayScore = parseInt(document.getElementById("away-score").value, 10);
+
+      if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) {
+        alert("Vui lòng nhập điểm hợp lệ.");
+        return;
+      }
+
+      if (homeScore === awayScore) {
+        alert("Không có kết quả hòa. Đội thắng phải có điểm lớn hơn.");
+        return;
+      }
+
+      match.home_score = homeScore;
+      match.away_score = awayScore;
+      match.status = "completed";
+      match.winner_team_id = homeScore > awayScore ? match.home_team_id : match.away_team_id;
+
+      if (match.stage === "Vòng bảng") {
+        computeStandings();
+      }
+
+      closeScoreModal();
+      renderAll();
+    }
+
+    function renderStandings() {
+      const html = state.groups
+        .map((g) => {
+          const rows = state.standings
+            .filter((s) => s.group === g)
+            .sort((a, b) => a.rank_no - b.rank_no)
+            .map((s) => {
+              return `
+                <tr>
+                  <td><b>${s.rank_no}</b></td>
+                  <td>${s.team_name}</td>
+                  <td>${s.played}</td>
+                  <td>${s.wins}</td>
+                  <td>${s.losses}</td>
+                  <td>${s.points_for}</td>
+                  <td>${s.points_against}</td>
+                  <td>${s.diff}</td>
+                  <td><b>${s.points}</b></td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          return `
+            <div class="card">
+              <h3>Bảng ${g}</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Hạng</th>
+                      <th>Đội</th>
+                      <th>Đã đấu</th>
+                      <th>Thắng</th>
+                      <th>Thua</th>
+                      <th>Điểm ghi</th>
+                      <th>Điểm thua</th>
+                      <th>Hiệu số</th>
+                      <th>Điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows || emptyRow(9)}</tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      document.getElementById("standings-content").innerHTML = html;
+    }
+
+    function knockoutCard(match) {
+      const score =
+        match.status === "completed"
+          ? `<div class="score-line">${match.home_score} - ${match.away_score}</div>`
+          : `<button class="btn btn-primary" onclick="openScoreModal('${match.id}')">Nhập điểm</button>`;
+
+      return `
+        <div class="card match-card">
+          <div class="top">
+            <div><b>${match.match_code}</b></div>
+            <div>${match.note || ""}</div>
+          </div>
+
+          <div class="team-line">${teamName(match.home_team_id)}</div>
+          <div class="muted">vs</div>
+          <div class="team-line">${teamName(match.away_team_id)}</div>
+
+          ${score}
+        </div>
+      `;
+    }
+
+    function renderKnockout() {
+      const stages = ["Tứ kết", "Bán kết", "Chung kết"];
+
+      const html = `
+        <div class="bracket">
+          ${stages
+            .map((stage) => {
+              const matches = state.matches
+                .filter((m) => m.stage === stage)
+                .sort((a, b) => (a.bracket_slot || 0) - (b.bracket_slot || 0));
+
+              const cards = matches.length
+                ? matches.map((m) => knockoutCard(m)).join("")
+                : `<div class="card muted">Chưa có dữ liệu</div>`;
+
+              return `
+                <div class="bracket-col">
+                  <h3>${stage}</h3>
+                  ${cards}
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `;
+
+      document.getElementById("knockout-content").innerHTML = html;
+    }
+
+    function renderUsers() {
+      const rows = [
+        {
+          user: "admin@example.com",
+          role: "admin",
+          scope: "Toàn quyền",
+          status: "Active"
+        },
+        {
+          user: "organizer@example.com",
+          role: "organizer",
+          scope: "Giải HN2026",
+          status: "Active"
+        },
+        {
+          user: "referee@example.com",
+          role: "referee",
+          scope: "Nhập điểm trận đấu",
+          status: "Active"
+        }
+      ]
+        .map((u) => {
+          return `
+            <tr>
+              <td>${u.user}</td>
+              <td><span class="badge badge-primary">${u.role}</span></td>
+              <td>${u.scope}</td>
+              <td><span class="badge badge-success">${u.status}</span></td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      document.getElementById("users-table").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Phạm vi</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function emptyRow(colspan) {
+      return `<tr><td colspan="${colspan}" class="muted">Chưa có dữ liệu</td></tr>`;
+    }
+  </script>
+</body>
+</html>
