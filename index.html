@@ -1,1459 +1,186 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏓 Hệ Thống Điểm Pickleball - Mini Game Tournament</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a4d1a 0%, #2d7a2d 50%, #4a9c4a 100%);
-            min-height: 100vh;
-            padding: 15px;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 50px),
-                repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 50px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #00a86b 0%, #008c5a 100%);
-            color: white;
-            padding: 25px 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 150%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 60%);
-            animation: pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-
-        .header h1 {
-            font-size: 1.8em;
-            margin-bottom: 8px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
-            position: relative;
-            z-index: 1;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .pickleball-icon {
-            display: inline-block;
-            width: 38px;
-            height: 38px;
-            background: radial-gradient(circle at 30% 30%, #ffe44d 0%, #ffd700 70%, #d4a017 100%);
-            border-radius: 50%;
-            position: relative;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.1);
-            animation: bounce 2s ease-in-out infinite;
-            flex-shrink: 0;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .pickleball-icon::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(0,0,0,0.25) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 75% 25%, rgba(0,0,0,0.25) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 50% 50%, rgba(0,0,0,0.25) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 25% 75%, rgba(0,0,0,0.25) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 75% 75%, rgba(0,0,0,0.25) 1.5px, transparent 1.5px);
-            background-size: 10px 10px;
-        }
-
-        .sport-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.25);
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            margin-top: 10px;
-            position: relative;
-            z-index: 1;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .disclaimer {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
-            border-left: 6px solid #ffc107;
-            padding: 15px 20px;
-            margin: 15px;
-            border-radius: 12px;
-            color: #856404;
-            font-weight: 600;
-            font-size: 0.9em;
-            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .filter-section {
-            padding: 20px 15px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-bottom: 3px solid #00a86b;
-        }
-
-        .filter-section h3 {
-            color: #008c5a;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-group label {
-            font-weight: 700;
-            color: #2d5016;
-            margin-bottom: 6px;
-            font-size: 0.85em;
-        }
-
-        .filter-group input,
-        .filter-group select {
-            padding: 10px 12px;
-            border: 2px solid #d0d7de;
-            border-radius: 8px;
-            font-size: 0.95em;
-            transition: all 0.3s;
-            background: white;
-        }
-
-        .filter-group input:focus,
-        .filter-group select:focus {
-            outline: none;
-            border-color: #00a86b;
-            box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.15);
-        }
-
-        /* Stats bar */
-        .stats-bar {
-            display: flex;
-            gap: 10px;
-            padding: 12px 15px;
-            background: white;
-            border-bottom: 2px solid #f0f0f0;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .stat-badge {
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-weight: 600;
-            color: #008c5a;
-            font-size: 0.85em;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .last-update {
-            color: #6c757d;
-            font-size: 0.75em;
-        }
-
-        /* Table container */
-        .table-container {
-            padding: 15px;
-            background: white;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #00a86b 0%, #008c5a 100%);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 10px rgba(0, 168, 107, 0.3);
-        }
-
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 168, 107, 0.4);
-        }
-
-        .refresh-icon.spinning {
-            display: inline-block;
-            animation: rotate 1s linear infinite;
-        }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* ===== DESKTOP TABLE ===== */
-        .desktop-table {
-            display: none;
-            overflow-x: auto;
-        }
-
-        .desktop-table table {
-            width: 100%;
-            border-collapse: collapse;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #e0e0e0;
-        }
-
-        .desktop-table thead {
-            background: linear-gradient(135deg, #00a86b 0%, #008c5a 100%);
-            color: white;
-        }
-
-        .desktop-table th {
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 700;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-right: 1px solid rgba(255,255,255,0.2);
-            white-space: nowrap;
-        }
-
-        .desktop-table tbody tr {
-            transition: all 0.3s ease;
-            border-bottom: 1px solid #e9ecef;
-            cursor: pointer;
-        }
-
-        .desktop-table tbody tr:hover {
-            background: linear-gradient(90deg, #e8f5e9 0%, #f1f8e9 100%);
-            transform: scale(1.005);
-            box-shadow: 0 4px 12px rgba(0, 168, 107, 0.25);
-        }
-
-        .desktop-table td {
-            padding: 12px;
-            color: #2c3e50;
-            font-size: 0.9em;
-            border-right: 1px solid #f0f0f0;
-        }
-
-        .desktop-table tbody tr:nth-child(even) {
-            background: #fafafa;
-        }
-
-        .desktop-table .score-col {
-            font-weight: 700;
-            color: #008c5a;
-            text-align: center;
-            background: rgba(0, 168, 107, 0.05);
-        }
-
-        .desktop-table tbody tr:hover .score-col {
-            background: rgba(0, 168, 107, 0.15);
-        }
-
-        /* ===== MOBILE CARD LIST ===== */
-        .mobile-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .player-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fdf9 100%);
-            border: 2px solid #e0f5ed;
-            border-radius: 15px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 3px 10px rgba(0, 168, 107, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .player-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-            background: linear-gradient(180deg, #00a86b 0%, #ffd700 100%);
-        }
-
-        .player-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 168, 107, 0.25);
-            border-color: #00a86b;
-        }
-
-        .player-card:active {
-            transform: translateY(-1px);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #d0e8dc;
-        }
-
-        .player-name {
-            font-size: 1.2em;
-            font-weight: 700;
-            color: #2d5016;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .player-name::before {
-            content: '🏓';
-            font-size: 1em;
-        }
-
-        .gender-badge {
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.75em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .gender-badge.nam {
-            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-            color: white;
-        }
-
-        .gender-badge.nu {
-            background: linear-gradient(135deg, #ec407a 0%, #d81b60 100%);
-            color: white;
-        }
-
-        .card-main-score {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .main-score-label {
-            color: #6c757d;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .main-score-value {
-            background: linear-gradient(135deg, #ffd700 0%, #ff9800 100%);
-            color: white;
-            padding: 8px 18px;
-            border-radius: 25px;
-            font-size: 1.4em;
-            font-weight: 800;
-            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .main-score-value::before {
-            content: '⭐';
-            font-size: 0.7em;
-        }
-
-        .card-stats {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-        }
-
-        .mini-stat {
-            flex: 1;
-            background: #f0f7f4;
-            padding: 8px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .mini-stat-label {
-            font-size: 0.7em;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-        }
-
-        .mini-stat-value {
-            font-size: 1em;
-            font-weight: 700;
-            color: #008c5a;
-        }
-
-        .card-click-hint {
-            text-align: center;
-            font-size: 0.75em;
-            color: #00a86b;
-            margin-top: 8px;
-            font-weight: 600;
-            opacity: 0.8;
-        }
-
-        .card-click-hint::after {
-            content: ' 👆';
-        }
-
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            align-items: flex-end;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            border-radius: 25px 25px 0 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #00a86b 0%, #008c5a 100%);
-            color: white;
-            padding: 20px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .modal-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #ffe44d 0%, #ffd700 70%, #d4a017 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2em;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border: 3px solid white;
-            flex-shrink: 0;
-            position: relative;
-        }
-
-        .modal-avatar::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(0,0,0,0.25) 2px, transparent 2px),
-                radial-gradient(circle at 75% 25%, rgba(0,0,0,0.25) 2px, transparent 2px),
-                radial-gradient(circle at 50% 50%, rgba(0,0,0,0.25) 2px, transparent 2px),
-                radial-gradient(circle at 25% 75%, rgba(0,0,0,0.25) 2px, transparent 2px),
-                radial-gradient(circle at 75% 75%, rgba(0,0,0,0.25) 2px, transparent 2px);
-            background-size: 14px 14px;
-        }
-
-        .modal-title {
-            flex: 1;
-        }
-
-        .modal-player-name {
-            font-size: 1.5em;
-            font-weight: 800;
-            margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .modal-player-id {
-            font-size: 0.85em;
-            opacity: 0.9;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .close-btn {
-            background: rgba(255, 255, 255, 0.25);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.5em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            flex-shrink: 0;
-            backdrop-filter: blur(10px);
-        }
-
-        .close-btn:hover, .close-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-            transform: rotate(90deg);
-        }
-
-        .modal-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .score-hero {
-            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            border: 2px solid #ffd700;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
-        }
-
-        .score-hero-label {
-            font-size: 0.9em;
-            color: #856404;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .score-hero-value {
-            font-size: 3em;
-            font-weight: 900;
-            color: #d4a017;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            line-height: 1;
-        }
-
-        .score-hero-value::before {
-            content: '⭐';
-            margin-right: 8px;
-            font-size: 0.8em;
-        }
-
-        .info-section {
-            margin-bottom: 20px;
-        }
-
-        .info-section-title {
-            font-size: 1em;
-            font-weight: 700;
-            color: #008c5a;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e0f5ed;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .info-item {
-            background: linear-gradient(135deg, #f8fdf9 0%, #e8f5e9 100%);
-            padding: 12px;
-            border-radius: 10px;
-            border-left: 4px solid #00a86b;
-        }
-
-        .info-item-label {
-            font-size: 0.75em;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        .info-item-value {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: #2d5016;
-        }
-
-        .score-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f0f7f4 100%);
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid #e0f5ed;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .score-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 168, 107, 0.2);
-        }
-
-        .score-card-label {
-            font-size: 0.75em;
-            color: #6c757d;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .score-card-value {
-            font-size: 1.8em;
-            font-weight: 900;
-            color: #008c5a;
-            line-height: 1;
-            margin-bottom: 8px;
-        }
-
-        .score-progress {
-            height: 6px;
-            background: #e0f5ed;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .score-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #00a86b 0%, #ffd700 100%);
-            border-radius: 3px;
-            transition: width 0.8s ease;
-        }
-
-        .win-loss-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .wl-card {
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .wl-card.win {
-            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-        }
-
-        .wl-card.loss {
-            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
-        }
-
-        .wl-card-icon {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-        }
-
-        .wl-card-value {
-            font-size: 2em;
-            font-weight: 900;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .wl-card-label {
-            font-size: 0.75em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.9;
-        }
-
-        .win-rate {
-            background: linear-gradient(135deg, #00a86b 0%, #008c5a 100%);
-            color: white;
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 12px;
-            font-weight: 700;
-        }
-
-        .win-rate-value {
-            font-size: 1.5em;
-            font-weight: 900;
-            margin-right: 5px;
-        }
-
-        .modal-footer {
-            padding: 15px 20px;
-            background: #f8f9fa;
-            border-top: 2px solid #e9ecef;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-close-modal {
-            flex: 1;
-            padding: 12px;
-            background: linear-gradient(135deg, #00a86b 0%, #008c5a 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);
-        }
-
-        .btn-close-modal:hover, .btn-close-modal:active {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 168, 107, 0.4);
-        }
-
-        /* Loading & States */
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #00a86b;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 35px;
-            height: 35px;
-            border: 4px solid #e0f5ed;
-            border-top-color: #00a86b;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
-
-        .no-data-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            border-left: 6px solid #dc3545;
-            padding: 15px;
-            margin: 15px;
-            border-radius: 12px;
-            color: #721c24;
-            font-weight: 600;
-            display: none;
-            font-size: 0.9em;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            color: #495057;
-            font-size: 0.85em;
-            border-top: 3px solid #00a86b;
-        }
-
-        /* Responsive */
-        @media (min-width: 900px) {
-            .desktop-table {
-                display: block;
-            }
-            .mobile-list {
-                display: none;
-            }
-            .header h1 {
-                font-size: 2.5em;
-            }
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .header h1 {
-                font-size: 1.4em;
-            }
-            .pickleball-icon {
-                width: 30px;
-                height: 30px;
-            }
-            .sport-badge {
-                font-size: 0.75em;
-                padding: 5px 12px;
-            }
-            .disclaimer {
-                font-size: 0.8em;
-                padding: 12px 15px;
-            }
-            .modal {
-                border-radius: 20px 20px 0 0;
-                max-height: 95vh;
-            }
-            .modal-avatar {
-                width: 55px;
-                height: 55px;
-                font-size: 1.5em;
-            }
-            .modal-player-name {
-                font-size: 1.2em;
-            }
-            .score-hero-value {
-                font-size: 2.5em;
-            }
-            .score-card-value {
-                font-size: 1.5em;
-            }
-            .wl-card-value {
-                font-size: 1.6em;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Supabase Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif;}
+body{background:#f2f2f2;margin:0;padding:20px;}
+.container{max-width:1200px;margin:auto;}
+.card{background:#fff;padding:20px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.15);margin-bottom:20px;}
+h2{margin-top:0;color:#1976d2;}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+input,select{padding:10px;font-size:15px;border:1px solid #ccc;border-radius:5px;width:100%;}
+input:focus,select:focus{outline:none;border-color:#1976d2;}
+button{padding:12px;border:none;background:#1976d2;color:white;cursor:pointer;font-size:15px;border-radius:5px;transition:.2s;}
+button:hover{background:#0d47a1;}
+button.danger{background:#e53935;}
+button.danger:hover{background:#b71c1c;}
+button.small{padding:6px 10px;font-size:13px;}
+.toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.toolbar input{flex:1;min-width:200px;}
+table{width:100%;border-collapse:collapse;}
+th{background:#1976d2;color:white;padding:10px;text-align:center;}
+td{padding:8px;border-bottom:1px solid #ddd;text-align:center;}
+tr:nth-child(even){background:#fafafa;}
+tr:hover{background:#e3f2fd;}
+#msg{margin-top:10px;font-weight:bold;min-height:20px;}
+.empty{text-align:center;color:#888;padding:20px;font-style:italic;}
+.loader{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>
-                <span class="pickleball-icon"></span>
-                HỆ THỐNG ĐIỂM PICKLEBALL
-                <span class="pickleball-icon"></span>
-            </h1>
-            <div class="sport-badge">⚡ MINI GAME TOURNAMENT ⚡</div>
-        </div>
+<div class="container">
 
-        <div class="disclaimer">
-            <span>⚠️</span>
-            <span>Đây là bảng điểm mang tính tham khảo dựa trên các thành tích thi đấu của VĐV</span>
-        </div>
+<div class="card">
+  <h2>➕ Thêm người chơi</h2>
+  <div class="form">
+    <input id="ten" placeholder="Tên người chơi">
+    <select id="gioitinh">
+      <option value="1">Nam</option>
+      <option value="0">Nữ</option>
+    </select>
+    <input id="baseline" type="number" step="0.01" placeholder="Baseline">
+    <input id="pvna" type="number" step="0.01" placeholder="PVNA">
+    <input id="mini" type="number" step="0.01" placeholder="Mini">
+    <button id="btnSave" onclick="saveData()">Lưu</button>
+  </div>
+  <div id="msg"></div>
+</div>
 
-        <div class="filter-section">
-            <h3>🔍 Bộ Lọc</h3>
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="filter-name">Tên VĐV</label>
-                    <input type="text" id="filter-name" placeholder="Tìm tên...">
-                </div>
-                <div class="filter-group">
-                    <label for="filter-gender">Giới Tính</label>
-                    <select id="filter-gender">
-                        <option value="">Tất cả</option>
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="filter-baseline">Base Line (≥)</label>
-                    <input type="number" id="filter-baseline" placeholder="VD: 3.0" step="0.1">
-                </div>
-                <div class="filter-group">
-                    <label for="filter-pvna">PVNA (≥)</label>
-                    <input type="number" id="filter-pvna" placeholder="VD: 4.0" step="0.1">
-                </div>
-                <div class="filter-group">
-                    <label for="filter-minigame">Mini Game (≥)</label>
-                    <input type="number" id="filter-minigame" placeholder="VD: 5.0" step="0.1">
-                </div>
-            </div>
-        </div>
+<div class="card">
+  <h2>📋 Danh sách người chơi</h2>
+  <div class="toolbar">
+    <input id="search" placeholder="🔍 Tìm theo tên..." oninput="renderTable()">
+    <button onclick="loadData()">🔄 Tải lại</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tên</th>
+        <th>Giới tính</th>
+        <th>Baseline</th>
+        <th>PVNA</th>
+        <th>Mini</th>
+        <th>Thao tác</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="7" class="empty">Đang tải...</td></tr>
+    </tbody>
+  </table>
+</div>
 
-        <div class="stats-bar" id="stats-bar" style="display: none;">
-            <div>
-                <span class="stat-badge">👥 Tổng: <span id="total-count">0</span></span>
-                <span class="stat-badge">✓ Hiện: <span id="display-count">0</span></span>
-            </div>
-            <button class="refresh-btn" onclick="loadData(true)">
-                <span class="refresh-icon" id="refresh-icon">🔄</span> Làm mới
-            </button>
-        </div>
+</div>
 
-        <div class="table-container">
-            <div id="error-message" class="error-message"></div>
-            
-            <div id="loading" class="loading">
-                <span>Đang tải dữ liệu</span>
-                <span class="loading-spinner"></span>
-            </div>
+<script>
+const SUPABASE_URL = "https://nmgofzqtebcnfhttaudy.supabase.co";
+const SUPABASE_KEY = "sb_publishable_VhMamB1cXFl8T4JMI2bX9w_PI543awJ";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            <div id="table-wrapper" style="display: none;">
-                <!-- Desktop table -->
-                <div class="desktop-table">
-                    <table>
-                        <thead>
-                            <tr id="table-header"></tr>
-                        </thead>
-                        <tbody id="table-body"></tbody>
-                    </table>
-                </div>
+let allData = [];
 
-                <!-- Mobile card list -->
-                <div class="mobile-list" id="mobile-list"></div>
-            </div>
+function showMsg(text, color="green"){
+  const m = document.getElementById("msg");
+  m.style.color = color;
+  m.innerHTML = text;
+  setTimeout(()=>{ m.innerHTML = ""; }, 3000);
+}
 
-            <div id="no-data" class="no-data" style="display: none;">
-                <div class="no-data-icon">🏓</div>
-                <p>Không có dữ liệu phù hợp</p>
-            </div>
-        </div>
+async function loadData(){
+  document.getElementById("tbody").innerHTML = `<tr><td colspan="7" class="empty"><span class="loader"></span> Đang tải dữ liệu...</td></tr>`;
+  const {data, error} = await db.from("ds").select("*").order("id");
+  if(error){
+    showMsg("Lỗi: " + error.message, "red");
+    document.getElementById("tbody").innerHTML = `<tr><td colspan="7" class="empty">Không thể tải dữ liệu</td></tr>`;
+    return;
+  }
+  allData = data || [];
+  renderTable();
+}
 
-        <div class="footer">
-            <p>© 2026 Pickleball Tournament </p>
-        </div>
-    </div>
+function renderTable(){
+  const keyword = document.getElementById("search").value.toLowerCase();
+  const filtered = allData.filter(r => (r.ten||"").toLowerCase().includes(keyword));
+  let html = "";
+  if(filtered.length === 0){
+    html = `<tr><td colspan="7" class="empty">Không có dữ liệu</td></tr>`;
+  } else {
+    filtered.forEach(r=>{
+      html += `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.ten ?? ""}</td>
+          <td>${r.gioitinh == 1 ? "Nam" : "Nữ"}</td>
+          <td>${r.scoreBaseline ?? ""}</td>
+          <td>${r.scorePVNA ?? ""}</td>
+          <td>${r.socreMini ?? ""}</td>
+          <td>
+            <button class="danger small" onclick="deleteRow(${r.id})">Xóa</button>
+          </td>
+        </tr>`;
+    });
+  }
+  document.getElementById("tbody").innerHTML = html;
+}
 
-    <!-- Modal -->
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-avatar"></div>
-                <div class="modal-title">
-                    <div class="modal-player-name" id="modal-name">Tên VĐV</div>
-                    <div class="modal-player-id">
-                        <span id="modal-gender-badge" class="gender-badge">Nam</span>
-                        <span>Mã VĐV: <strong id="modal-id">01</strong></span>
-                    </div>
-                </div>
-                <button class="close-btn" onclick="closeModal()" aria-label="Đóng">✕</button>
-            </div>
+async function saveData(){
+  const ten = document.getElementById("ten").value.trim();
+  if(!ten){
+    showMsg("Vui lòng nhập tên!", "red");
+    return;
+  }
+  const btn = document.getElementById("btnSave");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Đang lưu...';
 
-            <div class="modal-body">
-                <!-- Hero score: Mini Game -->
-                <div class="score-hero">
-                    <div class="score-hero-label">🏆 Điểm Mini Game</div>
-                    <div class="score-hero-value" id="modal-minigame">0</div>
-                </div>
+  const gioitinh = parseInt(document.getElementById("gioitinh").value);
+  const baseline = parseFloat(document.getElementById("baseline").value) || 0;
+  const pvna     = parseFloat(document.getElementById("pvna").value) || 0;
+  const mini     = parseFloat(document.getElementById("mini").value) || 0;
 
-                <!-- Win/Loss -->
-                <div class="info-section">
-                    <div class="info-section-title">📊 Thành Tích Thi Đấu</div>
-                    <div class="win-loss-container">
-                        <div class="wl-card win">
-                            <div class="wl-card-icon">🏆</div>
-                            <div class="wl-card-value" id="modal-wins">0</div>
-                            <div class="wl-card-label">Trận Thắng</div>
-                        </div>
-                        <div class="wl-card loss">
-                            <div class="wl-card-icon">❌</div>
-                            <div class="wl-card-value" id="modal-losses">0</div>
-                            <div class="wl-card-label">Trận Thua</div>
-                        </div>
-                    </div>
-                    <div class="win-rate">
-                        Tỷ lệ thắng: <span class="win-rate-value" id="modal-winrate">0%</span>
-                    </div>
-                </div>
+  const {error} = await db.from("ds").insert([{
+    ten: ten,
+    gioitinh: gioitinh,
+    scoreBaseline: baseline,
+    scorePVNA: pvna,
+    socreMini: mini   // ← giữ đúng tên cột trong DB của bạn
+  }]);
 
-                <!-- Other scores -->
-                <div class="info-section">
-                    <div class="info-section-title">🎯 Hệ Thống Điểm</div>
-                    <div class="info-grid">
-                        <div class="score-card">
-                            <div class="score-card-label">Base Line</div>
-                            <div class="score-card-value" id="modal-baseline">0</div>
-                            <div class="score-progress">
-                                <div class="score-progress-bar" id="progress-baseline" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="score-card">
-                            <div class="score-card-label">PVNA</div>
-                            <div class="score-card-value" id="modal-pvna">0</div>
-                            <div class="score-progress">
-                                <div class="score-progress-bar" id="progress-pvna" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  btn.disabled = false;
+  btn.innerHTML = "Lưu";
 
-                <!-- Other info -->
-                <div class="info-section">
-                    <div class="info-section-title">📋 Thông Tin Khác</div>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-item-label">Lock Score</div>
-                            <div class="info-item-value" id="modal-lock">-</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-item-label">Tổng Trận</div>
-                            <div class="info-item-value" id="modal-total">0</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  if(error){
+    showMsg("Lỗi: " + error.message, "red");
+    return;
+  }
 
-            <div class="modal-footer">
-                <button class="btn-close-modal" onclick="closeModal()">✓ Đóng & Quay Lại</button>
-            </div>
-        </div>
-    </div>
+  showMsg("✅ Đã lưu thành công!", "green");
+  ["ten","baseline","pvna","mini"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("ten").focus();
+  loadData();
+}
 
-    <script>
-        let allData = [];
-        let headers = [];
-        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSF5BELECRW1ogVOveDE4KuKplBjl-9v76BhMUqlrAHdux5spEZOKHBTOwynzkt4EP97Tb5AlnUG_ew/pub?output=csv';
-        
-        const CORS_PROXIES = [
-            url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-            url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-        ];
+async function deleteRow(id){
+  if(!confirm("Bạn có chắc muốn xóa dòng này?")) return;
+  const {error} = await db.from("ds").delete().eq("id", id);
+  if(error){
+    showMsg("Lỗi khi xóa: " + error.message, "red");
+    return;
+  }
+  showMsg("🗑️ Đã xóa thành công!", "green");
+  loadData();
+}
 
-        async function loadData(isManual = false) {
-            if (!isManual) {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('table-wrapper').style.display = 'none';
-                document.getElementById('no-data').style.display = 'none';
-                document.getElementById('stats-bar').style.display = 'none';
-                hideError();
-            } else {
-                document.getElementById('refresh-icon').classList.add('spinning');
-            }
+document.querySelectorAll("#ten,#baseline,#pvna,#mini").forEach(el=>{
+  el.addEventListener("keypress", e=>{ if(e.key === "Enter") saveData(); });
+});
 
-            // Try direct fetch first
-            try {
-                const response = await fetch(SHEET_URL + '&_t=' + Date.now());
-                if (response.ok) {
-                    const csvText = await response.text();
-                    if (csvText && csvText.trim().length > 0) {
-                        parseCSV(csvText);
-                        finishLoad(isManual);
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.log('Direct fetch failed');
-            }
-
-            // Try proxies
-            for (let i = 0; i < CORS_PROXIES.length; i++) {
-                try {
-                    const proxyUrl = CORS_PROXIES[i](SHEET_URL + '&_t=' + Date.now());
-                    const response = await fetch(proxyUrl);
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        if (csvText && csvText.trim().length > 0) {
-                            parseCSV(csvText);
-                            finishLoad(isManual);
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`Proxy ${i + 1} failed`);
-                    continue;
-                }
-            }
-
-            // All failed
-            if (!isManual) {
-                document.getElementById('loading').style.display = 'none';
-            }
-            document.getElementById('error-message').innerHTML = 
-                '❌ Không thể tải dữ liệu tự động. Vui lòng kiểm tra kết nối mạng và thử lại.';
-            document.getElementById('error-message').style.display = 'block';
-            if (isManual) {
-                document.getElementById('refresh-icon').classList.remove('spinning');
-            }
-        }
-
-        function finishLoad(isManual) {
-            if (isManual) {
-                document.getElementById('refresh-icon').classList.remove('spinning');
-            }
-            updateTime();
-        }
-
-        function updateTime() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'});
-            const el = document.querySelector('.last-update');
-            if (el) el.textContent = '🕐 ' + timeStr;
-        }
-
-        function parseCSV(csvText) {
-            const firstLine = csvText.split('\n')[0];
-            const separator = firstLine.includes('\t') ? '\t' : ',';
-            const lines = csvText.trim().split('\n');
-
-            if (lines.length === 0) {
-                showNoData();
-                return;
-            }
-
-            headers = parseLine(lines[0], separator).map(h => h.trim());
-            
-            allData = [];
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                const values = parseLine(line, separator);
-                if (values.length > 0 && values.some(v => v.trim())) {
-                    const row = {};
-                    headers.forEach((header, index) => {
-                        row[header] = (values[index] || '').trim();
-                    });
-                    allData.push(row);
-                }
-            }
-
-            document.getElementById('total-count').textContent = allData.length;
-            displayTable(allData);
-        }
-
-        function parseLine(line, separator) {
-            const values = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') {
-                    if (i + 1 < line.length && line[i + 1] === '"') {
-                        current += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === separator && !inQuotes) {
-                    values.push(current);
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            values.push(current);
-            return values.map(v => v.replace(/^"|"$/g, '').trim());
-        }
-
-        function displayTable(data) {
-            // Desktop table header
-            const headerRow = document.getElementById('table-header');
-            headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
-
-            // Desktop table body
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-
-            if (data.length === 0) {
-                showNoData();
-                return;
-            }
-
-            // Desktop rows
-            data.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                tr.onclick = () => openModal(row);
-                headers.forEach((header, colIndex) => {
-                    const td = document.createElement('td');
-                    let value = row[header];
-                    if (!isNaN(value) && value !== '' && header !== 'id') {
-                        td.textContent = parseFloat(value);
-                    } else {
-                        td.textContent = value;
-                    }
-                    // Highlight score columns
-                    if (['điểm Base Line', 'Điểm pvna', 'Điểm mini game'].includes(header)) {
-                        td.classList.add('score-col');
-                    }
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-
-            // Mobile cards
-            const mobileList = document.getElementById('mobile-list');
-            mobileList.innerHTML = '';
-            data.forEach(row => {
-                const card = document.createElement('div');
-                card.className = 'player-card';
-                card.onclick = () => openModal(row);
-                
-                const gender = row['Giới tính'] || '';
-                const genderClass = gender.toLowerCase() === 'nữ' || gender.toLowerCase() === 'nu' ? 'nu' : 'nam';
-                const miniGame = parseFloat(row['Điểm mini game']) || 0;
-                const wins = parseInt(row['số trận thắng']) || 0;
-                const losses = parseInt(row['số trận thua']) || 0;
-                const baseline = parseFloat(row['điểm Base Line']) || 0;
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="player-name">${row['tên vđv'] || 'VĐV'}</div>
-                        <span class="gender-badge ${genderClass}">${gender}</span>
-                    </div>
-                    <div class="card-main-score">
-                        <div class="main-score-label">⭐ Mini Game</div>
-                        <div class="main-score-value">${miniGame.toFixed(1)}</div>
-                    </div>
-                    <div class="card-stats">
-                        <div class="mini-stat">
-                            <div class="mini-stat-label">🏆 Thắng</div>
-                            <div class="mini-stat-value">${wins}</div>
-                        </div>
-                        <div class="mini-stat">
-                            <div class="mini-stat-label">❌ Thua</div>
-                            <div class="mini-stat-value">${losses}</div>
-                        </div>
-                        <div class="mini-stat">
-                            <div class="mini-stat-label">📊 Base</div>
-                            <div class="mini-stat-value">${baseline.toFixed(1)}</div>
-                        </div>
-                    </div>
-                    <div class="card-click-hint">Chạm để xem chi tiết</div>
-                `;
-                mobileList.appendChild(card);
-            });
-
-            document.getElementById('loading').style.display = 'none';
-            hideError();
-            document.getElementById('table-wrapper').style.display = 'block';
-            document.getElementById('no-data').style.display = 'none';
-            document.getElementById('stats-bar').style.display = 'flex';
-            document.getElementById('display-count').textContent = data.length;
-        }
-
-        function showNoData() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('table-wrapper').style.display = 'none';
-            document.getElementById('no-data').style.display = 'block';
-            document.getElementById('stats-bar').style.display = 'none';
-        }
-
-        function hideError() {
-            document.getElementById('error-message').style.display = 'none';
-        }
-
-        // ===== MODAL FUNCTIONS =====
-        function openModal(row) {
-            const name = row['tên vđv'] || 'VĐV';
-            const gender = row['Giới tính'] || '';
-            const id = row['id'] || '';
-            const wins = parseInt(row['số trận thắng']) || 0;
-            const losses = parseInt(row['số trận thua']) || 0;
-            const baseline = parseFloat(row['điểm Base Line']) || 0;
-            const pvna = parseFloat(row['Điểm pvna']) || 0;
-            const minigame = parseFloat(row['Điểm mini game']) || 0;
-            const lockScore = row['lock score'] || '-';
-
-            // Fill data
-            document.getElementById('modal-name').textContent = name;
-            document.getElementById('modal-id').textContent = id;
-            
-            const genderBadge = document.getElementById('modal-gender-badge');
-            genderBadge.textContent = gender;
-            genderBadge.className = 'gender-badge';
-            if (gender === 'Nam') genderBadge.classList.add('nam');
-            else if (gender === 'Nữ') genderBadge.classList.add('nu');
-
-            document.getElementById('modal-minigame').textContent = minigame.toFixed(1);
-            document.getElementById('modal-wins').textContent = wins;
-            document.getElementById('modal-losses').textContent = losses;
-            document.getElementById('modal-baseline').textContent = baseline.toFixed(1);
-            document.getElementById('modal-pvna').textContent = pvna.toFixed(1);
-            document.getElementById('modal-lock').textContent = lockScore;
-            
-            const total = wins + losses;
-            document.getElementById('modal-total').textContent = total;
-            
-            const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
-            document.getElementById('modal-winrate').textContent = winRate + '%';
-
-            // Progress bars (assuming max around 6)
-            setTimeout(() => {
-                document.getElementById('progress-baseline').style.width = Math.min((baseline / 6) * 100, 100) + '%';
-                document.getElementById('progress-pvna').style.width = Math.min((pvna / 6) * 100, 100) + '%';
-            }, 100);
-
-            // Show modal
-            document.getElementById('modalOverlay').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('active');
-            document.body.style.overflow = '';
-            // Reset progress
-            setTimeout(() => {
-                document.getElementById('progress-baseline').style.width = '0%';
-                document.getElementById('progress-pvna').style.width = '0%';
-            }, 300);
-        }
-
-        // Close modal on overlay click
-        document.getElementById('modalOverlay').addEventListener('click', (e) => {
-            if (e.target.id === 'modalOverlay') {
-                closeModal();
-            }
-        });
-
-        // Close on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('active')) {
-                closeModal();
-            }
-        });
-
-        // Filters
-        function applyFilters() {
-            const nameFilter = document.getElementById('filter-name').value.toLowerCase().trim();
-            const genderFilter = document.getElementById('filter-gender').value;
-            const baselineFilter = parseFloat(document.getElementById('filter-baseline').value);
-            const pvnaFilter = parseFloat(document.getElementById('filter-pvna').value);
-            const minigameFilter = parseFloat(document.getElementById('filter-minigame').value);
-
-            const filteredData = allData.filter(row => {
-                const nameMatch = !nameFilter || 
-                    (row['tên vđv'] && row['tên vđv'].toLowerCase().includes(nameFilter));
-                const genderMatch = !genderFilter || row['Giới tính'] === genderFilter;
-                const baselineMatch = isNaN(baselineFilter) || 
-                    (parseFloat(row['điểm Base Line']) || 0) >= baselineFilter;
-                const pvnaMatch = isNaN(pvnaFilter) || 
-                    (parseFloat(row['Điểm pvna']) || 0) >= pvnaFilter;
-                const minigameMatch = isNaN(minigameFilter) || 
-                    (parseFloat(row['Điểm mini game']) || 0) >= minigameFilter;
-                return nameMatch && genderMatch && baselineMatch && pvnaMatch && minigameMatch;
-            });
-
-            displayTable(filteredData);
-        }
-
-        document.getElementById('filter-name').addEventListener('input', applyFilters);
-        document.getElementById('filter-gender').addEventListener('change', applyFilters);
-        document.getElementById('filter-baseline').addEventListener('input', applyFilters);
-        document.getElementById('filter-pvna').addEventListener('input', applyFilters);
-        document.getElementById('filter-minigame').addEventListener('input', applyFilters);
-
-        // Auto refresh
-        setInterval(() => loadData(false), 5 * 60 * 1000);
-
-        // Initial load
-        window.addEventListener('DOMContentLoaded', () => loadData(false));
-    </script>
+loadData();
+</script>
 </body>
 </html>
