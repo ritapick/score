@@ -64,7 +64,7 @@
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .row .btn{flex:1}
   pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:10px;font-size:12px;overflow:auto}
-  code{background:#eef2ff;padding:2px 6px;border-radius:6px}
+  code{background:#eef2ff;padding:2px 6px;border-radius:6px;word-break:break-all}
   .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
   .modal-backdrop.show{display:flex}
   .modal{width:min(480px,100%);background:#fff;border-radius:16px;padding:20px}
@@ -82,11 +82,14 @@
 
     <div class="config-section">
       <h3>1. Cấu hình Supabase</h3>
-      <input id="cfg-url" placeholder="SUPABASE_URL (https://xxxx.supabase.co) - KHÔNG có /rest/v1/" />
-      <input id="cfg-key" placeholder="SUPABASE_ANON_KEY (bắt đầu bằng eyJ...)" />
+      <input id="cfg-url" placeholder="VD: https://xxxxxxxx.supabase.co" />
+      <input id="cfg-key" placeholder="API Key (sb_publishable_... hoặc eyJ...)" />
       <div class="row">
         <button class="btn btn-light" onclick="testConnection()">Kiểm tra kết nối</button>
         <button class="btn btn-dark" onclick="clearConfig()">Xóa cấu hình</button>
+      </div>
+      <div class="muted" style="margin-top:8px;font-size:11px">
+        Lấy ở: Supabase Dashboard → Project → Settings → API Keys
       </div>
     </div>
 
@@ -304,23 +307,23 @@ function validateConfig(){
   const key = el("cfg-key").value.trim();
   
   if(!url || !key){
-    return { ok: false, error: "Vui lòng nhập cả SUPABASE_URL và ANON_KEY." };
+    return { ok: false, error: "Vui lòng nhập cả SUPABASE_URL và API Key." };
   }
   
   if(url.includes("/rest/v1/")){
-    return { ok: false, error: "❌ URL sai: KHÔNG được chứa /rest/v1/. Chỉ dùng: https://xxxx.supabase.co" };
+    return { ok: false, error: "❌ URL sai: KHÔNG được chứa /rest/v1/ ở cuối.\nVí dụ đúng: https://xxxx.supabase.co" };
   }
   
   if(!url.startsWith("https://")){
     return { ok: false, error: "❌ URL phải bắt đầu bằng https://" };
   }
   
-  if(!key.startsWith("eyJ")){
-    return { ok: false, error: "❌ ANON_KEY sai: Phải bắt đầu bằng 'eyJ' và dài 200+ ký tự. Bạn đã copy nhầm key." };
-  }
+  // Chấp nhận cả 2 dạng key: mới (sb_publishable_) và cũ (eyJ...)
+  const isJwtKey = key.startsWith("eyJ") && key.length > 100;
+  const isPublishableKey = key.startsWith("sb_publishable_") && key.length > 20;
   
-  if(key.length < 100){
-    return { ok: false, error: "❌ ANON_KEY quá ngắn. Hãy copy đầy đủ từ Supabase Dashboard." };
+  if(!isJwtKey && !isPublishableKey){
+    return { ok: false, error: "❌ API Key không hợp lệ.\nHãy copy key ở: Supabase Dashboard → Settings → API Keys" };
   }
   
   return { ok: true };
@@ -370,9 +373,9 @@ function friendlyAuthError(error){
     return "Email chưa xác nhận. Xem hướng dẫn bên dưới.";
   }
   if(/invalid login credentials/i.test(msg)) return "Sai email hoặc mật khẩu.";
-  if(/invalid api key/i.test(msg) || error?.status === 401) return "Anon key không hợp lệ.";
+  if(/invalid api key/i.test(msg) || error?.status === 401) return "API Key không hợp lệ. Kiểm tra lại key ở Settings → API Keys.";
   if(/fetch|network|failed to fetch/i.test(msg)) return "Không kết nối được Supabase. Kiểm tra URL và mạng.";
-  if(/relation .* does not exist/i.test(msg)) return "Chưa có bảng. Hãy chạy script SQL trước.";
+  if(/relation .* does not exist/i.test(msg)) return "Chưa có bảng. Hãy chạy script SQL tạo schema trước.";
   return msg;
 }
 
