@@ -43,6 +43,13 @@ th{background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;posi
 .match-card{padding:13px;margin-bottom:11px}.team-line{font-weight:700;margin:4px 0}.score-line{font-size:19px;font-weight:900;margin-top:8px;color:var(--primary-d)}
 .muted{color:var(--muted);font-size:13px}
 .edit-row{background:#fef3c7!important}
+.new-row{background:#d1fae5!important}
+.group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group-card{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:0}
+.group-card h4{margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.group-team{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #eef2f7;font-size:13px}
+.group-team:last-child{border-bottom:none}
+.group-team select{min-width:110px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-backdrop.show{display:flex}
 .modal{width:min(440px,100%);background:#fff;border-radius:16px;padding:22px}
@@ -125,6 +132,7 @@ const SUPABASE_URL = "https://mvefkcaqvjflrgmaybev.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc";
 const SERVICE_KEY = ""; // 🔑 Dán service_role key để admin reset pass (không gửi email)
 const DEFAULT_PASS = "123@321";
+const GROUP_CODES = ["A","B","C","D","E","F","G","H"]; // 8 bảng
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const state = {
@@ -133,7 +141,7 @@ const state = {
   courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],
   matches:[],standings:[],groupStage:null,knockoutStage:null,
   users:[],refAssign:{},myMatchIds:new Set(),refMatches:[],refTournaments:[],currentMatchId:null,
-  editingEventId:null,editingPlayerId:null,editingTeamId:null
+  editingEventId:null,editingPlayerId:null,editingTeamId:null,lastCreatedEventId:null
 };
 
 function el(id){return document.getElementById(id);}
@@ -271,12 +279,10 @@ async function adminCreateUser(){
   alert("✅ Đã tạo: "+email+"\nPass: "+pass+" • Quyền: "+role);
   await loadUsers();renderAdmin();
 }
-async function editUser(email,pass,role,uid){
-  if(!uid){alert("Thiếu user id");return;}
-  const {error}=await sb.from("user_roles").upsert({user_id:uid,role},{onConflict:"user_id"});
-  if(error){alert("❌ "+error.message);return;}
-  await sb.from("app_users").upsert({user_id:uid,username:email,display_name:email});
-  alert("✅ Đã cập nhật user: "+email+" ("+role+")");
+async function changeRole(uid,role){
+  await sb.from("user_roles").delete().eq("user_id",uid);
+  const {error}=await sb.from("user_roles").insert({user_id:uid,role});
+  if(error)alert(error.message);
   await loadUsers();renderAdmin();
 }
 async function resetUserPassDefault(uid,email){
@@ -307,16 +313,14 @@ async function createTournament(){
   if(ex){alert("Mã giải '"+code+"' đã tồn tại.");return;}
   const base=name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
   const slug=code.toLowerCase()+"-"+(base||"giai-dau")+"-"+Date.now().toString(36);
-  const {data,error}=await sb.from("tournaments").insert({code,name,slug,start_date:el("t-start").value||null,end_date:el("t-end").value||null,location_name:el("t-location").value||null,status:"in_progress"}).select().single();
+  const {error}=await sb.from("tournaments").insert({code,name,slug,start_date:el("t-start").value||null,end_date:el("t-end").value||null,location_name:el("t-location").value||null,status:"in_progress"});
   if(error){alert(/row-level security/i.test(error.message)?"❌ Bị chặn RLS - chạy script SQL phân quyền.":"❌ "+error.message);return;}
-  alert("✅ Đã tạo giải '"+name+"'. Hãy chọn giải này ở Bước 2 để thiết lập.");
+  alert("✅ Đã tạo giải '"+name+"'. Hãy chọn giải ở Bước 2 để thiết lập.");
   await loadTournaments();
 }
 
-/* ================= BƯỚC 3: NỘI DUNG (tạo + sửa) ================= */
-function editEvent(id){
-  state.editingEventId=id;renderAdmin();
-}
+/* ================= BƯỚC 3: NỘI DUNG (thêm dòng mới khi tạo) ================= */
+function editEvent(id){state.editingEventId=id;renderAdmin();}
 function cancelEditEvent(){state.editingEventId=null;renderAdmin();}
 async function saveEvent(){
   if(!state.tournament){alert("⚠️ Hãy chọn giải ở Bước 2 trước.");return;}
@@ -330,10 +334,11 @@ async function saveEvent(){
     const r=await sb.from("events").update(payload).eq("id",id);error=r.error;
   }else{
     payload.tournament_id=state.tournament.id;payload.status="open";
-    const r=await sb.from("events").insert(payload);error=r.error;
+    const r=await sb.from("events").insert(payload).select().single();error=r.error;
+    if(r.data)state.lastCreatedEventId=r.data.id;
   }
   if(error){alert(/row-level security/i.test(error.message)?"❌ Bị chặn RLS.":"❌ "+error.message);return;}
-  alert("✅ "+(id?"Đã cập nhật":"Đã tạo")+" nội dung.");
+  alert("✅ "+(id?"Đã cập nhật":"Đã thêm dòng nội dung mới")+".");
   state.editingEventId=null;
   await selectTournament(state.tournament.id);
 }
@@ -344,7 +349,7 @@ async function deleteEvent(id){
   await selectTournament(state.tournament.id);
 }
 
-/* ================= BƯỚC 4: VĐV (tạo + sửa) ================= */
+/* ================= BƯỚC 4: VĐV ================= */
 function editPlayer(id){state.editingPlayerId=id;renderAdmin();}
 function cancelEditPlayer(){state.editingPlayerId=null;renderAdmin();}
 async function savePlayer(){
@@ -370,9 +375,17 @@ async function deletePlayer(id){
   renderAdmin();
 }
 
-/* ================= BƯỚC 5: ĐỘI (tạo + sửa) ================= */
+/* ================= BƯỚC 5: ĐỘI (mỗi VĐV chỉ 1 đội / nội dung) ================= */
 function editTeam(id){state.editingTeamId=id;renderAdmin();}
 function cancelEditTeam(){state.editingTeamId=null;renderAdmin();}
+
+// Tập hợp mã VĐV đã tham gia đội trong nội dung hiện tại
+function usedPlayerIdsInEvent(){
+  const s=new Set();
+  state.teams.forEach(tm=>tm.members.forEach(m=>s.add(m.player_id)));
+  return s;
+}
+
 async function saveTeam(){
   if(!state.currentEventId){alert("⚠️ Hãy chọn nội dung trước.");return;}
   const id=state.editingTeamId;
@@ -380,6 +393,17 @@ async function saveTeam(){
   if(!name){alert("Nhập tên đội");return;}
   const p1=el("team-p1").value,p2=el("team-p2").value;
   if(!p1||!p2||p1===p2){alert("Chọn 2 VĐV khác nhau");return;}
+  // Kiểm tra VĐV đã ở đội khác chưa (theo mã VĐV)
+  const used=usedPlayerIdsInEvent();
+  const own=new Set();
+  if(id){const t=state.teams.find(x=>x.id===id);(t?.members||[]).forEach(m=>own.add(m.player_id));}
+  for(const pid of [p1,p2]){
+    if(used.has(pid)&&!own.has(pid)){
+      const pl=state.players.find(p=>p.id===pid);
+      alert("❌ VĐV '"+(pl?.full_name||pid)+"' đã tham gia đội khác trong nội dung này.");
+      return;
+    }
+  }
   let teamId;
   if(id){
     const r=await sb.from("teams").update({name}).eq("id",id);
@@ -407,19 +431,27 @@ async function deleteTeam(id){
   await selectEvent(state.currentEventId);
 }
 
-/* ================= BƯỚC 6: XẾP BẢNG + SINH TRẬN ================= */
+/* ================= BƯỚC 6: XẾP BẢNG A-H ================= */
 async function setupGroupStage(){
   if(!state.currentEventId){alert("Chọn nội dung trước");return;}
   let stageId=state.groupStage?.id;
   if(!stageId){const {data,error}=await sb.from("stages").insert({event_id:state.currentEventId,code:"GRP",name:"Vòng bảng",stage_type:"group_stage",stage_order:1}).select().single();if(error){alert(error.message);return;}stageId=data.id;}
-  for(const c of["A","B","C","D"]){if(!state.groups.find(g=>g.stage_id===stageId&&g.code===c)){await sb.from("groups").insert({stage_id:stageId,code:c,name:"Bảng "+c,max_teams:4});}}
+  for(const c of GROUP_CODES){
+    if(!state.groups.find(g=>g.stage_id===stageId&&g.code===c)){
+      await sb.from("groups").insert({stage_id:stageId,code:c,name:"Bảng "+c,max_teams:4});
+    }
+  }
   if(!state.knockoutStage)await sb.from("stages").insert({event_id:state.currentEventId,code:"KO",name:"Knockout",stage_type:"knockout",stage_order:2});
   await selectEvent(state.currentEventId);
 }
-async function assignGroup(teamId,groupId){
-  if(!groupId)return;
-  const {error}=await sb.rpc("assign_team_to_group",{p_team_id:teamId,p_group_id:groupId});
-  if(error)alert(error.message);
+// Gán / chuyển bảng cho đội (xóa cũ rồi thêm mới)
+async function setTeamGroup(teamId,groupId){
+  if(!state.groupStage){alert("Hãy bấm 'Thiết lập 8 bảng' trước.");return;}
+  await sb.from("group_teams").delete().eq("team_id",teamId).eq("stage_id",state.groupStage.id);
+  if(groupId){
+    const {error}=await sb.from("group_teams").insert({group_id:groupId,stage_id:state.groupStage.id,team_id:teamId,event_id:state.currentEventId});
+    if(error){alert(error.message);}
+  }
   await selectEvent(state.currentEventId);
 }
 async function runGenerateGroupFixtures(){if(!state.groupStage){alert("Thiết lập vòng bảng trước");return;}const {error}=await sb.rpc("generate_group_stage_fixtures",{p_stage_id:state.groupStage.id});if(error)alert(error.message);await selectEvent(state.currentEventId);}
@@ -455,7 +487,7 @@ async function saveScore(){
   if(state.role==="referee")await loadRefereeData();
 }
 
-/* ================= RENDER ================= */
+/* ================= RENDER PUBLIC ================= */
 function bindNav(){document.querySelectorAll(".nav-link[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));}
 function showPage(p){
   document.querySelectorAll(".nav-link[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===p));
@@ -523,45 +555,73 @@ function renderReferee(){
   </tbody></table></div></div>`;
 }
 
-/* ================= RENDER ADMIN: THEO ĐÚNG 7 BƯỚC ================= */
+/* ================= RENDER ADMIN (7 BƯỚC) ================= */
+function groupSelectForTeam(tm){
+  const cur=state.groupTeams.find(gt=>gt.team_id===tm.id);
+  const opts='<option value="">— Chưa xếp —</option>'+GROUP_CODES.map(code=>{
+    const g=state.groups.find(x=>x.code===code&&x.stage_id===state.groupStage?.id);
+    if(!g)return "";
+    return `<option value="${g.id}" ${cur&&cur.group_id===g.id?"selected":""}>Bảng ${code}</option>`;
+  }).join("");
+  return `<select onchange="setTeamGroup('${tm.id}',this.value)">${opts}</select>`;
+}
+function teamGroupRow(tm){
+  return `<div class="group-team"><div><b>${tm.name}</b> <span class="muted">(${tm.total_rating})</span></div><div>${groupSelectForTeam(tm)}</div></div>`;
+}
+
 function renderAdmin(){
   const t=state.tournament,locked=isLocked();
   const tOpts=state.tournaments.map(x=>`<option value="${x.id}" ${t&&x.id===t.id?"selected":""}>${x.code} - ${x.name}</option>`).join("");
-  const pOpts=state.players.map(p=>`<option value="${p.id}">${p.full_name} (${p.skill_rating??""})</option>`).join("");
   const noTournament=!t;
   const noEvent=!state.currentEventId;
   const editingE=state.events.find(e=>e.id===state.editingEventId);
   const editingP=state.players.find(p=>p.id===state.editingPlayerId);
   const editingT=state.teams.find(tm=>tm.id===state.editingTeamId);
 
+  // --- Mục 5: danh sách VĐV chưa vào đội (theo mã) ---
+  const used=usedPlayerIdsInEvent();
+  if(editingT)(editingT.members||[]).forEach(m=>used.delete(m.player_id));
+  const pOpts=state.players.filter(p=>!used.has(p.id)).map(p=>`<option value="${p.id}">${p.full_name} [${p.id.slice(0,4)}] (${p.skill_rating??""})</option>`).join("");
+
+  // --- Mục 3: bảng nội dung, dòng mới nhất lên đầu ---
+  const eventsSorted=[...state.events].sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""));
+
+  // --- Mục 6: nhóm đội theo bảng A-H ---
+  let groupCards="";
+  if(state.groupStage){
+    groupCards=GROUP_CODES.map(code=>{
+      const g=state.groups.find(x=>x.code===code&&x.stage_id===state.groupStage.id);
+      if(!g)return "";
+      const members=state.teams.filter(tm=>state.groupTeams.some(gt=>gt.team_id===tm.id&&gt.group_id===g.id));
+      return `<div class="group-card"><h4>Bảng ${code} <span class="badge b-blue">${members.length}</span></h4>${members.map(teamGroupRow).join("")||'<div class="muted">Chưa có đội</div>'}</div>`;
+    }).join("");
+    const unassigned=state.teams.filter(tm=>!state.groupTeams.some(gt=>gt.team_id===tm.id));
+    groupCards+=`<div class="group-card" style="border-color:#fde68a;background:#fffbeb"><h4>⚠️ Chưa xếp bảng <span class="badge b-warn">${unassigned.length}</span></h4>${unassigned.map(teamGroupRow).join("")||'<div class="muted">Hết đội chờ xếp</div>'}</div>`;
+  }
+
   el("admin-content").innerHTML=`
-  <!-- BƯỚC 1: TẠO GIẢI MỚI -->
-  <div class="card">
-    <h3><span class="step-num">1</span> Tạo giải mới</h3>
+  <!-- BƯỚC 1 -->
+  <div class="card"><h3><span class="step-num">1</span> Tạo giải mới</h3>
     <div class="form-grid">
       <input id="t-code" placeholder="Mã giải (vd: HN2026)"/>
       <input id="t-name" placeholder="Tên giải"/>
-      <input id="t-start" type="date"/>
-      <input id="t-end" type="date"/>
+      <input id="t-start" type="date"/><input id="t-end" type="date"/>
       <input id="t-location" placeholder="Địa điểm"/>
       <button class="btn btn-primary" onclick="createTournament()">➕ Tạo giải</button>
     </div>
-    <div class="muted">Tạo giải mới sẽ thêm vào danh sách ở Bước 2.</div>
   </div>
 
-  <!-- BƯỚC 2: CHỌN GIẢI ĐỂ THIẾT LẬP -->
-  <div class="card">
-    <h3><span class="step-num">2</span> Chọn giải để thiết lập</h3>
+  <!-- BƯỚC 2 -->
+  <div class="card"><h3><span class="step-num">2</span> Chọn giải để thiết lập</h3>
     <div class="form-grid">
       <select onchange="selectTournament(this.value)">${tOpts||'<option value="">— Chưa có giải —</option>'}</select>
       ${t?`<button class="btn ${locked?"btn-blue":"btn-danger"}" onclick="toggleLock('${t.id}')">${locked?"🔓 Mở giải":"🔒 Đóng giải"}</button>`:""}
     </div>
-    ${t?`<div class="muted">Đang thiết lập: <b>${t.code} - ${t.name}</b> ${locked?'<span class="badge b-red">Đã đóng</span>':'<span class="badge b-green">Đang mở</span>'}</div>`:'<div class="alert-box">⚠️ Hãy tạo giải ở Bước 1 rồi chọn ở đây. Các bước 3-6 sẽ được mở sau khi chọn giải.</div>'}
+    ${t?`<div class="muted">Đang thiết lập: <b>${t.code} - ${t.name}</b> ${locked?'<span class="badge b-red">Đã đóng</span>':'<span class="badge b-green">Đang mở</span>'}</div>`:'<div class="alert-box">⚠️ Tạo giải ở Bước 1 rồi chọn ở đây để mở các bước 3-6.</div>'}
   </div>
 
-  <!-- BƯỚC 3: NỘI DUNG (disable nếu chưa chọn giải) -->
-  <div class="card ${noTournament?"disabled":""}">
-    <h3><span class="step-num">3</span> Tạo / chỉnh sửa nội dung thi đấu</h3>
+  <!-- BƯỚC 3 -->
+  <div class="card ${noTournament?"disabled":""}"><h3><span class="step-num">3</span> Tạo / chỉnh sửa nội dung thi đấu</h3>
     ${noTournament?'<div class="alert-box">🔒 Cần chọn giải ở Bước 2 trước.</div>':`
     <div class="form-grid">
       <input id="e-code" placeholder="Mã (vd: DOI475)" value="${editingE?editingE.code:""}"/>
@@ -572,12 +632,12 @@ function renderAdmin(){
         <option value="exact_total" ${editingE?.rating_rule==="exact_total"?"selected":""}>Tổng =</option>
         <option value="open" ${editingE?.rating_rule==="open"?"selected":""}>Mở</option>
       </select>
-      <button class="btn btn-primary" onclick="saveEvent()">${editingE?"💾 Cập nhật":"➕ Tạo mới"}</button>
+      <button class="btn btn-primary" onclick="saveEvent()">${editingE?"💾 Cập nhật":"➕ Tạo mới (thêm dòng)"}</button>
       ${editingE?`<button class="btn btn-light" onclick="cancelEditEvent()">✕ Hủy</button>`:""}
     </div>
     ${editingE?'<div class="alert-box">🖊️ Đang sửa nội dung <b>'+editingE.name+'</b></div>':""}
     <div class="table-wrap"><table><thead><tr><th>Mã</th><th>Tên</th><th>Trình</th><th>Luật</th><th></th></tr></thead><tbody>
-      ${state.events.map(e=>`<tr class="${state.editingEventId===e.id?"edit-row":""}">
+      ${eventsSorted.map(e=>`<tr class="${state.editingEventId===e.id?"edit-row":(state.lastCreatedEventId===e.id?"new-row":"")}">
         <td>${e.code}</td><td>${e.name}</td><td>${e.rating_limit??"-"}</td><td>${e.rating_rule}</td>
         <td><button class="btn btn-sm btn-warn" onclick="editEvent('${e.id}')">✏️ Sửa</button>
         <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')">🗑️</button></td>
@@ -585,35 +645,30 @@ function renderAdmin(){
     </tbody></table></div>`}
   </div>
 
-  <!-- BƯỚC 4: VĐV (disable nếu chưa chọn giải) -->
-  <div class="card ${noTournament?"disabled":""}">
-    <h3><span class="step-num">4</span> Tạo / chỉnh sửa vận động viên</h3>
+  <!-- BƯỚC 4 -->
+  <div class="card ${noTournament?"disabled":""}"><h3><span class="step-num">4</span> Tạo / chỉnh sửa vận động viên</h3>
     ${noTournament?'<div class="alert-box">🔒 Cần chọn giải ở Bước 2 trước.</div>':`
     <div class="form-grid">
       <input id="p-name" placeholder="Họ tên" value="${editingP?editingP.full_name:""}"/>
-      <select id="p-gender">
-        <option value="male" ${editingP?.gender==="male"?"selected":""}>Nam</option>
-        <option value="female" ${editingP?.gender==="female"?"selected":""}>Nữ</option>
-      </select>
+      <select id="p-gender"><option value="male" ${editingP?.gender==="male"?"selected":""}>Nam</option><option value="female" ${editingP?.gender==="female"?"selected":""}>Nữ</option></select>
       <input id="p-rating" type="number" step="0.05" placeholder="Rating" value="${editingP?.skill_rating??""}"/>
       <input id="p-club" placeholder="Club" value="${editingP?.club_name||""}"/>
       <button class="btn btn-primary" onclick="savePlayer()">${editingP?"💾 Cập nhật":"➕ Thêm mới"}</button>
       ${editingP?`<button class="btn btn-light" onclick="cancelEditPlayer()">✕ Hủy</button>`:""}
     </div>
-    ${editingP?'<div class="alert-box">🖊️ Đang sửa VĐV <b>'+editingP.full_name+'</b></div>':""}
-    <div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>GT</th><th>Rating</th><th>Club</th><th></th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>Mã</th><th>Họ tên</th><th>GT</th><th>Rating</th><th>Club</th><th></th></tr></thead><tbody>
       ${state.players.map(p=>`<tr class="${state.editingPlayerId===p.id?"edit-row":""}">
-        <td>${p.full_name}</td><td>${p.gender==="male"?"Nam":"Nữ"}</td><td>${p.skill_rating??""}</td><td>${p.club_name||""}</td>
+        <td class="muted">${p.id.slice(0,8)}</td><td>${p.full_name}</td><td>${p.gender==="male"?"Nam":"Nữ"}</td><td>${p.skill_rating??""}</td><td>${p.club_name||""}</td>
         <td><button class="btn btn-sm btn-warn" onclick="editPlayer('${p.id}')">✏️ Sửa</button>
         <button class="btn btn-sm btn-danger" onclick="deletePlayer('${p.id}')">🗑️</button></td>
-      </tr>`).join("")||'<tr><td colspan="5" class="muted">Chưa có VĐV</td></tr>'}
+      </tr>`).join("")||'<tr><td colspan="6" class="muted">Chưa có VĐV</td></tr>'}
     </tbody></table></div>`}
   </div>
 
-  <!-- BƯỚC 5: ĐỘI (disable nếu chưa chọn nội dung) -->
-  <div class="card ${noTournament||noEvent?"disabled":""}">
-    <h3><span class="step-num">5</span> Tạo / chỉnh sửa đội (2 VĐV)</h3>
+  <!-- BƯỚC 5 -->
+  <div class="card ${noTournament||noEvent?"disabled":""}"><h3><span class="step-num">5</span> Tạo / chỉnh sửa đội (2 VĐV)</h3>
     ${noTournament?'<div class="alert-box">🔒 Cần chọn giải ở Bước 2 trước.</div>':(noEvent?'<div class="alert-box">🔒 Cần tạo nội dung ở Bước 3 trước.</div>':`
+    <div class="muted" style="margin-bottom:8px">ℹ️ Mỗi VĐV chỉ ở <b>1 đội</b> trong nội dung này. VĐV đã vào đội sẽ <b>không còn</b> trong danh sách chọn. Phân biệt theo <b>mã VĐV</b>.</div>
     <div class="form-grid">
       <input id="team-name" placeholder="Tên đội" value="${editingT?editingT.name:""}"/>
       <select id="team-p1"><option value="">-- VĐV 1 --</option>${pOpts}</select>
@@ -640,23 +695,21 @@ function renderAdmin(){
     </tbody></table></div>`)}
   </div>
 
-  <!-- BƯỚC 6: XẾP BẢNG + SINH TRẬN -->
-  <div class="card ${noTournament||noEvent?"disabled":""}">
-    <h3><span class="step-num">6</span> Xếp bảng thi đấu</h3>
+  <!-- BƯỚC 6 -->
+  <div class="card ${noTournament||noEvent?"disabled":""}"><h3><span class="step-num">6</span> Xếp bảng thi đấu (A–H)</h3>
     ${noTournament||noEvent?'<div class="alert-box">🔒 Cần hoàn thành bước 2-5 trước.</div>':`
     <div class="actions">
-      <button class="btn btn-dark" onclick="setupGroupStage()">🏆 Thiết lập 4 bảng</button>
+      <button class="btn btn-dark" onclick="setupGroupStage()">🏆 Thiết lập 8 bảng (A-H)</button>
       <button class="btn btn-primary" onclick="runGenerateGroupFixtures()">⚽ Sinh vòng bảng</button>
       <button class="btn btn-blue" onclick="runGenerateQF()">🔥 Tứ kết</button>
       <button class="btn btn-blue" onclick="runGenerateSF()">🔥 Bán kết</button>
       <button class="btn btn-blue" onclick="runGenerateFinal()">🏅 Chung kết</button>
     </div>
-    <div class="muted">Sau khi sinh vòng bảng, admin có thể gán đội vào từng bảng bằng cách bấm "Chỉnh sửa đội" → chọn bảng.</div>`}
+    ${state.groupStage?`<div class="group-grid">${groupCards}</div>`:'<div class="alert-box">Bấm "Thiết lập 8 bảng" để bắt đầu xếp bảng.</div>'}`}
   </div>
 
-  <!-- BƯỚC 7: USER -->
-  <div class="card">
-    <h3><span class="step-num">7</span> Tạo / chỉnh sửa người dùng ${state.role==="admin"?"<span class='badge b-blue'>admin: có reset pass</span>":""}</h3>
+  <!-- BƯỚC 7 -->
+  <div class="card"><h3><span class="step-num">7</span> Tạo / chỉnh sửa người dùng ${state.role==="admin"?'<span class="badge b-blue">admin: có reset pass</span>':""}</h3>
     <div class="form-grid">
       <input id="nu-email" placeholder="Email"/>
       <input id="nu-pass" type="text" value="${DEFAULT_PASS}" placeholder="Mật khẩu"/>
@@ -667,7 +720,6 @@ function renderAdmin(){
       </select>
       <button class="btn btn-primary" onclick="adminCreateUser()">➕ Tạo user mới</button>
     </div>
-    <div class="muted" style="font-size:12px;margin-bottom:10px">Mật khẩu mặc định: <b>${DEFAULT_PASS}</b>. User tự đổi ở nút 🔑 hoặc admin reset bằng nút bên dưới.</div>
     <div class="table-wrap"><table><thead><tr><th>Email</th><th>Quyền</th><th>Đổi quyền</th>${state.role==="admin"?'<th>Reset pass</th>':""}</tr></thead><tbody>
       ${state.users.map(u=>`<tr>
         <td>${u.username}</td>
@@ -682,7 +734,7 @@ function renderAdmin(){
     </tbody></table></div>
   </div>`;
 
-  // Sau khi render, nếu đang edit team → set lại giá trị 2 select VĐV
+  // Điền lại 2 select VĐV khi đang sửa đội
   if(editingT&&editingT.members){
     const p1=editingT.members.find(m=>m.position===1);
     const p2=editingT.members.find(m=>m.position===2);
