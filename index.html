@@ -57,6 +57,7 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .btn-sm{padding:4px 9px;font-size:11px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .time-cell{display:flex;gap:6px;align-items:center}.time-cell select{width:96px}
+td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--cyan);font-family:'Oswald'}
 .serve-dots{color:var(--red);font-size:10px;margin-left:5px;letter-spacing:2px;vertical-align:middle}
 .group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .group-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -206,13 +207,8 @@ function fmtTime(s){if(!s)return "";const d=new Date(s);if(isNaN(d.getTime()))re
 function sortByTime(a,b){const ta=a.scheduled_at?new Date(a.scheduled_at).getTime():Infinity;const tb=b.scheduled_at?new Date(b.scheduled_at).getTime():Infinity;return (ta-tb)||(a.match_seq-b.match_seq);}
 function sortedTournaments(){return [...state.tournaments].sort((a,b)=>{const ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(b.start_date||"").localeCompare(String(a.start_date||""));});}
 function timeOptions(sel){let o='<option value="">— Giờ —</option>';for(let h=5;h<=23;h++){for(let m=0;m<60;m+=5){const v=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");o+=`<option value="${v}" ${sel===v?"selected":""}>${v}</option>`;}}return o;}
+function koLabel(m){if(m.round===1)return "TK"+m.bracket_slot;if(m.round===2)return "BK"+m.bracket_slot;return "CK";}
 function serveDots(m,side){if(!m.serve||m.status==="completed")return "";const isHome=m.serve.startsWith("h");if((side==="home")!==isHome)return "";const n=m.serve.endsWith("2")?2:1;return `<span class="serve-dots">${"●".repeat(n)}</span>`;}
-/* Mã hiển thị chuyên nghiệp cho knockout: TK1-4, BK1-2, CK */
-function koLabel(m){
-  if(m.round===1)return "TK"+m.bracket_slot;
-  if(m.round===2)return "BK"+m.bracket_slot;
-  return "CK";
-}
 function scoreCell(m,canEdit){
   const hasScore=(m.home_score!=null&&m.away_score!=null&&(m.home_score>0||m.away_score>0||m.status==="completed"));
   if(canEdit&&m.status!=="completed"){return `<button class="btn btn-primary" onclick="openRefModal('${m.id}')">Điểm</button>`;}
@@ -230,7 +226,6 @@ function buildQFMap(){
   const [B1,B2,B3,B4]=c;
   return {1:{home:{g:B1,r:1},away:{g:B2,r:2}},2:{home:{g:B3,r:1},away:{g:B4,r:2}},3:{home:{g:B2,r:1},away:{g:B1,r:2}},4:{home:{g:B4,r:1},away:{g:B3,r:2}}};
 }
-
 function groupRanking(gid){
   const gm=state.matches.filter(m=>m.group_id===gid&&m.status==="completed");
   const map={};
@@ -294,11 +289,7 @@ async function refreshKnockout(){
     await reloadEventMatches();
   }catch(e){console.warn("refreshKnockout:",e);}
 }
-async function buildKO(){
-  await refreshKnockout();
-  renderAll();
-  alert("✅ Đã xây vòng KO từ kết quả vòng bảng.");
-}
+async function buildKO(){await refreshKnockout();renderAll();alert("✅ Đã xây vòng KO từ kết quả vòng bảng.");}
 
 function setupRealtime(){
   sb.channel("pb-matches")
@@ -685,6 +676,16 @@ async function savePendingTime(id){
   m.scheduled_at=v;delete state.pending[id];
   renderMatches();
 }
+/* Giờ knockout: chỉnh sửa & lưu ngay */
+async function saveKOTime(id,val){
+  const m=state.matches.find(x=>x.id===id);if(!m)return;
+  const date=state.tournament?.start_date||"2026-01-01";
+  const v=val?date+"T"+val+":00+07":null;
+  const {error}=await sb.from("matches").update({scheduled_at:v}).eq("id",id);
+  if(error){alert(error.message);return;}
+  m.scheduled_at=v;
+  renderMatches();renderKnockout();
+}
 async function updateMatchCourt(id,courtId){
   const m=state.matches.find(x=>x.id===id);if(!m)return;
   const {error}=await sb.from("matches").update({court_id:courtId||null}).eq("id",id);
@@ -860,7 +861,22 @@ function matchRow(m,adminEdit,showRef){
     ${showRef?`<td>${refCell}</td>`:""}
     <td>${statusBadge(m.status)}</td></tr>`;
 }
-/* Knockout: mỗi vòng một bảng riêng, phân tách từng trận chuyên nghiệp */
+/* Dòng trận Knockout: giờ chỉnh sửa & lưu ngay, sân + trọng tài chọn trực tiếp */
+function koRow(m,adminEdit){
+  const committed=fmtTime(m.scheduled_at);
+  const courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
+  const referees=state.users.filter(u=>u.role==="referee");
+  const resetBtn=adminEdit&&(m.status==="completed"||m.status==="live")?` <button class="btn btn-sm btn-warn" onclick="resetMatchScore('${m.id}')" title="Xóa tỷ số, thi đấu lại">🧹</button>`:"";
+  return `<tr>
+    <td><span class="ko-code">${koLabel(m)}</span> <span class="muted" style="font-size:10px">${m.match_code}</span></td>
+    <td>${adminEdit?`<input type="time" value="${committed}" onchange="saveKOTime('${m.id}',this.value)"/>`:(committed?`<span class="time-chip">${committed}</span>`:"-")}</td>
+    <td class="col-court">${adminEdit?`<select onchange="updateMatchCourt('${m.id}',this.value)">${courtOptions(m.court_id)}</select>`:courtName}</td>
+    <td>${teamName(m.home_team_id)}${serveDots(m,"home")}</td>
+    <td>${scoreCell(m,adminEdit)}${resetBtn}</td>
+    <td>${teamName(m.away_team_id)}${serveDots(m,"away")}</td>
+    <td>${adminEdit?matchRefereeSelect(m,referees):refNameOf(m)}</td>
+    <td>${statusBadge(m.status)}</td></tr>`;
+}
 function knockoutTablesHTML(adminEdit){
   const ko=state.knockoutStage?state.matches.filter(m=>m.stage_id===state.knockoutStage.id):[];
   if(!ko.length){
@@ -879,7 +895,7 @@ function knockoutTablesHTML(adminEdit){
   rounds.forEach(rd=>{
     const ms=ko.filter(m=>m.round===rd.r).sort((a,b)=>(a.bracket_slot||0)-(b.bracket_slot||0));
     if(!ms.length)return;
-    html+=`<div class="card"><h3>${rd.t}</h3><div class="table-wrap"><table><thead><tr><th>Mã trận</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Tỷ số</th><th>Đội 2</th><th>Trọng tài</th><th>TT</th></tr></thead><tbody>${ms.map(m=>matchRow(m,adminEdit,true)).join("")}</tbody></table></div></div>`;
+    html+=`<div class="card"><h3>${rd.t}</h3><div class="table-wrap"><table><thead><tr><th>Mã trận</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Tỷ số</th><th>Đội 2</th><th>Trọng tài</th><th>TT</th></tr></thead><tbody>${ms.map(m=>koRow(m,adminEdit)).join("")}</tbody></table></div></div>`;
   });
   return html||'<div class="card muted">Chưa có trận knockout.</div>';
 }
