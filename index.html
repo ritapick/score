@@ -159,7 +159,7 @@ const state={session:null,user:null,role:null,username:null,
  courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],
  matches:[],standings:[],groupStage:null,knockoutStage:null,
  users:[],refAssign:{},myMatchIds:new Set(),refMatches:[],refTournaments:[],currentMatchId:null,
- editingEventId:null,editingPlayerId:null,editingTeamId:null,lastCreatedEventId:null,
+ editingEventId:null,editingPlayerId:null,editingTeamId:null,editingTeamOriginal:null,lastCreatedEventId:null,
  openTournaments:[],
  t5:{tid:null,eid:null,events:[],teams:[]},
  t6:{tid:null,eid:null,events:[],teams:[],groups:[],groupTeams:[],groupStage:null,knockoutStage:null},
@@ -190,6 +190,14 @@ function playerLabel(p){return p.full_name+" ("+(p.skill_rating!=null?Number(p.s
 function toMin(t){const [h,m]=String(t||"08:30").split(":").map(Number);return h*60+m;}
 function fromMin(total){const d=state.tournament?.start_date||"2026-01-01";const h=Math.floor(total/60),m=total%60;return d+"T"+String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":00+07";}
 function fmtTime(s){return s?s.split("T")[1]?.slice(0,5):"";}
+/* Giải đang mở trước, đã đóng xuống dưới */
+function sortedTournaments(){
+  return [...state.tournaments].sort((a,b)=>{
+    const ao=a.status==="completed"?1:0, bo=b.status==="completed"?1:0;
+    if(ao!==bo)return ao-bo;
+    return String(b.start_date||"").localeCompare(String(a.start_date||""));
+  });
+}
 
 /* ================= LOAD 5/6 ================= */
 async function refreshOpenTournaments(){const {data}=await sb.from("tournaments").select("*").neq("status","completed").order("start_date",{ascending:false});state.openTournaments=data||[];}
@@ -262,12 +270,12 @@ function applyAuthUI(){
 async function loadTournaments(){
   const {data}=await sb.from("tournaments").select("*").order("start_date",{ascending:false});
   state.tournaments=data||[];
-  el("ctx-tournament").innerHTML=state.tournaments.map(t=>`<option value="${t.id}">${t.code} - ${t.name}</option>`).join("")||'<option value="">Chưa có giải</option>';
-  if(state.tournaments.length)await selectTournament(state.tournaments[0].id);else renderAll();
+  el("ctx-tournament").innerHTML=sortedTournaments().map(t=>`<option value="${t.id}">${t.code} - ${t.name}${t.status==="completed"?" (đóng)":""}</option>`).join("")||'<option value="">Chưa có giải</option>';
+  if(state.tournaments.length)await selectTournament(sortedTournaments()[0].id);else renderAll();
 }
 async function selectTournament(id){
   state.tournament=state.tournaments.find(t=>t.id===id)||null;
-  state.editingEventId=null;state.editingPlayerId=null;state.editingTeamId=null;
+  state.editingEventId=null;state.editingPlayerId=null;state.editingTeamId=null;state.editingTeamOriginal=null;
   if(!state.tournament)return;
   const {data:e}=await sb.from("events").select("*").eq("tournament_id",id);state.events=e||[];
   el("ctx-event").innerHTML=state.events.map(x=>`<option value="${x.id}">${x.name}</option>`).join("")||'<option value="">Chưa có nội dung</option>';
@@ -276,7 +284,7 @@ async function selectTournament(id){
   if(state.events.length)await selectEvent(state.events[0].id);else{state.currentEventId=null;state.teams=[];state.matches=[];renderAll();}
 }
 async function selectEvent(id){
-  state.currentEventId=id||null;state.editingTeamId=null;
+  state.currentEventId=id||null;state.editingTeamId=null;state.editingTeamOriginal=null;
   if(!state.currentEventId){renderAll();return;}
   const {data:teams}=await sb.from("teams").select(TEAM_SELECT).eq("event_id",state.currentEventId);state.teams=mapTeams(teams);
   const {data:st}=await sb.from("stages").select("*").eq("event_id",state.currentEventId).order("stage_order");state.stages=st||[];
@@ -366,7 +374,6 @@ async function createTournament(){
   const slug=code.toLowerCase()+"-"+(base||"giai-dau")+"-"+Date.now().toString(36);
   const {data,error}=await sb.from("tournaments").insert({code,name,slug,start_date:el("t-start").value||null,end_date:el("t-end").value||null,location_name:el("t-location").value||null,status:"in_progress"}).select().single();
   if(error){alert(/row-level security/i.test(error.message)?"❌ Bị chặn RLS.":"❌ "+error.message);return;}
-  // Tạo sẵn 8 sân
   for(let i=1;i<=8;i++){await sb.from("courts").insert({tournament_id:data.id,name:"Sân "+i,display_order:i}).then(()=>{}).catch(()=>{});}
   alert("✅ Đã tạo giải '"+name+"' kèm 8 sân.");
   await loadTournaments();await refreshOpenTournaments();
@@ -392,7 +399,7 @@ function editPlayer(id){state.editingPlayerId=id;renderAdmin();}
 function cancelEditPlayer(){state.editingPlayerId=null;renderAdmin();}
 async function savePlayer(){
   const id=state.editingPlayerId;
-  const name=el("p-name").value.trim().toUpperCase(); // IN HOA trước khi lưu
+  const name=el("p-name").value.trim().toUpperCase();
   if(!name){alert("Nhập họ tên");return;}
   const r=parseFloat(el("p-rating").value);
   const payload={full_name:name,gender:el("p-gender").value,skill_rating:isNaN(r)?null:r,club_name:(el("p-club").value||"").toUpperCase()};
@@ -423,9 +430,21 @@ function refreshTeamPlayerSelects(){
   s2.innerHTML='<option value="">-- VĐV 2 --</option>'+avail.filter(p=>p.id!==v1).map(p=>`<option value="${p.id}">${playerLabel(p)}</option>`).join("");
   if(v1)s1.value=v1; if(v2)s2.value=v2;
   updateTeamPreview();
+  updateTeamEditButtons();
 }
 function onTeamP1Change(){refreshTeamPlayerSelects();}
 function onTeamP2Change(){refreshTeamPlayerSelects();}
+function teamChanged(){
+  if(!state.editingTeamId||!state.editingTeamOriginal)return false;
+  const p1=el("team-p1")?.value,p2=el("team-p2")?.value;
+  const o=state.editingTeamOriginal;
+  return (p1!==o.p1||p2!==o.p2);
+}
+function updateTeamEditButtons(){
+  const box=el("team-edit-actions");if(!box)return;
+  if(!state.editingTeamId){box.classList.add("hidden");return;}
+  box.classList.toggle("hidden",!teamChanged());
+}
 function updateTeamPreview(){
   const box=el("team-preview");if(!box)return;
   const p1=el("team-p1")?.value,p2=el("team-p2")?.value;
@@ -436,8 +455,15 @@ function updateTeamPreview(){
   const chk=ratingCheck(total,ev);
   box.innerHTML=`🏷️ Tên đội: <b>${autoTeamName(a,b)}</b><br>➕ Tổng trình: <b>${total.toFixed(2)}</b> ${chk.msg?`<span class="badge ${chk.ok?"b-green":"b-red"}">${chk.msg}</span>`:""}`;
 }
-function editTeam(id){state.editingTeamId=id;renderAdmin();}
-function cancelEditTeam(){state.editingTeamId=null;renderAdmin();}
+function editTeam(id){
+  state.editingTeamId=id;
+  const t=state.t5.teams.find(x=>x.id===id);
+  const p1=t?.members?.find(m=>m.position===1)?.player_id||"";
+  const p2=t?.members?.find(m=>m.position===2)?.player_id||"";
+  state.editingTeamOriginal={p1,p2};
+  renderAdmin();
+}
+function cancelEditTeam(){state.editingTeamId=null;state.editingTeamOriginal=null;renderAdmin();}
 async function saveTeam(){
   const ev=state.t5.events.find(e=>e.id===state.t5.eid);
   if(!state.t5.tid||!state.t5.eid||!ev){alert("⚠️ BẮT BUỘC chọn GIẢI đang mở và NỘI DUNG ở Mục 5.");return;}
@@ -457,8 +483,9 @@ async function saveTeam(){
   else{const r=await sb.from("teams").insert({event_id:state.t5.eid,name}).select().single();if(r.error){alert(r.error.message);return;}teamId=r.data.id;}
   const {error}=await sb.from("team_members").insert([{team_id:teamId,event_id:state.t5.eid,player_id:p1,position:1},{team_id:teamId,event_id:state.t5.eid,player_id:p2,position:2}]);
   if(error){alert(error.message);return;}
-  alert("✅ "+(id?"Đã cập nhật":"Đã tạo")+" đội:\n"+name);
-  state.editingTeamId=null;await setT5Event(state.t5.eid);
+  alert("✅ "+(id?"Đã cập nhật cặp VĐV":"Đã tạo")+" đội:\n"+name);
+  state.editingTeamId=null;state.editingTeamOriginal=null;
+  await setT5Event(state.t5.eid);
 }
 async function deleteTeam(id){if(!confirm("Xóa đội này?"))return;const {error}=await sb.from("teams").delete().eq("id",id);if(error){alert(error.message);return;}await setT5Event(state.t5.eid);}
 
@@ -491,9 +518,7 @@ async function ensureEightCourts(){
   if(!state.tournament||!isAdmin())return;
   for(let i=1;i<=8;i++){
     const name="Sân "+i;
-    if(!state.courts.find(c=>c.name===name)){
-      await sb.from("courts").insert({tournament_id:state.tournament.id,name,display_order:i}).then(()=>{}).catch(()=>{});
-    }
+    if(!state.courts.find(c=>c.name===name)){await sb.from("courts").insert({tournament_id:state.tournament.id,name,display_order:i}).then(()=>{}).catch(()=>{});}
   }
   const {data}=await sb.from("courts").select("*").eq("tournament_id",state.tournament.id).order("display_order");
   state.courts=data||[];
@@ -537,8 +562,34 @@ async function generateFixturesCurrent(){
   if(error){alert(error.message);return;}
   await selectEvent(state.currentEventId);
 }
-async function updateMatchCourt(id,courtId){const {error}=await sb.from("matches").update({court_id:courtId||null}).eq("id",id);if(error)alert(error.message);else await selectEvent(state.currentEventId);}
-async function updateMatchTime(id,time){const date=state.tournament?.start_date||"2026-01-01";const v=time?date+"T"+time+":00+07":null;const {error}=await sb.from("matches").update({scheduled_at:v}).eq("id",id);if(error)alert(error.message);else await selectEvent(state.currentEventId);}
+/* XÓA LỊCH THEO NỘI DUNG: xóa hết trận => mất thời gian + tỷ số, reset mã về 01 */
+async function deleteScheduleCurrent(){
+  if(!isAdmin()){alert("Chỉ admin/organizer mới xóa lịch.");return;}
+  if(!state.currentEventId){alert("Chọn nội dung trước.");return;}
+  if(!confirm("⚠️ XÓA toàn bộ lịch thi đấu của nội dung này?\nToàn bộ THỜI GIAN và TỶ SỐ sẽ bị xóa, mã trận reset về 01."))return;
+  const {error}=await sb.from("matches").delete().eq("event_id",state.currentEventId);
+  if(error){alert(error.message);return;}
+  await sb.from("event_match_counters").update({last_match_number:0}).eq("event_id",state.currentEventId).then(()=>{}).catch(()=>{});
+  alert("✅ Đã xóa lịch thi đấu của nội dung.");
+  await selectEvent(state.currentEventId);
+}
+/* Cập nhật giờ / sân: lưu DB + cập nhật cục bộ + xếp lại theo giờ */
+async function updateMatchTime(id,time){
+  const m=state.matches.find(x=>x.id===id);if(!m)return;
+  const date=state.tournament?.start_date||"2026-01-01";
+  const v=time?date+"T"+time+":00+07":null;
+  const {error}=await sb.from("matches").update({scheduled_at:v}).eq("id",id);
+  if(error){alert(error.message);return;}
+  m.scheduled_at=v;
+  renderMatches();
+}
+async function updateMatchCourt(id,courtId){
+  const m=state.matches.find(x=>x.id===id);if(!m)return;
+  const {error}=await sb.from("matches").update({court_id:courtId||null}).eq("id",id);
+  if(error){alert(error.message);return;}
+  m.court_id=courtId||null;
+  renderMatches();
+}
 
 function openScoreModal(id){
   const m=state.matches.find(x=>x.id===id)||state.refMatches.find(x=>x.id===id);
@@ -608,7 +659,7 @@ function renderHome(){
   ${gc?`<div class="card"><h3>📋 Bảng thi đấu — ${ev?ev.name:""}</h3><div class="group-grid">${gc}</div></div>`:""}`;
 }
 
-/* ===== LỊCH: bảng theo thứ tự Mã|Giờ|Sân|Đội1|Điểm|Đội2|TT, sort theo giờ, in đậm đội thắng ===== */
+/* ===== LỊCH ===== */
 function courtOptions(sel){return '<option value="">— Sân —</option>'+state.courts.map(c=>`<option value="${c.id}" ${sel===c.id?"selected":""}>${c.name}</option>`).join("");}
 function renderScheduleSettings(){
   if(!isAdmin())return "";
@@ -620,7 +671,11 @@ function renderScheduleSettings(){
   </div>
   <div class="muted" style="margin-bottom:8px">Sân mặc định theo bảng (A→Sân1 … H→Sân8):</div>
   <div class="form-grid">${groups.map(g=>`<div><div class="muted">Bảng ${g.code}</div><select onchange="setGroupCourt('${g.code}',this.value)">${courtOptions(state.schedule.groupCourt[g.code])}</select></div>`).join("")||'<div class="muted">Chưa có bảng</div>'}</div>
-  <div class="actions"><button class="btn btn-dark" onclick="generateFixturesCurrent()">⚽ Sinh trận vòng tròn</button><button class="btn btn-primary" onclick="applyAutoSchedule()">🕐 Áp lịch tự động</button></div></div>`;
+  <div class="actions">
+    <button class="btn btn-dark" onclick="generateFixturesCurrent()">⚽ Sinh trận vòng tròn</button>
+    <button class="btn btn-primary" onclick="applyAutoSchedule()">🕐 Áp lịch tự động</button>
+    <button class="btn btn-danger" onclick="deleteScheduleCurrent()">🗑 Xóa lịch thi đấu</button>
+  </div></div>`;
 }
 function matchRow(m,adminEdit){
   const time=fmtTime(m.scheduled_at);
@@ -678,7 +733,7 @@ function renderReferee(){
   <div class="card"><h3>🏁 Các giải đang thi đấu</h3>
   ${state.refTournaments.map(t=>`<span class="badge b-green" style="margin-right:6px">${t.code} - ${t.name}</span>`).join("")||'<span class="muted">Không có giải đang thi đấu</span>'}</div>
   <div class="card"><h3>Trận được phân công</h3><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Tên trận</th><th>TT</th><th>Điểm</th><th></th></tr></thead><tbody>
-  ${state.refMatches.map(m=>`<tr><td><b>${m.match_code}</b></td><td>${teamName(m.home_team_id)} vs ${teamName(m.away_team_id)}</td><td>${statusBadge(m.status)}</td><td>${m.status==="completed"?m.home_score+"-"+m.away_score:"-"}</td><td>${m.status!=="completed"?`<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Nhập điểm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="5" class="muted">Chưa được phân công</td></tr>'}
+  ${state.refMatches.map(m=>`<tr><td><b>${m.match_code}</b></td><td>${teamName(m.home_team_id)} vs ${teamName(m.away_team_id)}</td><td>${statusBadge(m.status)}</td><td>${m.status==="completed"?m.home_score+"-"+m.awayScore:"-"}</td><td>${m.status!=="completed"?`<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Nhập điểm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="5" class="muted">Chưa được phân công</td></tr>'}
   </tbody></table></div></div>`;
 }
 
@@ -695,7 +750,7 @@ function groupSelect6(tm){
 }
 function renderAdmin(){
   const t=state.tournament,locked=isLocked();
-  const tOpts=state.tournaments.map(x=>`<option value="${x.id}" ${t&&x.id===t.id?"selected":""}>${x.code} - ${x.name}</option>`).join("");
+  const tOpts=sortedTournaments().map(x=>`<option value="${x.id}" ${t&&x.id===t.id?"selected":""}>${x.code} - ${x.name}${x.status==="completed"?" (đóng)":""}</option>`).join("");
   const noTournament=!t;
   const editingE=state.events.find(e=>e.id===state.editingEventId);
   const editingP=state.players.find(p=>p.id===state.editingPlayerId);
@@ -735,15 +790,18 @@ function renderAdmin(){
     <div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>GT</th><th>Rating</th><th>Club</th><th></th></tr></thead><tbody>
     ${state.players.map(p=>`<tr class="${state.editingPlayerId===p.id?"edit-row":""}"><td>${p.full_name}</td><td>${p.gender==="male"?"Nam":"Nữ"}</td><td>${p.skill_rating??""}</td><td>${p.club_name||""}</td><td><button class="btn btn-sm btn-warn" onclick="editPlayer('${p.id}')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deletePlayer('${p.id}')">🗑️</button></td></tr>`).join("")||'<tr><td colspan="5" class="muted">Chưa có</td></tr>'}</tbody></table></div>`}
   </div>
-  <div class="card"><h3><span class="step-num">5</span> Tạo đội (tên tự động)</h3>
+  <div class="card"><h3><span class="step-num">5</span> Tạo / sửa đội</h3>
     <div class="sel-row"><select onchange="setT5Tournament(this.value)">${openTournamentOptions(state.t5.tid)}</select>
     <select onchange="setT5Event(this.value)" ${state.t5.tid?"":"disabled"}><option value="">— Chọn nội dung —</option>${state.t5.events.map(e=>`<option value="${e.id}" ${state.t5.eid===e.id?"selected":""}>${e.name} (${e.rating_limit??"mở"})</option>`).join("")}</select></div>
     ${state.t5.eid&&ev5?`
     <div class="form-grid">
       <select id="team-p1" onchange="onTeamP1Change()"><option value="">-- VĐV 1 --</option></select>
       <select id="team-p2" onchange="onTeamP2Change()"><option value="">-- VĐV 2 --</option></select>
-      <button class="btn btn-primary" onclick="saveTeam()">${editingT?"💾 Cập nhật":"➕ Tạo đội"}</button>
-      ${editingT?`<button class="btn btn-light" onclick="cancelEditTeam()">✕ Hủy</button>`:""}
+      <button id="team-create-btn" class="btn btn-primary ${editingT?"hidden":""}" onclick="saveTeam()">➕ Tạo đội</button>
+      <div id="team-edit-actions" class="hidden" style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveTeam()">💾 Cập nhật</button>
+        <button class="btn btn-light" onclick="cancelEditTeam()">✕ Hủy</button>
+      </div>
     </div>
     <div id="team-preview" class="preview"></div>
     <div class="table-wrap"><table><thead><tr><th>Đội (tự động)</th><th>Tổng</th><th></th></tr></thead><tbody>
@@ -770,6 +828,7 @@ function renderAdmin(){
     if(p2)el("team-p2").value=p2.player_id;
   }
   refreshTeamPlayerSelects();
+  updateTeamEditButtons();
 }
 
 /* ================= INIT ================= */
