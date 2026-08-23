@@ -676,7 +676,6 @@ async function savePendingTime(id){
   m.scheduled_at=v;delete state.pending[id];
   renderMatches();
 }
-/* Giờ knockout: chỉnh sửa & lưu ngay */
 async function saveKOTime(id,val){
   const m=state.matches.find(x=>x.id===id);if(!m)return;
   const date=state.tournament?.start_date||"2026-01-01";
@@ -861,7 +860,7 @@ function matchRow(m,adminEdit,showRef){
     ${showRef?`<td>${refCell}</td>`:""}
     <td>${statusBadge(m.status)}</td></tr>`;
 }
-/* Dòng trận Knockout: giờ chỉnh sửa & lưu ngay, sân + trọng tài chọn trực tiếp */
+/* Dòng KO: LUÔN đủ cột; giờ chỉnh & lưu ngay; sân + trọng tài chọn trực tiếp */
 function koRow(m,adminEdit){
   const committed=fmtTime(m.scheduled_at);
   const courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
@@ -877,27 +876,37 @@ function koRow(m,adminEdit){
     <td>${adminEdit?matchRefereeSelect(m,referees):refNameOf(m)}</td>
     <td>${statusBadge(m.status)}</td></tr>`;
 }
+const KO_HEAD='<tr><th>Mã trận</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Tỷ số</th><th>Đội 2</th><th>Trọng tài</th><th>TT</th></tr>';
 function knockoutTablesHTML(adminEdit){
   const ko=state.knockoutStage?state.matches.filter(m=>m.stage_id===state.knockoutStage.id):[];
-  if(!ko.length){
-    const qf=buildQFMap();
-    if(!qf)return '<div class="card muted">Cần đủ 4 bảng có VĐV + kết quả để xây vòng KO.</div>';
-    const nameOf=ref=>teamName(resolveRef(ref));
-    let html=`<div class="card"><h3>🔥 TỨ KẾT (dự kiến từ BXH)</h3><div class="table-wrap"><table><thead><tr><th>Mã trận</th><th>Đội 1</th><th>Đội 2</th></tr></thead><tbody>`;
-    [1,2,3,4].forEach(s=>{html+=`<tr><td><span class="ko-code">TK${s}</span></td><td>${nameOf(qf[s].home)}</td><td>${nameOf(qf[s].away)}</td></tr>`;});
-    html+=`</tbody></table></div></div>`;
-    html+=`<div class="card muted">Bán kết & Chung kết sẽ tự nối sau khi có kết quả tứ kết.${adminEdit?' Bấm "🔥 Xây vòng KO" để lưu vào hệ thống.':''}</div>`;
-    if(adminEdit)html+=`<div class="actions"><button class="btn btn-primary" onclick="buildKO()">🔥 Xây vòng KO từ kết quả vòng bảng</button></div>`;
-    return html;
+  if(ko.length){
+    const rounds=[{r:1,t:"🔥 TỨ KẾT"},{r:2,t:"🥈 BÁN KẾT"},{r:3,t:"🏅 CHUNG KẾT"}];
+    let html="";
+    rounds.forEach(rd=>{
+      const ms=ko.filter(m=>m.round===rd.r).sort((a,b)=>(a.bracket_slot||0)-(b.bracket_slot||0));
+      if(!ms.length)return;
+      html+=`<div class="card"><h3>${rd.t}</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>${ms.map(m=>koRow(m,adminEdit)).join("")}</tbody></table></div></div>`;
+    });
+    return html||'<div class="card muted">Chưa có trận knockout.</div>';
   }
-  const rounds=[{r:1,t:"🔥 TỨ KẾT"},{r:2,t:"🥈 BÁN KẾT"},{r:3,t:"🏅 CHUNG KẾT"}];
-  let html="";
-  rounds.forEach(rd=>{
-    const ms=ko.filter(m=>m.round===rd.r).sort((a,b)=>(a.bracket_slot||0)-(b.bracket_slot||0));
-    if(!ms.length)return;
-    html+=`<div class="card"><h3>${rd.t}</h3><div class="table-wrap"><table><thead><tr><th>Mã trận</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Tỷ số</th><th>Đội 2</th><th>Trọng tài</th><th>TT</th></tr></thead><tbody>${ms.map(m=>koRow(m,adminEdit)).join("")}</tbody></table></div></div>`;
+  /* Chưa lưu KO → vẫn HIỂN THỊ ĐỦ CỘT với đội dự kiến từ BXH */
+  const qf=buildQFMap();
+  if(!qf)return '<div class="card muted">Cần đủ 4 bảng có VĐV + kết quả để xây vòng KO.</div>';
+  const nameOf=ref=>teamName(resolveRef(ref));
+  let html=`<div class="card"><h3>🔥 TỨ KẾT</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>`;
+  [1,2,3,4].forEach(s=>{
+    html+=`<tr><td><span class="ko-code">TK${s}</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td>${nameOf(qf[s].home)}</td><td><span class="muted">-</span></td><td>${nameOf(qf[s].away)}</td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>`;
   });
-  return html||'<div class="card muted">Chưa có trận knockout.</div>';
+  html+=`</tbody></table></div></div>`;
+  html+=`<div class="card"><h3>🥈 BÁN KẾT</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>
+    <tr><td><span class="ko-code">BK1</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td><span class="muted">Thắng TK1</span></td><td><span class="muted">-</span></td><td><span class="muted">Thắng TK2</span></td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>
+    <tr><td><span class="ko-code">BK2</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td><span class="muted">Thắng TK3</span></td><td><span class="muted">-</span></td><td><span class="muted">Thắng TK4</span></td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>
+  </tbody></table></div></div>`;
+  html+=`<div class="card"><h3>🏅 CHUNG KẾT</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>
+    <tr><td><span class="ko-code">CK</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td><span class="muted">Thắng BK1</span></td><td><span class="muted">-</span></td><td><span class="muted">Thắng BK2</span></td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>
+  </tbody></table></div></div>`;
+  if(adminEdit)html+=`<div class="actions"><button class="btn btn-primary" onclick="buildKO()">🔥 Xây vòng KO (lưu & chỉnh sửa Giờ/Sân/Trọng tài)</button></div>`;
+  return html;
 }
 function renderMatches(){
   computeScheduleInMemory();
