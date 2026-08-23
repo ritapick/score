@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Pickleball Pro - Quản lý giải đấu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,36 +12,39 @@
 *{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:radial-gradient(1100px 500px at 85% -10%,rgba(163,230,53,.10),transparent),radial-gradient(900px 500px at -10% 30%,rgba(34,211,238,.07),transparent),var(--bg);color:var(--text)}
 button,input,select{font:inherit}.hidden{display:none!important}
 h1,h2,h3,h4,.logo,.nav-link,.stat-value{font-family:'Oswald',sans-serif;letter-spacing:.03em}
-.topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;min-height:60px;gap:10px;flex-wrap:wrap}
-.logo{color:var(--lime);font-weight:700;font-size:20px;margin-right:18px;text-transform:uppercase;font-style:italic}.logo span{color:var(--text)}
-.nav-link{background:none;border:none;color:var(--muted);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;text-transform:uppercase;transition:.15s}
+.topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;min-height:56px;gap:8px;flex-wrap:wrap}
+.logo{color:var(--lime);font-weight:700;font-size:18px;margin-right:10px;text-transform:uppercase;font-style:italic}.logo span{color:var(--text)}
+.nav-link{background:none;border:none;color:var(--muted);padding:8px 11px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;text-transform:uppercase;transition:.15s}
 .nav-link:hover{color:var(--text);background:rgba(163,230,53,.1)}.nav-link.active{background:var(--lime);color:#0b1220}
 .nav-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .user-chip{color:#0b1220;font-size:12px;font-weight:800;background:var(--lime);padding:6px 12px;border-radius:999px}
 .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:6px;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.ctx-bar{background:var(--surface2);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.ctx-bar select{background:#0d1626;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 10px}
-.ctx-bar .muted{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase}
-main{max-width:1200px;margin:0 auto;padding:22px}
+.ctx-bar{background:var(--surface2);border-bottom:1px solid var(--line);padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctx-bar select{background:#0d1626;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 10px;flex:1;min-width:0}
+.ctx-bar .muted{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase}
+main{max-width:1200px;margin:0 auto;padding:14px}
 .page{display:none}.page.active{display:block}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;position:relative;overflow:hidden}
-.card::before{content:"";position:absolute;top:0;left:0;width:64px;height:3px;background:linear-gradient(90deg,var(--lime),transparent)}
-.card h3{margin:0 0 14px;display:flex;align-items:center;gap:10px;text-transform:uppercase;font-size:15px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+/* Card trong suốt, ít viền để rộng hơn */
+.card{background:transparent;border:none;border-radius:0;padding:6px 2px;margin-bottom:10px;position:relative}
+.card h3{margin:0 0 10px;display:flex;align-items:center;gap:8px;text-transform:uppercase;font-size:15px;flex-wrap:wrap;color:var(--lime)}
 .card.disabled{opacity:.45;pointer-events:none}
-.step-num{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:8px;background:var(--lime);color:#0b1220;font-size:14px;font-weight:700;font-style:italic}
-.stat-label{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px}
-.stat-value{font-size:30px;font-weight:700;color:var(--lime);font-style:italic}
+.step-num{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:8px;background:var(--lime);color:#0b1220;font-size:13px;font-weight:700;font-style:italic}
+.stat-label{color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-size:26px;font-weight:700;color:var(--lime);font-style:italic}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
 .b-green{background:rgba(163,230,53,.15);color:var(--lime)}.b-blue{background:rgba(34,211,238,.15);color:var(--cyan)}.b-red{background:rgba(248,113,113,.15);color:var(--red)}.b-gray{background:rgba(148,163,184,.15);color:var(--muted)}.b-warn{background:rgba(251,146,60,.15);color:var(--orange)}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface2);max-height:520px}
-table{width:100%;border-collapse:collapse;min-width:760px}
-th,td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;vertical-align:middle}
-th{background:#0d1626;color:var(--muted);font-size:11px;text-transform:uppercase;position:sticky;top:0;font-family:'Oswald'}
+/* Table tràn lề, không viền ngoài */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:none;border-radius:0;background:transparent;max-height:none}
+table{width:100%;border-collapse:collapse;min-width:480px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;vertical-align:middle}
+th{background:transparent;color:var(--muted);font-size:10px;text-transform:uppercase;position:sticky;top:0;font-family:'Oswald'}
 tbody tr:hover{background:rgba(163,230,53,.05)}
 .edit-row{background:rgba(251,146,60,.12)!important}.new-row{background:rgba(163,230,53,.12)!important}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.score-cell{font-family:'Oswald';font-size:18px;font-weight:700;color:var(--text);white-space:nowrap}
+.score-cell .winner{color:var(--lime)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
 .form-grid input,.form-grid select,td input,td select{width:100%;background:#0d1626;border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text)}
 .sel-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .sel-row select{width:100%;background:#0d1626;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--text)}
@@ -54,16 +57,17 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .btn-warn{background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)}
 .btn-sm{padding:4px 9px;font-size:11px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.time-cell{display:flex;gap:6px;align-items:center}.time-cell select{width:100px}
-.serve-dots{color:var(--red);font-size:10px;margin-left:6px;letter-spacing:2px;vertical-align:middle}
-.group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
-.group-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px}
-.group-card h4{margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;color:var(--lime)}
-.group-team{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.time-cell{display:flex;gap:6px;align-items:center}.time-cell select{width:96px}
+.serve-dots{color:var(--red);font-size:10px;margin-left:5px;letter-spacing:2px;vertical-align:middle}
+.group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.group-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.group-card h4{margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;color:var(--lime);font-size:13px}
+.group-team{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .group-team:last-child{border-bottom:none}
-.group-team select{min-width:110px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)}
-.bracket{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:14px}
-.match-card{padding:14px;margin-bottom:11px}.team-line{font-weight:700;margin:4px 0}
+.group-team select{min-width:96px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)}
+.bracket{display:grid;grid-template-columns:repeat(3,minmax(200px,1fr));gap:12px}
+.match-card{padding:12px;margin-bottom:10px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
+.team-line{font-weight:700;margin:4px 0}
 .score-line{font-size:20px;font-weight:800;margin-top:8px;color:var(--lime);font-family:'Oswald';font-style:italic}
 .muted{color:var(--muted);font-size:13px}
 .preview{margin:6px 0 10px;font-size:13px;color:var(--muted)}.preview b{color:var(--lime)}
@@ -78,7 +82,6 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .ref-score{font-family:'Oswald';font-size:58px;color:var(--lime);font-style:italic;line-height:1}
 .ref-controls{display:flex;gap:8px;justify-content:center;margin-top:12px}
 .ref-controls button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:#0d1626;color:var(--text);font-size:22px;cursor:pointer}
-.ref-controls button:hover{border-color:var(--lime);color:var(--lime)}
 .ref-vs{font-family:'Oswald';color:var(--muted);font-size:20px}
 .ref-serve{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .ref-serve-team{text-align:center;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px}
@@ -87,7 +90,7 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .serve-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
 .modal-backdrop{position:fixed;inset:0;background:rgba(4,8,16,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-backdrop.show{display:flex}
-.modal{width:min(460px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+.modal{width:min(460px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px}
 .modal h3{margin:0 0 4px;text-transform:uppercase;color:var(--lime)}
 .modal .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
 .field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--muted);text-transform:uppercase}
@@ -95,12 +98,25 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .msg{padding:10px 12px;border-radius:10px;font-size:13px;margin-top:12px;display:none;white-space:pre-wrap}
 .msg.show{display:block}.msg-error{background:rgba(248,113,113,.15);color:var(--red)}.msg-success{background:rgba(163,230,53,.15);color:var(--lime)}.msg-info{background:rgba(34,211,238,.15);color:var(--cyan)}
-.hero{border-radius:var(--radius);padding:30px;margin-bottom:16px;position:relative;overflow:hidden;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35)}
+.hero{border-radius:var(--radius);padding:24px;margin-bottom:14px;position:relative;overflow:hidden;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35)}
 .hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
-.hero h1{margin:0 0 6px;font-size:30px;text-transform:uppercase;font-style:italic;position:relative;z-index:1}
+.hero h1{margin:0 0 6px;font-size:26px;text-transform:uppercase;font-style:italic;position:relative;z-index:1}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1}
 .alert-box{padding:12px 14px;border-radius:12px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--orange);font-size:13px;margin-bottom:12px}
-@media(max-width:800px){.bracket{grid-template-columns:1fr}.sel-row{grid-template-columns:1fr}.ref-teams{grid-template-columns:1fr}.ref-serve{grid-template-columns:1fr}}
+/* Ẩn cột Sân trên màn hình nhỏ để bảng rộng hơn */
+.col-court{}
+@media(max-width:640px){
+  main{padding:8px}
+  .col-court{display:none}
+  table{min-width:360px}
+  th,td{padding:8px 6px;font-size:12px}
+  .score-cell{font-size:16px}
+  .bracket{grid-template-columns:1fr}
+  .sel-row{grid-template-columns:1fr}
+  .ref-teams{grid-template-columns:1fr}
+  .ref-serve{grid-template-columns:1fr}
+  .nav-link{padding:7px 9px;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -117,15 +133,15 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   </div>
   <div class="nav-right">
     <span id="user-chip" class="user-chip hidden"></span>
-    <button id="pass-btn" class="btn btn-light hidden" onclick="openPassModal()">🔑 Đổi mật khẩu</button>
+    <button id="pass-btn" class="btn btn-light hidden" onclick="openPassModal()">🔑 Đổi MK</button>
     <button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
     <button id="logout-btn" class="btn btn-light hidden" onclick="logout()">Đăng xuất</button>
   </div>
 </nav>
 
 <div class="ctx-bar">
-  <span class="muted">Giải:</span><select id="ctx-tournament" onchange="selectTournament(this.value)"></select>
-  <span class="muted">Nội dung:</span><select id="ctx-event" onchange="selectEvent(this.value)"></select>
+  <span class="muted">Giải</span><select id="ctx-tournament" onchange="selectTournament(this.value)"></select>
+  <span class="muted">Nội dung</span><select id="ctx-event" onchange="selectEvent(this.value)"></select>
   <span id="lock-badge"></span>
 </div>
 
@@ -162,7 +178,6 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   <div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="closeScoreModal()">Hủy</button><button class="btn btn-primary" onclick="saveScore()">Lưu</button></div>
 </div></div>
 
-<!-- Modal trọng tài -->
 <div id="ref-modal" class="modal-backdrop"><div class="modal ref-box">
   <div class="ref-header"><span id="ref-match-code"></span><span id="ref-group-code" class="badge b-blue"></span></div>
   <div class="ref-teams">
@@ -233,13 +248,15 @@ function fmtTime(s){if(!s)return "";const d=new Date(s);if(isNaN(d.getTime()))re
 function sortByTime(a,b){const ta=a.scheduled_at?new Date(a.scheduled_at).getTime():Infinity;const tb=b.scheduled_at?new Date(b.scheduled_at).getTime():Infinity;return (ta-tb)||(a.match_seq-b.match_seq);}
 function sortedTournaments(){return [...state.tournaments].sort((a,b)=>{const ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(b.start_date||"").localeCompare(String(a.start_date||""));});}
 function timeOptions(sel){let o='<option value="">— Giờ —</option>';for(let h=5;h<=23;h++){for(let m=0;m<60;m+=5){const v=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");o+=`<option value="${v}" ${sel===v?"selected":""}>${v}</option>`;}}return o;}
-/* Chấm đỏ lượt giao banh: 1 chấm = lượt 1, 2 chấm = lượt 2 */
-function serveDots(m,side){
-  if(!m.serve)return "";
-  const isHome=m.serve.startsWith("h");
-  if((side==="home")!==isHome)return "";
-  const n=m.serve.endsWith("2")?2:1;
-  return `<span class="serve-dots">${"●".repeat(n)}</span>`;
+function serveDots(m,side){if(!m.serve)return "";const isHome=m.serve.startsWith("h");if((side==="home")!==isHome)return "";const n=m.serve.endsWith("2")?2:1;return `<span class="serve-dots">${"●".repeat(n)}</span>`;}
+/* Ô điểm: luôn hiện tỷ số hiện tại (realtime), in đậm đội dẫn/xong */
+function scoreCell(m,canEdit){
+  const hasScore=(m.home_score!=null&&m.away_score!=null&&(m.home_score>0||m.away_score>0||m.status==="completed"));
+  if(canEdit && m.status!=="completed"){return `<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Điểm</button>`;}
+  if(!hasScore){return `<span class="muted">-</span>`;}
+  const done=m.status==="completed";
+  const hw=done&&m.home_score>m.away_score, aw=done&&m.away_score>m.home_score;
+  return `<span class="score-cell">${hw?'<span class="winner">':''}${m.home_score}${hw?'</span>':''} - ${aw?'<span class="winner">':''}${m.away_score}${aw?'</span>':''}</span>`;
 }
 
 /* ================= REALTIME ================= */
@@ -583,7 +600,6 @@ function computeScheduleInMemory(){
     });
   });
 }
-/* Áp lịch: trận đầu = giờ bắt đầu, các trận sau CỘNG DỒN khoảng cách */
 async function applyAutoSchedule(){
   if(!isAdmin()){alert("Chỉ admin/organizer mới áp lịch.");return;}
   await ensureEightCourts();
@@ -646,7 +662,7 @@ async function assignGroupReferee(groupId,userId){
 function groupRefereeSelect(g,referees){
   const first=state.matches.find(m=>m.group_id===g.id);
   const cur=first?state.refAssign[first.id]:null;
-  return `<select style="min-width:150px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)" onchange="assignGroupReferee('${g.id}',this.value)"><option value="">— Trọng tài —</option>${referees.map(r=>`<option value="${r.user_id}" ${cur===r.user_id?"selected":""}>${r.username}</option>`).join("")}</select>`;
+  return `<select style="min-width:120px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)" onchange="assignGroupReferee('${g.id}',this.value)"><option value="">— Trọng tài —</option>${referees.map(r=>`<option value="${r.user_id}" ${cur===r.user_id?"selected":""}>${r.username}</option>`).join("")}</select>`;
 }
 
 /* ================= NHẬP ĐIỂM ================= */
@@ -674,7 +690,6 @@ async function saveScore(){
   if(state.currentEventId)await selectEvent(state.currentEventId);
   if(state.role==="referee")await loadRefereeData();
 }
-/* ===== Trọng tài ===== */
 function openRefModal(id){
   const m=state.matches.find(x=>x.id===id)||state.refMatches.find(x=>x.id===id);
   if(!m||!canScore(m)){alert("Bạn không có quyền nhập điểm trận này.");return;}
@@ -692,11 +707,7 @@ function openRefModal(id){
   el("ref-modal").classList.add("show");
 }
 function closeRefModal(){el("ref-modal").classList.remove("show");state.refModalMatchId=null;}
-function refAdj(side,delta){
-  const box=side==="home"?el("ref-home-score"):el("ref-away-score");
-  let v=parseInt(box.textContent)||0;v=Math.max(0,v+delta);
-  box.textContent=v;refPush();
-}
+function refAdj(side,delta){const box=side==="home"?el("ref-home-score"):el("ref-away-score");let v=parseInt(box.textContent)||0;v=Math.max(0,v+delta);box.textContent=v;refPush();}
 async function refPush(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
   if(!m)return;
@@ -706,7 +717,6 @@ async function refPush(){
   if(error){alert(error.message);return;}
   m.home_score=h;m.away_score=a;
 }
-/* Lượt giao banh: chỉ 1 check hoạt động */
 function refreshServeButtons(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
   const s=m?m.serve:null;
@@ -794,17 +804,13 @@ function matchRow(m,adminEdit){
   const pending=state.pending[m.id];
   const timeVal=(pending!==undefined)?pending:committed;
   const courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
-  const done=m.status==="completed";
-  const h=m.home_score,a=m.away_score;
-  const homeWin=done&&h>a, awayWin=done&&a>h;
-  const scoreCell=done?`${homeWin?`<b class="winner">${h}</b>`:h} - ${awayWin?`<b class="winner">${a}</b>`:a}`:(canScore(m)?`<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Điểm</button>`:"-");
   return `<tr>
     <td><b>${m.match_code}</b></td>
     <td>${adminEdit?`<div class="time-cell"><select onchange="setPendingTime('${m.id}',this.value)">${timeOptions(timeVal)}</select>${pending!==undefined?`<button class="btn btn-sm btn-primary" onclick="savePendingTime('${m.id}')">💾</button>`:""}</div>`:(committed?`<span class="time-chip">${committed}</span>`:"-")}</td>
-    <td>${adminEdit?`<select onchange="updateMatchCourt('${m.id}',this.value)">${courtOptions(m.court_id)}</select>`:courtName}</td>
-    <td>${homeWin?'<b class="winner">':''}${teamName(m.home_team_id)}${homeWin?'</b>':''}${serveDots(m,"home")}</td>
-    <td>${scoreCell}</td>
-    <td>${awayWin?'<b class="winner">':''}${teamName(m.away_team_id)}${awayWin?'</b>':''}${serveDots(m,"away")}</td>
+    <td class="col-court">${adminEdit?`<select onchange="updateMatchCourt('${m.id}',this.value)">${courtOptions(m.court_id)}</select>`:courtName}</td>
+    <td>${teamName(m.home_team_id)}${serveDots(m,"home")}</td>
+    <td>${scoreCell(m,adminEdit)}</td>
+    <td>${teamName(m.away_team_id)}${serveDots(m,"away")}</td>
     <td>${statusBadge(m.status)}</td></tr>`;
 }
 function renderMatches(){
@@ -816,13 +822,13 @@ function renderMatches(){
   if(!groups.length)html+=`<div class="card"><h3>📅 Lịch thi đấu <span class="live-dot"></span></h3><div class="alert-box">Chưa có vòng bảng. Vào Quản trị → Bước 6 để thiết lập & xếp bảng.</div></div>`;
   groups.forEach(g=>{
     const ms=state.matches.filter(m=>m.group_id===g.id).sort(sortByTime);
-    html+=`<div class="card"><h3>📅 Bảng ${g.code} <span class="badge b-blue">${ms.length} trận</span> ${adminEdit?groupRefereeSelect(g,referees):""}</h3>
-    <div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th>Sân</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th><th>TT</th></tr></thead><tbody>
+    html+=`<div class="card"><h3>📅 Bảng ${g.code} <span class="badge b-blue">${ms.length}</span> ${adminEdit?groupRefereeSelect(g,referees):""}</h3>
+    <div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th><th>TT</th></tr></thead><tbody>
     ${ms.map(m=>matchRow(m,adminEdit)).join("")||'<tr><td colspan="7" class="muted">Chưa có trận</td></tr>'}
     </tbody></table></div></div>`;
   });
   const ko=state.matches.filter(m=>!m.group_id).sort(sortByTime);
-  if(ko.length)html+=`<div class="card"><h3>🔥 Knockout</h3><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th>Sân</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th><th>TT</th></tr></thead><tbody>${ko.map(m=>matchRow(m,adminEdit)).join("")}</tbody></table></div></div>`;
+  if(ko.length)html+=`<div class="card"><h3>🔥 Knockout</h3><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th><th>TT</th></tr></thead><tbody>${ko.map(m=>matchRow(m,adminEdit)).join("")}</tbody></table></div></div>`;
   el("matches-table").innerHTML=html;
 }
 function renderStandings(){
@@ -838,7 +844,7 @@ function renderKnockout(){
   const stages=["Tứ kết","Bán kết","Chung kết"],rm={"Tứ kết":1,"Bán kết":2,"Chung kết":3};
   el("knockout-content").innerHTML='<div class="bracket">'+stages.map(s=>{
     const ms=state.matches.filter(m=>m.round===rm[s]&&m.stage_id===state.knockoutStage?.id).sort((a,b)=>(a.bracket_slot||0)-(b.bracket_slot||0));
-    return `<div><h3>${s}</h3>${ms.map(m=>`<div class="card match-card"><div class="muted">${m.match_code}</div><div class="team-line">${teamName(m.home_team_id)}${serveDots(m,"home")}</div><div class="muted">vs</div><div class="team-line">${teamName(m.away_team_id)}${serveDots(m,"away")}</div>${m.status==="completed"?`<div class="score-line">${m.home_score}-${m.away_score}</div>`:""}</div>`).join("")||'<div class="card muted">Chưa có</div>'}</div>`;
+    return `<div><h3>${s}</h3>${ms.map(m=>`<div class="match-card"><div class="muted">${m.match_code}</div><div class="team-line">${teamName(m.home_team_id)}${serveDots(m,"home")}</div><div class="muted">vs</div><div class="team-line">${teamName(m.away_team_id)}${serveDots(m,"away")}</div>${m.status==="completed"||m.home_score!=null?`<div class="score-line">${m.home_score??0}-${m.away_score??0}</div>`:""}</div>`).join("")||'<div class="match-card muted">Chưa có</div>'}</div>`;
   }).join("")+"</div>";
 }
 function renderReferee(){
@@ -848,7 +854,7 @@ function renderReferee(){
   myGroups.forEach(g=>{
     const ms=state.refMatches.filter(m=>m.group_id===g.id).sort(sortByTime);
     html+=`<div class="card"><h3>📋 Bảng ${g.code}</h3><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th>Trận</th><th>Điểm</th><th>TT</th><th></th></tr></thead><tbody>
-    ${ms.map(m=>`<tr><td><b>${m.match_code}</b></td><td><span class="time-chip">${fmtTime(m.scheduled_at)||"-"}</span></td><td>${teamName(m.home_team_id)}${serveDots(m,"home")} vs ${teamName(m.away_team_id)}${serveDots(m,"away")}</td><td>${m.status==="completed"?`<b>${m.home_score}-${m.away_score}</b>`:(m.home_score??0)+"-"+(m.away_score??0)}</td><td>${statusBadge(m.status)}</td><td>${m.status!=="completed"?`<button class="btn btn-primary" onclick="openRefModal('${m.id}')">🎯 Nhập điểm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="6" class="muted">Chưa có trận</td></tr>'}
+    ${ms.map(m=>`<tr><td><b>${m.match_code}</b></td><td><span class="time-chip">${fmtTime(m.scheduled_at)||"-"}</span></td><td>${teamName(m.home_team_id)}${serveDots(m,"home")} vs ${teamName(m.away_team_id)}${serveDots(m,"away")}</td><td>${scoreCell(m,false)}</td><td>${statusBadge(m.status)}</td><td>${m.status!=="completed"?`<button class="btn btn-primary" onclick="openRefModal('${m.id}')">🎯 Nhập điểm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="6" class="muted">Chưa có trận</td></tr>'}
     </tbody></table></div></div>`;
   });
   el("referee-content").innerHTML=html;
@@ -953,3 +959,4 @@ setupRealtime();
 </script>
 </body>
 </html>
+
