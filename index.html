@@ -71,7 +71,6 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .preview{margin:6px 0 10px;font-size:13px;color:var(--muted)}.preview b{color:var(--lime)}
 .time-chip{font-family:'Oswald';color:var(--cyan);font-weight:600}
 .winner{color:var(--lime);font-weight:800}
-/* ===== Trọng tài: ô tỷ số gộp lượt giao ===== */
 .ref-box{max-width:640px}
 .ref-header{display:flex;justify-content:space-between;align-items:center;color:var(--cyan);font-family:'Oswald';margin-bottom:14px;text-transform:uppercase}
 .ref-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-bottom:16px}
@@ -164,7 +163,6 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   <div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="closePassModal()">Hủy</button><button class="btn btn-primary" onclick="changePassword()">Lưu</button></div>
 </div></div>
 
-<!-- Modal nhập điểm admin -->
 <div id="score-modal" class="modal-backdrop"><div class="modal">
   <h3 id="score-modal-title">Nhập điểm</h3><div class="sub" id="score-modal-sub"></div>
   <div class="modal-grid">
@@ -174,7 +172,6 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   <div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="closeScoreModal()">Hủy</button><button class="btn btn-primary" onclick="saveScore()">Lưu</button></div>
 </div></div>
 
-<!-- Modal trọng tài: ô tỷ số gộp lượt giao banh -->
 <div id="ref-modal" class="modal-backdrop"><div class="modal ref-box">
   <div class="ref-header"><span id="ref-match-code"></span><span id="ref-group-code" class="badge b-blue"></span></div>
   <div class="ref-teams">
@@ -251,7 +248,14 @@ function fmtTime(s){if(!s)return "";const d=new Date(s);if(isNaN(d.getTime()))re
 function sortByTime(a,b){const ta=a.scheduled_at?new Date(a.scheduled_at).getTime():Infinity;const tb=b.scheduled_at?new Date(b.scheduled_at).getTime():Infinity;return (ta-tb)||(a.match_seq-b.match_seq);}
 function sortedTournaments(){return [...state.tournaments].sort((a,b)=>{const ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(b.start_date||"").localeCompare(String(a.start_date||""));});}
 function timeOptions(sel){let o='<option value="">— Giờ —</option>';for(let h=5;h<=23;h++){for(let m=0;m<60;m+=5){const v=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");o+=`<option value="${v}" ${sel===v?"selected":""}>${v}</option>`;}}return o;}
-function serveDots(m,side){if(!m.serve)return "";const isHome=m.serve.startsWith("h");if((side==="home")!==isHome)return "";const n=m.serve.endsWith("2")?2:1;return `<span class="serve-dots">${"●".repeat(n)}</span>`;}
+/* SỬA: KHÔNG hiện chấm giao banh khi trận đã Xong */
+function serveDots(m,side){
+  if(!m.serve||m.status==="completed")return "";
+  const isHome=m.serve.startsWith("h");
+  if((side==="home")!==isHome)return "";
+  const n=m.serve.endsWith("2")?2:1;
+  return `<span class="serve-dots">${"●".repeat(n)}</span>`;
+}
 function scoreCell(m,canEdit){
   const hasScore=(m.home_score!=null&&m.away_score!=null&&(m.home_score>0||m.away_score>0||m.status==="completed"));
   if(canEdit && m.status!=="completed"){return `<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Điểm</button>`;}
@@ -666,11 +670,11 @@ function groupRefereeSelect(g,referees){
   const cur=first?state.refAssign[first.id]:null;
   return `<select style="min-width:120px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)" onchange="assignGroupReferee('${g.id}',this.value)"><option value="">— Trọng tài —</option>${referees.map(r=>`<option value="${r.user_id}" ${cur===r.user_id?"selected":""}>${r.username}</option>`).join("")}</select>`;
 }
-/* ===== Admin: xóa tỷ số để thi đấu lại ===== */
+/* ===== SỬA: xóa tỷ số dùng 0 (tránh NOT NULL), đưa về Live ===== */
 async function resetMatchScore(id){
   if(!isAdmin()){alert("Chỉ admin mới được xóa tỷ số.");return;}
   if(!confirm("Xóa tỷ số trận này để thi đấu lại?"))return;
-  const {error}=await sb.from("matches").update({home_score:null,away_score:null,serve:null,winner_team_id:null,status:"live"}).eq("id",id);
+  const {error}=await sb.from("matches").update({home_score:0,away_score:0,serve:null,winner_team_id:null,status:"live"}).eq("id",id);
   if(error){alert(error.message);return;}
   if(state.currentEventId)await selectEvent(state.currentEventId);
 }
@@ -700,7 +704,6 @@ async function saveScore(){
   if(state.currentEventId)await selectEvent(state.currentEventId);
   if(state.role==="referee")await loadRefereeData();
 }
-/* ===== Trọng tài: ô tỷ số gộp lượt giao ===== */
 function openRefModal(id){
   const m=state.matches.find(x=>x.id===id)||state.refMatches.find(x=>x.id===id);
   if(!m||!canScore(m)){alert("Bạn không có quyền nhập điểm trận này.");return;}
@@ -722,7 +725,6 @@ async function refPush(){
   if(!m)return;
   const h=parseInt(el("ref-home-score").textContent)||0;
   const a=parseInt(el("ref-away-score").textContent)||0;
-  // Tự chuyển sang "Đang đấu" khi có điểm
   const payload={home_score:h,away_score:a};
   if(m.status==="scheduled")payload.status="live";
   const {error}=await sb.from("matches").update(payload).eq("id",m.id);
@@ -742,7 +744,6 @@ async function setServe(v){
   if(error){alert(error.message);return;}
   m.serve=nv;refreshServeButtons();
 }
-/* Nút Đóng: đóng giao diện, trạng thái Đang đấu (Live) */
 async function refCloseLive(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
   if(m){
@@ -752,7 +753,7 @@ async function refCloseLive(){
   closeRefModal();
   if(state.role==="referee")await loadRefereeData();
 }
-/* Nút Kết thúc: đóng giao diện, trạng thái Xong */
+/* SỬA: kết thúc trận xóa luôn lượt giao để bảng điểm sạch */
 async function refFinish(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
   if(!m)return;
@@ -760,7 +761,7 @@ async function refFinish(){
   const a=parseInt(el("ref-away-score").textContent)||0;
   if(h===a){alert("❌ Không có hòa. Hãy điều chỉnh điểm trước khi kết thúc.");return;}
   const winner=h>a?m.home_team_id:m.away_team_id;
-  const {error}=await sb.from("matches").update({home_score:h,away_score:a,status:"completed",winner_team_id:winner}).eq("id",m.id);
+  const {error}=await sb.from("matches").update({home_score:h,away_score:a,status:"completed",winner_team_id:winner,serve:null}).eq("id",m.id);
   if(error){alert(error.message);return;}
   closeRefModal();
   await loadRefereeData();
@@ -983,4 +984,3 @@ setupRealtime();
 </script>
 </body>
 </html>
-
