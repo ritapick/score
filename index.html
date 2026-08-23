@@ -26,7 +26,6 @@ h1,h2,h3,h4,.logo,.nav-link,.stat-value{font-family:'Oswald',sans-serif;letter-s
 main{max-width:1200px;margin:0 auto;padding:14px}
 .page{display:none}.page.active{display:block}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
-/* Card trong suốt, ít viền để rộng hơn */
 .card{background:transparent;border:none;border-radius:0;padding:6px 2px;margin-bottom:10px;position:relative}
 .card h3{margin:0 0 10px;display:flex;align-items:center;gap:8px;text-transform:uppercase;font-size:15px;flex-wrap:wrap;color:var(--lime)}
 .card.disabled{opacity:.45;pointer-events:none}
@@ -35,7 +34,6 @@ main{max-width:1200px;margin:0 auto;padding:14px}
 .stat-value{font-size:26px;font-weight:700;color:var(--lime);font-style:italic}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
 .b-green{background:rgba(163,230,53,.15);color:var(--lime)}.b-blue{background:rgba(34,211,238,.15);color:var(--cyan)}.b-red{background:rgba(248,113,113,.15);color:var(--red)}.b-gray{background:rgba(148,163,184,.15);color:var(--muted)}.b-warn{background:rgba(251,146,60,.15);color:var(--orange)}
-/* Table tràn lề, không viền ngoài */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:none;border-radius:0;background:transparent;max-height:none}
 table{width:100%;border-collapse:collapse;min-width:480px}
 th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;vertical-align:middle}
@@ -73,21 +71,19 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .preview{margin:6px 0 10px;font-size:13px;color:var(--muted)}.preview b{color:var(--lime)}
 .time-chip{font-family:'Oswald';color:var(--cyan);font-weight:600}
 .winner{color:var(--lime);font-weight:800}
-/* Trọng tài */
-.ref-box{max-width:620px}
+/* ===== Trọng tài: ô tỷ số gộp lượt giao ===== */
+.ref-box{max-width:640px}
 .ref-header{display:flex;justify-content:space-between;align-items:center;color:var(--cyan);font-family:'Oswald';margin-bottom:14px;text-transform:uppercase}
-.ref-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:16px}
-.ref-team{text-align:center;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px}
-.ref-team .name{font-weight:700;margin-bottom:10px;min-height:20px}
-.ref-score{font-family:'Oswald';font-size:58px;color:var(--lime);font-style:italic;line-height:1}
-.ref-controls{display:flex;gap:8px;justify-content:center;margin-top:12px}
-.ref-controls button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:#0d1626;color:var(--text);font-size:22px;cursor:pointer}
-.ref-vs{font-family:'Oswald';color:var(--muted);font-size:20px}
-.ref-serve{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.ref-serve-team{text-align:center;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px}
-.ref-serve-team .name{font-size:12px;color:var(--muted);margin-bottom:8px}
-.serve-btn{border:1px solid var(--line);background:#0d1626;color:var(--muted);border-radius:8px;padding:7px 12px;margin:0 4px;cursor:pointer;font-size:11px;font-weight:700}
+.ref-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-bottom:16px}
+.ref-team{display:flex;flex-direction:column;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.ref-team .name{font-weight:700;margin-bottom:8px;min-height:20px}
+.ref-score{font-family:'Oswald';font-size:54px;color:var(--lime);font-style:italic;line-height:1}
+.ref-controls{display:flex;gap:8px;justify-content:center;margin:10px 0}
+.ref-controls button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:#0d1626;color:var(--text);font-size:22px;cursor:pointer}
+.ref-serve-inline{display:flex;gap:6px;justify-content:center;margin-top:6px}
+.serve-btn{border:1px solid var(--line);background:#0d1626;color:var(--muted);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:11px;font-weight:700}
 .serve-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
+.ref-vs{font-family:'Oswald';color:var(--muted);font-size:20px;display:flex;align-items:center}
 .modal-backdrop{position:fixed;inset:0;background:rgba(4,8,16,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-backdrop.show{display:flex}
 .modal{width:min(460px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px}
@@ -103,7 +99,6 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .hero h1{margin:0 0 6px;font-size:26px;text-transform:uppercase;font-style:italic;position:relative;z-index:1}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1}
 .alert-box{padding:12px 14px;border-radius:12px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--orange);font-size:13px;margin-bottom:12px}
-/* Ẩn cột Sân trên màn hình nhỏ để bảng rộng hơn */
 .col-court{}
 @media(max-width:640px){
   main{padding:8px}
@@ -114,7 +109,7 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   .bracket{grid-template-columns:1fr}
   .sel-row{grid-template-columns:1fr}
   .ref-teams{grid-template-columns:1fr}
-  .ref-serve{grid-template-columns:1fr}
+  .ref-vs{justify-content:center}
   .nav-link{padding:7px 9px;font-size:11px}
 }
 </style>
@@ -169,6 +164,7 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   <div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="closePassModal()">Hủy</button><button class="btn btn-primary" onclick="changePassword()">Lưu</button></div>
 </div></div>
 
+<!-- Modal nhập điểm admin -->
 <div id="score-modal" class="modal-backdrop"><div class="modal">
   <h3 id="score-modal-title">Nhập điểm</h3><div class="sub" id="score-modal-sub"></div>
   <div class="modal-grid">
@@ -178,26 +174,33 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
   <div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="closeScoreModal()">Hủy</button><button class="btn btn-primary" onclick="saveScore()">Lưu</button></div>
 </div></div>
 
+<!-- Modal trọng tài: ô tỷ số gộp lượt giao banh -->
 <div id="ref-modal" class="modal-backdrop"><div class="modal ref-box">
   <div class="ref-header"><span id="ref-match-code"></span><span id="ref-group-code" class="badge b-blue"></span></div>
   <div class="ref-teams">
-    <div class="ref-team"><div class="name" id="ref-home-name"></div><div class="ref-score" id="ref-home-score">0</div>
-      <div class="ref-controls"><button onclick="refAdj('home',-1)">−</button><button onclick="refAdj('home',1)">+</button></div></div>
+    <div class="ref-team">
+      <div class="name" id="ref-home-name"></div>
+      <div class="ref-score" id="ref-home-score">0</div>
+      <div class="ref-controls"><button onclick="refAdj('home',-1)">−</button><button onclick="refAdj('home',1)">+</button></div>
+      <div class="ref-serve-inline">
+        <button class="serve-btn" id="sb-h1" onclick="setServe('h1')">● Giao 1</button>
+        <button class="serve-btn" id="sb-h2" onclick="setServe('h2')">●● Giao 2</button>
+      </div>
+    </div>
     <div class="ref-vs">VS</div>
-    <div class="ref-team"><div class="name" id="ref-away-name"></div><div class="ref-score" id="ref-away-score">0</div>
-      <div class="ref-controls"><button onclick="refAdj('away',-1)">−</button><button onclick="refAdj('away',1)">+</button></div></div>
-  </div>
-  <div class="ref-serve">
-    <div class="ref-serve-team"><div class="name" id="ref-serve-home-name"></div>
-      <button class="serve-btn" id="sb-h1" onclick="setServe('h1')">● Giao 1</button>
-      <button class="serve-btn" id="sb-h2" onclick="setServe('h2')">●● Giao 2</button></div>
-    <div class="ref-serve-team"><div class="name" id="ref-serve-away-name"></div>
-      <button class="serve-btn" id="sb-a1" onclick="setServe('a1')">● Giao 1</button>
-      <button class="serve-btn" id="sb-a2" onclick="setServe('a2')">●● Giao 2</button></div>
+    <div class="ref-team">
+      <div class="name" id="ref-away-name"></div>
+      <div class="ref-score" id="ref-away-score">0</div>
+      <div class="ref-controls"><button onclick="refAdj('away',-1)">−</button><button onclick="refAdj('away',1)">+</button></div>
+      <div class="ref-serve-inline">
+        <button class="serve-btn" id="sb-a1" onclick="setServe('a1')">● Giao 1</button>
+        <button class="serve-btn" id="sb-a2" onclick="setServe('a2')">●● Giao 2</button>
+      </div>
+    </div>
   </div>
   <div class="muted" style="text-align:center;margin-bottom:12px">Điểm & lượt giao banh tự lưu ngay khi thay đổi</div>
   <div class="actions" style="justify-content:space-between">
-    <button class="btn btn-light" onclick="closeRefModal()">Đóng</button>
+    <button class="btn btn-light" onclick="refCloseLive()">Đóng (đang thi đấu)</button>
     <button class="btn btn-primary" onclick="refFinish()">🏁 Kết thúc trận đấu</button>
   </div>
 </div></div>
@@ -229,8 +232,8 @@ function el(id){return document.getElementById(id);}
 function isLocked(){return state.tournament?.status==="completed";}
 function isAdmin(){return state.role==="admin"||state.role==="organizer";}
 function teamName(id){const t=(state.teams.length?state.teams:state.t6.teams).find(x=>x.id===id)||state.t5.teams.find(x=>x.id===id);return t?t.name:"TBD";}
-function statusLabel(s){return{scheduled:"Lịch",completed:"Xong",live:"Live",cancelled:"Hủy",postponed:"Hoãn"}[s]||s;}
-function statusBadge(s){return s==="completed"?'<span class="badge b-green">Xong</span>':s==="scheduled"?'<span class="badge b-blue">Lịch</span>':'<span class="badge b-gray">'+statusLabel(s)+"</span>";}
+function statusLabel(s){return{scheduled:"Lịch",completed:"Xong",live:"Đang đấu",cancelled:"Hủy",postponed:"Hoãn"}[s]||s;}
+function statusBadge(s){return s==="completed"?'<span class="badge b-green">Xong</span>':s==="live"?'<span class="badge b-red">Đang đấu</span>':s==="scheduled"?'<span class="badge b-blue">Lịch</span>':'<span class="badge b-gray">'+statusLabel(s)+"</span>";}
 function mapTeams(a){return (a||[]).map(t=>{const m=t.team_members||[];return{...t,members:m,total_rating:Number(m.reduce((s,x)=>s+(x.players?.skill_rating||0),0).toFixed(2))};});}
 function ratingCheck(total,ev){
   if(!ev||ev.rating_limit==null)return{ok:true,msg:""};
@@ -249,7 +252,6 @@ function sortByTime(a,b){const ta=a.scheduled_at?new Date(a.scheduled_at).getTim
 function sortedTournaments(){return [...state.tournaments].sort((a,b)=>{const ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(b.start_date||"").localeCompare(String(a.start_date||""));});}
 function timeOptions(sel){let o='<option value="">— Giờ —</option>';for(let h=5;h<=23;h++){for(let m=0;m<60;m+=5){const v=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");o+=`<option value="${v}" ${sel===v?"selected":""}>${v}</option>`;}}return o;}
 function serveDots(m,side){if(!m.serve)return "";const isHome=m.serve.startsWith("h");if((side==="home")!==isHome)return "";const n=m.serve.endsWith("2")?2:1;return `<span class="serve-dots">${"●".repeat(n)}</span>`;}
-/* Ô điểm: luôn hiện tỷ số hiện tại (realtime), in đậm đội dẫn/xong */
 function scoreCell(m,canEdit){
   const hasScore=(m.home_score!=null&&m.away_score!=null&&(m.home_score>0||m.away_score>0||m.status==="completed"));
   if(canEdit && m.status!=="completed"){return `<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Điểm</button>`;}
@@ -664,6 +666,14 @@ function groupRefereeSelect(g,referees){
   const cur=first?state.refAssign[first.id]:null;
   return `<select style="min-width:120px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)" onchange="assignGroupReferee('${g.id}',this.value)"><option value="">— Trọng tài —</option>${referees.map(r=>`<option value="${r.user_id}" ${cur===r.user_id?"selected":""}>${r.username}</option>`).join("")}</select>`;
 }
+/* ===== Admin: xóa tỷ số để thi đấu lại ===== */
+async function resetMatchScore(id){
+  if(!isAdmin()){alert("Chỉ admin mới được xóa tỷ số.");return;}
+  if(!confirm("Xóa tỷ số trận này để thi đấu lại?"))return;
+  const {error}=await sb.from("matches").update({home_score:null,away_score:null,serve:null,winner_team_id:null,status:"live"}).eq("id",id);
+  if(error){alert(error.message);return;}
+  if(state.currentEventId)await selectEvent(state.currentEventId);
+}
 
 /* ================= NHẬP ĐIỂM ================= */
 function openScoreModal(id){
@@ -690,6 +700,7 @@ async function saveScore(){
   if(state.currentEventId)await selectEvent(state.currentEventId);
   if(state.role==="referee")await loadRefereeData();
 }
+/* ===== Trọng tài: ô tỷ số gộp lượt giao ===== */
 function openRefModal(id){
   const m=state.matches.find(x=>x.id===id)||state.refMatches.find(x=>x.id===id);
   if(!m||!canScore(m)){alert("Bạn không có quyền nhập điểm trận này.");return;}
@@ -699,8 +710,6 @@ function openRefModal(id){
   el("ref-group-code").textContent=g?("Bảng "+g.code):"";
   el("ref-home-name").textContent=teamName(m.home_team_id);
   el("ref-away-name").textContent=teamName(m.away_team_id);
-  el("ref-serve-home-name").textContent=teamName(m.home_team_id);
-  el("ref-serve-away-name").textContent=teamName(m.away_team_id);
   el("ref-home-score").textContent=m.home_score??0;
   el("ref-away-score").textContent=m.away_score??0;
   refreshServeButtons();
@@ -713,9 +722,12 @@ async function refPush(){
   if(!m)return;
   const h=parseInt(el("ref-home-score").textContent)||0;
   const a=parseInt(el("ref-away-score").textContent)||0;
-  const {error}=await sb.from("matches").update({home_score:h,away_score:a}).eq("id",m.id);
+  // Tự chuyển sang "Đang đấu" khi có điểm
+  const payload={home_score:h,away_score:a};
+  if(m.status==="scheduled")payload.status="live";
+  const {error}=await sb.from("matches").update(payload).eq("id",m.id);
   if(error){alert(error.message);return;}
-  m.home_score=h;m.away_score=a;
+  m.home_score=h;m.away_score=a;if(payload.status)m.status=payload.status;
 }
 function refreshServeButtons(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
@@ -730,6 +742,17 @@ async function setServe(v){
   if(error){alert(error.message);return;}
   m.serve=nv;refreshServeButtons();
 }
+/* Nút Đóng: đóng giao diện, trạng thái Đang đấu (Live) */
+async function refCloseLive(){
+  const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
+  if(m){
+    const {error}=await sb.from("matches").update({status:"live"}).eq("id",m.id);
+    if(error){alert(error.message);}
+  }
+  closeRefModal();
+  if(state.role==="referee")await loadRefereeData();
+}
+/* Nút Kết thúc: đóng giao diện, trạng thái Xong */
 async function refFinish(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId)||state.refMatches.find(x=>x.id===state.refModalMatchId);
   if(!m)return;
@@ -804,12 +827,13 @@ function matchRow(m,adminEdit){
   const pending=state.pending[m.id];
   const timeVal=(pending!==undefined)?pending:committed;
   const courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
+  const resetBtn=adminEdit&&(m.status==="completed"||m.status==="live")?` <button class="btn btn-sm btn-warn" onclick="resetMatchScore('${m.id}')" title="Xóa tỷ số, thi đấu lại">🧹</button>`:"";
   return `<tr>
     <td><b>${m.match_code}</b></td>
     <td>${adminEdit?`<div class="time-cell"><select onchange="setPendingTime('${m.id}',this.value)">${timeOptions(timeVal)}</select>${pending!==undefined?`<button class="btn btn-sm btn-primary" onclick="savePendingTime('${m.id}')">💾</button>`:""}</div>`:(committed?`<span class="time-chip">${committed}</span>`:"-")}</td>
     <td class="col-court">${adminEdit?`<select onchange="updateMatchCourt('${m.id}',this.value)">${courtOptions(m.court_id)}</select>`:courtName}</td>
     <td>${teamName(m.home_team_id)}${serveDots(m,"home")}</td>
-    <td>${scoreCell(m,adminEdit)}</td>
+    <td>${scoreCell(m,adminEdit)}${resetBtn}</td>
     <td>${teamName(m.away_team_id)}${serveDots(m,"away")}</td>
     <td>${statusBadge(m.status)}</td></tr>`;
 }
