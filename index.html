@@ -175,7 +175,6 @@ const DEFAULT_PASS="123@321";
 const GROUP_CODES=["A","B","C","D","E","F","G","H"];
 const TEAM_SELECT="id,name,seed,status,event_id,team_members(player_id,position,players(id,full_name,skill_rating))";
 const VN_OFFSET=7;
-const QF_MAP={1:{home:{g:"A",r:1},away:{g:"B",r:2}},2:{home:{g:"C",r:1},away:{g:"D",r:2}},3:{home:{g:"B",r:1},away:{g:"A",r:2}},4:{home:{g:"D",r:1},away:{g:"C",r:2}}};
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const state={session:null,user:null,role:null,username:null,
@@ -216,6 +215,21 @@ function scoreCell(m,canEdit){
   return `<span class="score-cell">${hw?'<span class="winner">':''}${m.home_score}${hw?'</span>':''} - ${aw?'<span class="winner">':''}${m.away_score}${aw?'</span>':''}</span>`;
 }
 
+/* ===== CHỈ CÁC BẢNG CÓ VĐV (ẩn bảng trống) ===== */
+function activeGroups(){
+  return state.groups
+    .filter(g=>state.groupTeams.some(gt=>gt.group_id===g.id))
+    .sort((a,b)=>a.code.localeCompare(b.code));
+}
+function activeGroupCodes(){return activeGroups().map(g=>g.code);}
+/* Luật tứ kết dựa trên 4 bảng hoạt động (B1..B4) */
+function buildQFMap(){
+  const c=activeGroupCodes();
+  if(c.length<4)return null;
+  const [B1,B2,B3,B4]=c;
+  return {1:{home:{g:B1,r:1},away:{g:B2,r:2}},2:{home:{g:B3,r:1},away:{g:B4,r:2}},3:{home:{g:B2,r:1},away:{g:B1,r:2}},4:{home:{g:B4,r:1},away:{g:B3,r:2}}};
+}
+
 /* ===== Xếp hạng bảng + knockout ===== */
 function groupRanking(gid){
   const gm=state.matches.filter(m=>m.group_id===gid&&m.status==="completed");
@@ -231,9 +245,9 @@ function resolveRef(ref){
   const top=groupRanking(g.id);
   return ref.r===1?(top[0]?.team_id||null):(top[1]?.team_id||null);
 }
-/* Tạo stage KO nếu thiếu + 7 trận placeholder */
 async function ensureKnockoutMatches(){
   if(!state.groupStage)return false;
+  if(activeGroups().length<4)return false; /* chỉ khi đủ 4 bảng có VĐV */
   const groupMatches=state.matches.filter(m=>m.group_id);
   if(!groupMatches.length)return false;
   if(!state.knockoutStage){
@@ -253,14 +267,17 @@ async function ensureKnockoutMatches(){
 }
 async function syncKnockoutTeams(){
   if(!state.knockoutStage)return;
+  const qf=buildQFMap();
   const ko=state.matches.filter(m=>m.stage_id===state.knockoutStage.id);
   const bySlot=(r,s)=>ko.find(m=>m.round===r&&m.bracket_slot===s);
   const updates=[];
-  for(const slot of [1,2,3,4]){
-    const m=bySlot(1,slot);if(!m)continue;
-    const def=QF_MAP[slot];
-    const home=resolveRef(def.home), away=resolveRef(def.away);
-    if(home!==m.home_team_id||away!==m.away_team_id)updates.push({id:m.id,home_team_id:home,away_team_id:away});
+  if(qf){
+    for(const slot of [1,2,3,4]){
+      const m=bySlot(1,slot);if(!m)continue;
+      const def=qf[slot];
+      const home=resolveRef(def.home), away=resolveRef(def.away);
+      if(home!==m.home_team_id||away!==m.away_team_id)updates.push({id:m.id,home_team_id:home,away_team_id:away});
+    }
   }
   const tk1=bySlot(1,1),tk2=bySlot(1,2),tk3=bySlot(1,3),tk4=bySlot(1,4);
   const sfDef={1:{home:tk1?.winner_team_id||null,away:tk2?.winner_team_id||null},2:{home:tk3?.winner_team_id||null,away:tk4?.winner_team_id||null}};
@@ -788,12 +805,10 @@ function renderAll(){renderLockBadge();renderHome();renderMatches();renderStandi
 function renderLockBadge(){el("lock-badge").innerHTML=isLocked()?'<span class="badge b-red">🔒 Đã đóng</span>':(state.tournament?.status==="in_progress"?'<span class="badge b-green">Đang mở</span>':"");}
 function buildGroupCardsReadonly(){
   if(!state.groupStage)return "";
-  return GROUP_CODES.map(code=>{
-    const g=state.groups.find(x=>x.code===code&&x.stage_id===state.groupStage.id);
-    if(!g)return "";
+  return activeGroups().map(g=>{
     const members=state.teams.filter(tm=>state.groupTeams.some(gt=>gt.team_id===tm.id&&gt.group_id===g.id));
     if(!members.length)return "";
-    return `<div class="group-card"><h4>Bảng ${code} <span class="badge b-blue">${members.length}</span></h4>${members.map(tm=>`<div class="group-team"><div><b>${tm.name}</b></div><span class="muted">${tm.total_rating}</span></div>`).join("")}</div>`;
+    return `<div class="group-card"><h4>Bảng ${g.code} <span class="badge b-blue">${members.length}</span></h4>${members.map(tm=>`<div class="group-team"><div><b>${tm.name}</b></div><span class="muted">${tm.total_rating}</span></div>`).join("")}</div>`;
   }).join("");
 }
 function renderHome(){
@@ -817,13 +832,13 @@ function renderHome(){
 function courtOptions(sel){return '<option value="">— Sân —</option>'+state.courts.map(c=>`<option value="${c.id}" ${sel===c.id?"selected":""}>${c.name}</option>`).join("");}
 function renderScheduleSettings(){
   if(!isAdmin())return "";
-  const groups=state.groups.filter(g=>g.stage_id===state.groupStage?.id);
+  const groups=activeGroups();
   return `<div class="card"><h3>🕐 Thiết lập lịch thi đấu</h3>
   <div class="form-grid">
     <div><div class="muted">Giờ bắt đầu</div><input type="time" value="${state.schedule.startTime}" onchange="setSchStart(this.value)"/></div>
     <div><div class="muted">Cách nhau (phút)</div><input type="number" value="${state.schedule.gapMinutes}" onchange="setSchGap(this.value)"/></div>
   </div>
-  <div class="muted" style="margin-bottom:8px">Sân mặc định theo bảng (A→Sân1 … H→Sân8):</div>
+  <div class="muted" style="margin-bottom:8px">Sân mặc định theo bảng (bảng 1→Sân1 …):</div>
   <div class="form-grid">${groups.map(g=>`<div><div class="muted">Bảng ${g.code}</div><select onchange="setGroupCourt('${g.code}',this.value)">${courtOptions(state.schedule.groupCourt[g.code])}</select></div>`).join("")||'<div class="muted">Chưa có bảng</div>'}</div>
   <div class="actions">
     <button class="btn btn-dark" onclick="generateFixturesCurrent()">⚽ Sinh trận vòng tròn</button>
@@ -849,9 +864,8 @@ function matchRow(m,adminEdit,showRef){
     ${showRef?`<td>${refCell}</td>`:""}
     <td>${statusBadge(m.status)}</td></tr>`;
 }
-/* Bảng knockout dùng chung cho Lịch đấu & tab Knockout */
 function knockoutTablesHTML(adminEdit){
-  if(!state.knockoutStage)return '<div class="card muted">Chưa có vòng knockout. Sinh vòng bảng trước.</div>';
+  if(!state.knockoutStage)return '<div class="card muted">Chưa có vòng knockout. Cần đủ 4 bảng có VĐV + sinh vòng bảng.</div>';
   const rounds=[{r:1,t:"🔥 Tứ kết"},{r:2,t:"🥈 Bán kết"},{r:3,t:"🏅 Chung kết"}];
   let html="";
   rounds.forEach(rd=>{
@@ -866,21 +880,20 @@ function renderMatches(){
   const adminEdit=isAdmin()&&!isLocked();
   const referees=state.users.filter(u=>u.role==="referee");
   let html=renderScheduleSettings();
-  const activeGroups=state.groups.filter(g=>state.groupTeams.some(gt=>gt.group_id===g.id)||state.matches.some(m=>m.group_id===g.id));
-  if(!activeGroups.length)html+=`<div class="card"><h3>📅 Lịch thi đấu <span class="live-dot"></span></h3><div class="alert-box">Chưa có vòng bảng. Vào Quản trị → Bước 6 để thiết lập & xếp bảng.</div></div>`;
-  activeGroups.forEach(g=>{
+  const groups=activeGroups(); /* CHỈ BẢNG CÓ VĐV */
+  if(!groups.length)html+=`<div class="card"><h3>📅 Lịch thi đấu <span class="live-dot"></span></h3><div class="alert-box">Chưa có vòng bảng. Vào Quản trị → Bước 6 để thiết lập & xếp bảng.</div></div>`;
+  groups.forEach(g=>{
     const ms=state.matches.filter(m=>m.group_id===g.id).sort(sortByTime);
     html+=`<div class="card"><h3>📅 Bảng ${g.code} <span class="badge b-blue">${ms.length}</span> ${adminEdit?groupRefereeSelect(g,referees):""}</h3>
     <div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th class="col-court">Sân</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th><th>TT</th></tr></thead><tbody>
     ${ms.map(m=>matchRow(m,adminEdit,false)).join("")||'<tr><td colspan="7" class="muted">Chưa có trận</td></tr>'}
     </tbody></table></div></div>`;
   });
-  /* HIỂN THỊ KNOCKOUT NGAY TRONG LỊCH ĐẤU */
   html+=knockoutTablesHTML(adminEdit);
   el("matches-table").innerHTML=html;
 }
 function renderStandings(){
-  const groups=state.groups.filter(g=>g.stage_id===state.groupStage?.id);
+  const groups=activeGroups(); /* CHỈ BẢNG CÓ VĐV */
   el("standings-content").innerHTML=groups.map(g=>{
     const rows=state.standings.filter(s=>s.group_id===g.id).sort((a,b)=>a.rank_no-b.rank_no);
     return `<div class="card"><h3>Bảng ${g.code}</h3><div class="table-wrap"><table><thead><tr><th>#</th><th>Đội</th><th>Trận</th><th>Thắng</th><th>Thua</th><th>HS</th><th>Điểm</th></tr></thead><tbody>
