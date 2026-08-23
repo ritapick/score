@@ -54,6 +54,8 @@ tbody tr:hover{background:rgba(163,230,53,.05)}
 .btn-warn{background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)}
 .btn-sm{padding:4px 9px;font-size:11px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.time-cell{display:flex;gap:6px;align-items:center}
+.time-cell input{width:110px}
 .group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 .group-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px}
 .group-card h4{margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;color:var(--lime)}
@@ -152,6 +154,7 @@ const SERVICE_KEY="";
 const DEFAULT_PASS="123@321";
 const GROUP_CODES=["A","B","C","D","E","F","G","H"];
 const TEAM_SELECT="id,name,seed,status,event_id,team_members(player_id,position,players(id,full_name,skill_rating))";
+const VN_OFFSET=7; // Múi giờ Việt Nam +07
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const state={session:null,user:null,role:null,username:null,
@@ -159,6 +162,7 @@ const state={session:null,user:null,role:null,username:null,
  courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],
  matches:[],standings:[],groupStage:null,knockoutStage:null,
  users:[],refAssign:{},myMatchIds:new Set(),refMatches:[],refTournaments:[],currentMatchId:null,
+ pending:{}, // giờ chưa lưu: {matchId: "HH:MM"}
  editingEventId:null,editingPlayerId:null,editingTeamId:null,editingTeamOriginal:null,lastCreatedEventId:null,
  openTournaments:[],
  t5:{tid:null,eid:null,events:[],teams:[]},
@@ -187,10 +191,24 @@ function autoTeamName(a,b){
   return a.full_name+" ("+r1+") – "+b.full_name+" ("+r2+")";
 }
 function playerLabel(p){return p.full_name+" ("+(p.skill_rating!=null?Number(p.skill_rating).toFixed(2):"")+")";}
+
+/* ===== MÚI GIỜ VIỆT NAM (+07) ===== */
 function toMin(t){const [h,m]=String(t||"08:30").split(":").map(Number);return h*60+m;}
 function fromMin(total){const d=state.tournament?.start_date||"2026-01-01";const h=Math.floor(total/60),m=total%60;return d+"T"+String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":00+07";}
-function fmtTime(s){return s?s.split("T")[1]?.slice(0,5):"";}
-/* Giải đang mở trước, đã đóng xuống dưới */
+/* Hiển thị giờ theo +07, đúng cho cả chuỗi +07 lẫn UTC trả về từ DB */
+function fmtTime(s){
+  if(!s)return "";
+  const d=new Date(s);
+  if(isNaN(d.getTime()))return "";
+  const h=(d.getUTCHours()+VN_OFFSET)%24;
+  const m=d.getUTCMinutes();
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+function sortByTime(a,b){
+  const ta=a.scheduled_at?new Date(a.scheduled_at).getTime():Infinity;
+  const tb=b.scheduled_at?new Date(b.scheduled_at).getTime():Infinity;
+  return (ta-tb)||(a.match_seq-b.match_seq);
+}
 function sortedTournaments(){
   return [...state.tournaments].sort((a,b)=>{
     const ao=a.status==="completed"?1:0, bo=b.status==="completed"?1:0;
@@ -275,7 +293,7 @@ async function loadTournaments(){
 }
 async function selectTournament(id){
   state.tournament=state.tournaments.find(t=>t.id===id)||null;
-  state.editingEventId=null;state.editingPlayerId=null;state.editingTeamId=null;state.editingTeamOriginal=null;
+  state.editingEventId=null;state.editingPlayerId=null;state.editingTeamId=null;state.editingTeamOriginal=null;state.pending={};
   if(!state.tournament)return;
   const {data:e}=await sb.from("events").select("*").eq("tournament_id",id);state.events=e||[];
   el("ctx-event").innerHTML=state.events.map(x=>`<option value="${x.id}">${x.name}</option>`).join("")||'<option value="">Chưa có nội dung</option>';
@@ -284,7 +302,7 @@ async function selectTournament(id){
   if(state.events.length)await selectEvent(state.events[0].id);else{state.currentEventId=null;state.teams=[];state.matches=[];renderAll();}
 }
 async function selectEvent(id){
-  state.currentEventId=id||null;state.editingTeamId=null;state.editingTeamOriginal=null;
+  state.currentEventId=id||null;state.editingTeamId=null;state.editingTeamOriginal=null;state.pending={};
   if(!state.currentEventId){renderAll();return;}
   const {data:teams}=await sb.from("teams").select(TEAM_SELECT).eq("event_id",state.currentEventId);state.teams=mapTeams(teams);
   const {data:st}=await sb.from("stages").select("*").eq("event_id",state.currentEventId).order("stage_order");state.stages=st||[];
@@ -553,6 +571,7 @@ async function applyAutoSchedule(){
       if(!error)count++;
     }
   }
+  state.pending={};
   alert("✅ Đã áp lịch tự động cho "+count+" trận\nBắt đầu "+state.schedule.startTime+", cách "+gap+"p/trận, sân theo bảng.");
   await selectEvent(state.currentEventId);
 }
@@ -562,7 +581,6 @@ async function generateFixturesCurrent(){
   if(error){alert(error.message);return;}
   await selectEvent(state.currentEventId);
 }
-/* XÓA LỊCH THEO NỘI DUNG: xóa hết trận => mất thời gian + tỷ số, reset mã về 01 */
 async function deleteScheduleCurrent(){
   if(!isAdmin()){alert("Chỉ admin/organizer mới xóa lịch.");return;}
   if(!state.currentEventId){alert("Chọn nội dung trước.");return;}
@@ -570,17 +588,25 @@ async function deleteScheduleCurrent(){
   const {error}=await sb.from("matches").delete().eq("event_id",state.currentEventId);
   if(error){alert(error.message);return;}
   await sb.from("event_match_counters").update({last_match_number:0}).eq("event_id",state.currentEventId).then(()=>{}).catch(()=>{});
+  state.pending={};
   alert("✅ Đã xóa lịch thi đấu của nội dung.");
   await selectEvent(state.currentEventId);
 }
-/* Cập nhật giờ / sân: lưu DB + cập nhật cục bộ + xếp lại theo giờ */
-async function updateMatchTime(id,time){
+/* ===== Giờ: chỉ lưu tạm, bấm 💾 mới ghi DB ===== */
+function setPendingTime(id,val){
+  state.pending[id]=val;
+  renderMatches();
+}
+async function savePendingTime(id){
+  const val=state.pending[id];
+  if(val===undefined)return;
   const m=state.matches.find(x=>x.id===id);if(!m)return;
   const date=state.tournament?.start_date||"2026-01-01";
-  const v=time?date+"T"+time+":00+07":null;
+  const v=date+"T"+val+":00+07";
   const {error}=await sb.from("matches").update({scheduled_at:v}).eq("id",id);
   if(error){alert(error.message);return;}
   m.scheduled_at=v;
+  delete state.pending[id];
   renderMatches();
 }
 async function updateMatchCourt(id,courtId){
@@ -678,7 +704,9 @@ function renderScheduleSettings(){
   </div></div>`;
 }
 function matchRow(m,adminEdit){
-  const time=fmtTime(m.scheduled_at);
+  const committed=fmtTime(m.scheduled_at);
+  const pending=state.pending[m.id];
+  const timeVal=(pending!==undefined)?pending:committed;
   const courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
   const done=m.status==="completed";
   const h=m.home_score,a=m.away_score;
@@ -686,14 +714,16 @@ function matchRow(m,adminEdit){
   const scoreCell=done?`${homeWin?`<b class="winner">${h}</b>`:h} - ${awayWin?`<b class="winner">${a}</b>`:a}`:(canScore(m)?`<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Điểm</button>`:"-");
   return `<tr>
     <td><b>${m.match_code}</b></td>
-    <td>${adminEdit?`<input type="time" value="${time}" onchange="updateMatchTime('${m.id}',this.value)"/>`:(time?`<span class="time-chip">${time}</span>`:"-")}</td>
+    <td>${adminEdit?`<div class="time-cell">
+        <input type="time" value="${timeVal}" onchange="setPendingTime('${m.id}',this.value)"/>
+        ${pending!==undefined?`<button class="btn btn-sm btn-primary" onclick="savePendingTime('${m.id}')" title="Lưu giờ">💾</button>`:""}
+      </div>`:(committed?`<span class="time-chip">${committed}</span>`:"-")}</td>
     <td>${adminEdit?`<select onchange="updateMatchCourt('${m.id}',this.value)">${courtOptions(m.court_id)}</select>`:courtName}</td>
     <td>${homeWin?`<b class="winner">${teamName(m.home_team_id)}</b>`:teamName(m.home_team_id)}</td>
     <td>${scoreCell}</td>
     <td>${awayWin?`<b class="winner">${teamName(m.away_team_id)}</b>`:teamName(m.away_team_id)}</td>
     <td>${statusBadge(m.status)}</td></tr>`;
 }
-function sortByTime(a,b){return String(a.scheduled_at||"9999").localeCompare(String(b.scheduled_at||"9999"))||(a.match_seq-b.match_seq);}
 function renderMatches(){
   computeScheduleInMemory();
   const adminEdit=isAdmin()&&!isLocked();
@@ -732,8 +762,8 @@ function renderReferee(){
   el("referee-content").innerHTML=`
   <div class="card"><h3>🏁 Các giải đang thi đấu</h3>
   ${state.refTournaments.map(t=>`<span class="badge b-green" style="margin-right:6px">${t.code} - ${t.name}</span>`).join("")||'<span class="muted">Không có giải đang thi đấu</span>'}</div>
-  <div class="card"><h3>Trận được phân công</h3><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Tên trận</th><th>TT</th><th>Điểm</th><th></th></tr></thead><tbody>
-  ${state.refMatches.map(m=>`<tr><td><b>${m.match_code}</b></td><td>${teamName(m.home_team_id)} vs ${teamName(m.away_team_id)}</td><td>${statusBadge(m.status)}</td><td>${m.status==="completed"?m.home_score+"-"+m.awayScore:"-"}</td><td>${m.status!=="completed"?`<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Nhập điểm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="5" class="muted">Chưa được phân công</td></tr>'}
+  <div class="card"><h3>Trận được phân công</h3><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Giờ</th><th>Tên trận</th><th>TT</th><th>Điểm</th><th></th></tr></thead><tbody>
+  ${state.refMatches.map(m=>`<tr><td><b>${m.match_code}</b></td><td><span class="time-chip">${fmtTime(m.scheduled_at)||"-"}</span></td><td>${teamName(m.home_team_id)} vs ${teamName(m.away_team_id)}</td><td>${statusBadge(m.status)}</td><td>${m.status==="completed"?m.home_score+"-"+m.away_score:"-"}</td><td>${m.status!=="completed"?`<button class="btn btn-primary" onclick="openScoreModal('${m.id}')">Nhập điểm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="6" class="muted">Chưa được phân công</td></tr>'}
   </tbody></table></div></div>`;
 }
 
