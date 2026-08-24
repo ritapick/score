@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>Pickleball Pro - Quản lý giải đấu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,6 +23,7 @@ h1,h2,h3,h4,.logo,.nav-link,.stat-value{font-family:'Oswald',sans-serif;letter-s
 .nav-link:hover{color:var(--text);background:rgba(163,230,53,.1)}.nav-link.active{background:var(--lime);color:#0b1220}
 .nav-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .user-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--lime);padding:5px 10px;border-radius:999px}
+.edit-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--cyan);padding:5px 10px;border-radius:999px}
 .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:5px;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .ctx-bar{background:var(--surface2);border-bottom:1px solid var(--line);padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -98,19 +102,13 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 .hero h1{margin:0 0 6px;font-size:24px;text-transform:uppercase;font-style:italic;position:relative;z-index:1}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1}
 .alert-box{padding:12px 14px;border-radius:12px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--orange);font-size:13px;margin-bottom:12px}
-.col-court{}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--lime);color:#0b1220;padding:10px 18px;border-radius:999px;font-weight:800;font-size:12px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase}
 .toast.show{opacity:1}
+.col-court{}
 @media(max-width:760px){
-  main{padding:8px}
-  .col-court{display:none}
-  table{min-width:420px}
-  th,td{padding:8px 6px;font-size:12px}
-  .score-cell{font-size:16px}
-  .sel-row{grid-template-columns:1fr}
-  .ref-teams{grid-template-columns:1fr}
-  .ref-vs{justify-content:center}
-  .hero h1{font-size:20px}
+  main{padding:8px}.col-court{display:none}table{min-width:420px}
+  th,td{padding:8px 6px;font-size:12px}.score-cell{font-size:16px}
+  .sel-row{grid-template-columns:1fr}.ref-teams{grid-template-columns:1fr}.ref-vs{justify-content:center}.hero h1{font-size:20px}
 }
 </style>
 </head>
@@ -120,6 +118,7 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
   <div class="brand-row">
     <span class="logo">⚡ Pickle<span>ball Pro</span></span>
     <div class="nav-right">
+      <span id="edit-chip" class="edit-chip hidden">🛠 CHẾ ĐỘ SỬA</span>
       <span id="user-chip" class="user-chip hidden"></span>
       <button id="pass-btn" class="btn btn-light hidden" onclick="openPassModal()">🔑 Đổi MK</button>
       <button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
@@ -366,9 +365,8 @@ function closePassModal(){el("pass-modal").classList.remove("show");}
 function loginMsg(t,m){const b=el("login-message");b.className="msg show msg-"+t;b.textContent=m;}
 function showToast(msg,type="ok"){
   const t=el("toast");t.textContent=msg;t.className="toast show";
-  if(type==="err")t.style.background="var(--red)",t.style.color="#fff";
-  else t.style.background="var(--lime)",t.style.color="#0b1220";
-  clearTimeout(window._toastTO);window._toastTO=setTimeout(()=>t.classList.remove("show"),2000);
+  if(type==="err"){t.style.background="var(--red)";t.style.color="#fff";clearTimeout(window._toastTO);window._toastTO=setTimeout(()=>t.classList.remove("show"),5000);}
+  else{t.style.background="var(--lime)";t.style.color="#0b1220";clearTimeout(window._toastTO);window._toastTO=setTimeout(()=>t.classList.remove("show"),2000);}
 }
 async function doLogin(){
   const u=el("login-username").value.trim(),p=el("login-password").value;
@@ -377,7 +375,6 @@ async function doLogin(){
   const {data,error}=await sb.auth.signInWithPassword({email:u,password:p});
   if(error){loginMsg("error","❌ "+error.message);return;}
   closeLogin();await loadMyProfile(data.session);applyAuthUI();
-  /* FIX: Load users + courts ngay sau khi login admin */
   if(isAdmin()){await loadUsers();if(state.tournament)await ensureEightCourts();}
   renderAll();
   if(state.role==="referee")await loadRefereeData();
@@ -446,8 +443,6 @@ async function selectEvent(id){
   if(state.groupStage&&isAdmin())await refreshKnockout();
   if(state.groupStage){const {data:s}=await sb.from("group_standings").select("*").eq("stage_id",state.groupStage.id);state.standings=s||[];}else state.standings=[];
   if(isAdmin())await loadRefAssign();
-  /* FIX: Đảm bảo users đã load */
-  if(isAdmin()&&state.users.length===0)await loadUsers();
   renderAll();
   if(isAdmin()){await loadUsers();renderAdmin();}
 }
@@ -708,11 +703,11 @@ async function savePendingTime(id){
   const date=state.tournament?.start_date||"2026-01-01";
   const v=date+"T"+val+":00+07";
   const {error}=await sb.from("matches").update({scheduled_at:v}).eq("id",id);
-  if(error){alert(error.message);return;}
+  if(error){showToast("❌ Lỗi: "+error.message,"err");return;}
   m.scheduled_at=v;delete state.pending[id];
+  showToast("✅ Đã lưu giờ "+val);
   renderMatches();
 }
-/* FIX: saveKOTime dùng showToast thay vì re-render toàn bộ, tránh mất focus */
 async function saveKOTime(id,val,inputEl){
   const m=state.matches.find(x=>x.id===id);if(!m)return;
   const date=state.tournament?.start_date||"2026-01-01";
@@ -721,14 +716,9 @@ async function saveKOTime(id,val,inputEl){
   if(error){showToast("❌ Lỗi: "+error.message,"err");return;}
   m.scheduled_at=v;
   showToast("✅ Đã lưu giờ "+val);
-  /* Chỉ render knockout để cập nhật các bảng KO, không re-render toàn bộ */
   renderKnockout();
-  /* Nếu đang ở trang matches, re-render matches nhưng restore focus */
-  if(el("page-matches").classList.contains("active")){
-    renderMatches();
-  }
+  if(el("page-matches").classList.contains("active"))renderMatches();
 }
-/* FIX: updateMatchCourt - không re-render toàn bộ */
 async function updateMatchCourt(id,courtId){
   const m=state.matches.find(x=>x.id===id);if(!m)return;
   const {error}=await sb.from("matches").update({court_id:courtId||null}).eq("id",id);
@@ -762,7 +752,6 @@ async function assignMatchReferee(matchId,userId){
   showToast(userId?("✅ Trọng tài: "+(u?.username||"")):"✅ Đã bỏ trọng tài");
   renderMatches();renderKnockout();
 }
-/* FIX: groupRefereeSelect - thêm cảnh báo khi không có trọng tài */
 function groupRefereeSelect(g,referees){
   const first=state.matches.find(m=>m.group_id===g.id);
   const cur=first?state.refAssign[first.id]:null;
@@ -771,7 +760,6 @@ function groupRefereeSelect(g,referees){
   }
   return `<select style="min-width:110px;background:#0d1626;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--text)" onchange="assignGroupReferee('${g.id}',this.value)"><option value="">— TT bảng —</option>${referees.map(r=>`<option value="${r.user_id}" ${cur===r.user_id?"selected":""}>${r.username}</option>`).join("")}</select>`;
 }
-/* FIX: matchRefereeSelect - cảnh báo nếu chưa có trọng tài */
 function matchRefereeSelect(m,referees){
   const cur=state.refAssign[m.id]||null;
   if(!referees||referees.length===0){
@@ -855,7 +843,6 @@ async function showPage(p){
   if(p==="admin"&&isAdmin()){await refreshOpenTournaments();await loadUsers();renderAdmin();}
   if(p==="referee")loadRefereeData();
   if(p==="matches"){
-    /* FIX: Đảm bảo courts + users đã load khi admin vào trang */
     if(isAdmin()){
       await ensureEightCourts();
       if(state.users.length===0)await loadUsers();
@@ -863,18 +850,25 @@ async function showPage(p){
     ensureScheduleDefaults();computeScheduleInMemory();
     if(state.groupStage&&isAdmin())await refreshKnockout();
     renderMatches();
+    updateEditChip();
   }
   if(p==="knockout"){
-    /* FIX: Đảm bảo courts + users đã load khi admin vào trang KO */
     if(isAdmin()){
       if(state.courts.length===0&&state.tournament)await ensureEightCourts();
       if(state.users.length===0)await loadUsers();
       await refreshKnockout();
     }
     renderKnockout();
+    updateEditChip();
   }
 }
-function renderAll(){renderLockBadge();renderHome();renderMatches();renderStandings();renderKnockout();}
+/* Badge hiển thị chế độ sửa để người dùng thấy rõ */
+function updateEditChip(){
+  const chip=el("edit-chip");
+  const on=isAdmin()&&!isLocked();
+  chip.classList.toggle("hidden",!on);
+}
+function renderAll(){renderLockBadge();renderHome();renderMatches();renderStandings();renderKnockout();updateEditChip();}
 function renderLockBadge(){el("lock-badge").innerHTML=isLocked()?'<span class="badge b-red">🔒 Đã đóng</span>':(state.tournament?.status==="in_progress"?'<span class="badge b-green">Đang mở</span>':"");}
 function buildGroupCardsReadonly(){
   if(!state.groupStage)return "";
@@ -938,7 +932,6 @@ function matchRow(m,adminEdit,showRef){
     ${showRef?`<td>${refCell}</td>`:""}
     <td>${statusBadge(m.status)}</td></tr>`;
 }
-/* FIX koRow: dùng onblur+onchange cho time, thêm data-id cho restore focus */
 function koRow(m,adminEdit){
   const committed=fmtTime(m.scheduled_at);
   const courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
@@ -990,7 +983,6 @@ function renderMatches(){
   const adminEdit=isAdmin()&&!isLocked();
   const referees=state.users.filter(u=>u.role==="referee");
   let html=renderScheduleSettings();
-  /* FIX: Cảnh báo nếu admin chưa có trọng tài nào */
   if(adminEdit&&state.users.length>0&&referees.length===0){
     html+=`<div class="alert-box">⚠ <b>Chưa có user trọng tài nào</b>. Vào Quản trị → Bước 7 để tạo user với quyền <b>referee</b>.</div>`;
   }
@@ -1044,7 +1036,7 @@ function groupSelect6(tm){
 }
 function renderAdmin(){
   const t=state.tournament,locked=isLocked();
-  const tOpts=sortedTournaments().map(x=>`<option value="${x.id}" ${t&&x.id===t.id?"selected":""}>${x.code} - ${t.name}${t.status==="completed"?" (đóng)":""}</option>`).join("");
+  const tOpts=sortedTournaments().map(x=>`<option value="${x.id}" ${t&&x.id===t.id?"selected":""}>${x.code} - ${x.name}${x.status==="completed"?" (đóng)":""}</option>`).join("");
   const noTournament=!t;
   const editingE=state.events.find(e=>e.id===state.editingEventId);
   const editingP=state.players.find(p=>p.id===state.editingPlayerId);
@@ -1126,13 +1118,13 @@ setupRealtime();
 (async()=>{
   const {data}=await sb.auth.getSession();
   if(data.session){await loadMyProfile(data.session);
-    /* FIX: Sau khi restore session, load users nếu admin */
     if(isAdmin()){await loadUsers();}
     if(state.role==="referee")await loadRefereeData();
   }
   applyAuthUI();
   await refreshOpenTournaments();
   await loadTournaments();
+  updateEditChip();
 })();
 </script>
 </body>
