@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<!-- CHỐNG CACHE MẠNH -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<title>Pickleball Pro - Quản lý giải đấu</title>
+<meta http-equiv="Cache-Control" content="post-check=0, pre-check=0"/>
+<title>Pickleball Pro v2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+<!-- VERSION 2.0 - Bypass cache bằng query string -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4?v=2.0.0"></script>
 <style>
 :root{--bg:#0b1220;--nav:#0a101d;--surface:#111c31;--surface2:#0e1728;--line:rgba(148,163,184,.16);--text:#e6edf7;--muted:#8fa3bd;--lime:#a3e635;--cyan:#22d3ee;--orange:#fb923c;--red:#f87171;--radius:16px}
 *{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:radial-gradient(1100px 500px at 85% -10%,rgba(163,230,53,.10),transparent),radial-gradient(900px 500px at -10% 30%,rgba(34,211,238,.07),transparent),var(--bg);color:var(--text)}
@@ -18,12 +21,13 @@ h1,h2,h3,h4,.logo,.nav-link,.stat-value{font-family:'Oswald',sans-serif;letter-s
 .topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;flex-direction:column;gap:8px}
 .brand-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .logo{color:var(--lime);font-weight:700;font-size:18px;text-transform:uppercase;font-style:italic}.logo span{color:var(--text)}
+.version-tag{font-size:10px;background:var(--cyan);color:#0b1220;padding:2px 8px;border-radius:4px;font-weight:800}
 .nav-links{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
 .nav-link{flex:0 0 auto;background:none;border:none;color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;text-transform:uppercase;transition:.15s}
 .nav-link:hover{color:var(--text);background:rgba(163,230,53,.1)}.nav-link.active{background:var(--lime);color:#0b1220}
 .nav-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .user-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--lime);padding:5px 10px;border-radius:999px}
-.edit-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--cyan);padding:5px 10px;border-radius:999px}
+.edit-chip{color:#0b1220;font-size:12px;font-weight:800;background:var(--cyan);padding:6px 12px;border-radius:999px;animation:pulse 2s infinite}
 .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:5px;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .ctx-bar{background:var(--surface2);border-bottom:1px solid var(--line);padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -105,6 +109,7 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--lime);color:#0b1220;padding:10px 18px;border-radius:999px;font-weight:800;font-size:12px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase}
 .toast.show{opacity:1}
 .col-court{}
+.debug-banner{position:fixed;top:70px;right:10px;background:rgba(34,211,238,.9);color:#0b1220;padding:8px 12px;border-radius:8px;font-size:11px;font-weight:700;z-index:9998;line-height:1.4;max-width:200px}
 @media(max-width:760px){
   main{padding:8px}.col-court{display:none}table{min-width:420px}
   th,td{padding:8px 6px;font-size:12px}.score-cell{font-size:16px}
@@ -116,7 +121,7 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 
 <nav class="topnav">
   <div class="brand-row">
-    <span class="logo">⚡ Pickle<span>ball Pro</span></span>
+    <span class="logo">⚡ Pickle<span>ball Pro</span> <span class="version-tag">v2.0</span></span>
     <div class="nav-right">
       <span id="edit-chip" class="edit-chip hidden">🛠 CHẾ ĐỘ SỬA</span>
       <span id="user-chip" class="user-chip hidden"></span>
@@ -150,6 +155,7 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
   <section id="page-referee" class="page"><div id="referee-content"></div></section>
 </main>
 
+<div id="debug-banner" class="debug-banner hidden"></div>
 <div id="toast" class="toast"></div>
 
 <div id="login-modal" class="modal-backdrop"><div class="modal">
@@ -186,6 +192,12 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 </div></div>
 
 <script>
+// VERSION CHECK - Log version khi load
+console.log('===========================================');
+console.log('🏓 Pickleball Pro v2.0 - Loaded');
+console.log('Time:', new Date().toISOString());
+console.log('===========================================');
+
 const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc";
 const SERVICE_KEY="";
@@ -378,8 +390,9 @@ async function doLogin(){
   if(isAdmin()){await loadUsers();if(state.tournament)await ensureEightCourts();}
   renderAll();
   if(state.role==="referee")await loadRefereeData();
+  updateDebugBanner();
 }
-async function logout(){await sb.auth.signOut();state.session=null;state.user=null;state.role=null;applyAuthUI();renderAll();}
+async function logout(){await sb.auth.signOut();state.session=null;state.user=null;state.role=null;applyAuthUI();renderAll();updateDebugBanner();}
 async function changePassword(){
   const p1=el("np-pass").value,p2=el("np-pass2").value;
   if(!p1||p1.length<6){alert("Mật khẩu tối thiểu 6 ký tự.");return;}
@@ -445,6 +458,7 @@ async function selectEvent(id){
   if(isAdmin())await loadRefAssign();
   renderAll();
   if(isAdmin()){await loadUsers();renderAdmin();}
+  updateDebugBanner();
 }
 async function loadRefAssign(){state.refAssign={};if(!state.matches.length)return;const {data}=await sb.from("referee_matches").select("*").in("match_id",state.matches.map(m=>m.id));(data||[]).forEach(r=>state.refAssign[r.match_id]=r.user_id);}
 async function loadUsers(){
@@ -509,6 +523,7 @@ async function toggleLock(tid){
   const {error}=await sb.from("tournaments").update({status:s}).eq("id",tid);
   if(error)alert(error.message);
   await loadTournaments();await refreshOpenTournaments();if(isAdmin())renderAdmin();
+  updateDebugBanner();
 }
 
 async function createTournament(){
@@ -850,7 +865,6 @@ async function showPage(p){
     ensureScheduleDefaults();computeScheduleInMemory();
     if(state.groupStage&&isAdmin())await refreshKnockout();
     renderMatches();
-    updateEditChip();
   }
   if(p==="knockout"){
     if(isAdmin()){
@@ -859,16 +873,30 @@ async function showPage(p){
       await refreshKnockout();
     }
     renderKnockout();
-    updateEditChip();
   }
+  updateEditChip();
+  updateDebugBanner();
 }
-/* Badge hiển thị chế độ sửa để người dùng thấy rõ */
 function updateEditChip(){
   const chip=el("edit-chip");
   const on=isAdmin()&&!isLocked();
   chip.classList.toggle("hidden",!on);
 }
-function renderAll(){renderLockBadge();renderHome();renderMatches();renderStandings();renderKnockout();updateEditChip();}
+function updateDebugBanner(){
+  const banner=el("debug-banner");
+  if(!isAdmin()){banner.classList.add("hidden");return;}
+  banner.classList.remove("hidden");
+  const refs=state.users.filter(u=>u.role==="referee").length;
+  const locked=isLocked();
+  const adminEdit=isAdmin()&&!isLocked();
+  banner.innerHTML=`
+    <div>👤 ${state.role} ${adminEdit?'✅ EDIT MODE':'❌ LOCKED'}</div>
+    <div>🏁 ${refs} trọng tài</div>
+    <div>🏟 ${state.courts.length} sân</div>
+    <div>🔒 ${locked?'ĐÓNG':'MỞ'}</div>
+  `;
+}
+function renderAll(){renderLockBadge();renderHome();renderMatches();renderStandings();renderKnockout();updateEditChip();updateDebugBanner();}
 function renderLockBadge(){el("lock-badge").innerHTML=isLocked()?'<span class="badge b-red">🔒 Đã đóng</span>':(state.tournament?.status==="in_progress"?'<span class="badge b-green">Đang mở</span>':"");}
 function buildGroupCardsReadonly(){
   if(!state.groupStage)return "";
@@ -1125,6 +1153,7 @@ setupRealtime();
   await refreshOpenTournaments();
   await loadTournaments();
   updateEditChip();
+  updateDebugBanner();
 })();
 </script>
 </body>
