@@ -3,16 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<!-- CHỐNG CACHE MẠNH -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<meta http-equiv="Cache-Control" content="post-check=0, pre-check=0"/>
-<title>Pickleball Pro v2.0</title>
+<title>Pickleball Pro v2.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- VERSION 2.0 - Bypass cache bằng query string -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4?v=2.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4?v=2.1.0"></script>
 <style>
 :root{--bg:#0b1220;--nav:#0a101d;--surface:#111c31;--surface2:#0e1728;--line:rgba(148,163,184,.16);--text:#e6edf7;--muted:#8fa3bd;--lime:#a3e635;--cyan:#22d3ee;--orange:#fb923c;--red:#f87171;--radius:16px}
 *{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:radial-gradient(1100px 500px at 85% -10%,rgba(163,230,53,.10),transparent),radial-gradient(900px 500px at -10% 30%,rgba(34,211,238,.07),transparent),var(--bg);color:var(--text)}
@@ -121,7 +118,7 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 
 <nav class="topnav">
   <div class="brand-row">
-    <span class="logo">⚡ Pickle<span>ball Pro</span> <span class="version-tag">v2.0</span></span>
+    <span class="logo">⚡ Pickle<span>ball Pro</span> <span class="version-tag">v2.1</span></span>
     <div class="nav-right">
       <span id="edit-chip" class="edit-chip hidden">🛠 CHẾ ĐỘ SỬA</span>
       <span id="user-chip" class="user-chip hidden"></span>
@@ -192,10 +189,8 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 </div></div>
 
 <script>
-// VERSION CHECK - Log version khi load
 console.log('===========================================');
-console.log('🏓 Pickleball Pro v2.0 - Loaded');
-console.log('Time:', new Date().toISOString());
+console.log('🏓 Pickleball Pro v2.1 - KO pre-created');
 console.log('===========================================');
 
 const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co";
@@ -276,25 +271,26 @@ function resolveRef(ref){
   const top=groupRanking(g.id);
   return ref.r===1?(top[0]?.team_id||null):(top[1]?.team_id||null);
 }
+
+/* MỚI: Tạo sẵn 7 trận KO ngay khi thiết lập (không chờ bảng hoàn thành) */
 async function ensureKnockoutMatches(){
-  if(!state.groupStage)return false;
-  if(activeGroups().length<4)return false;
-  const groupMatches=state.matches.filter(m=>m.group_id);
-  if(!groupMatches.length)return false;
+  if(!state.currentEventId)return false;
   if(!state.knockoutStage){
     try{const {data}=await sb.from("stages").insert({event_id:state.currentEventId,code:"KO",name:"Knockout",stage_type:"knockout",stage_order:2}).select().single();if(data)state.knockoutStage=data;}catch(e){console.warn(e);}
   }
   if(!state.knockoutStage)return false;
-  const existing=state.matches.filter(m=>m.stage_id===state.knockoutStage.id);
+  const {data:exk}=await sb.from("matches").select("id,round,bracket_slot").eq("stage_id",state.knockoutStage.id);
+  const existing=exk||[];
   const need=[];
   for(let s=1;s<=4;s++)if(!existing.find(m=>m.round===1&&m.bracket_slot===s))need.push({round:1,bracket_slot:s});
   for(let s=1;s<=2;s++)if(!existing.find(m=>m.round===2&&m.bracket_slot===s))need.push({round:2,bracket_slot:s});
   if(!existing.find(m=>m.round===3&&m.bracket_slot===1))need.push({round:3,bracket_slot:1});
   for(const n of need){
-    try{await sb.from("matches").insert({event_id:state.currentEventId,tournament_id:state.tournament.id,stage_id:state.knockoutStage.id,round:n.round,bracket_slot:n.bracket_slot,status:"scheduled"});}catch(e){console.warn(e);}
+    try{await sb.from("matches").insert({event_id:state.currentEventId,tournament_id:state.tournament?state.tournament.id:null,stage_id:state.knockoutStage.id,round:n.round,bracket_slot:n.bracket_slot,status:"scheduled"});}catch(e){console.warn(e);}
   }
   return need.length>0;
 }
+/* Ghi đè tên đội vào trận KO đã có sẵn khi đủ điều kiện */
 async function syncKnockoutTeams(){
   if(!state.knockoutStage)return;
   const qf=buildQFMap();
@@ -318,14 +314,13 @@ async function syncKnockoutTeams(){
 }
 async function refreshKnockout(){
   try{
-    if(!state.groupStage)return;
+    if(!state.currentEventId)return;
     const added=await ensureKnockoutMatches();
     if(added)await reloadEventMatches();
     await syncKnockoutTeams();
     await reloadEventMatches();
   }catch(e){console.warn("refreshKnockout:",e);}
 }
-async function buildKO(){await refreshKnockout();renderAll();alert("✅ Đã xây vòng KO từ kết quả vòng bảng.");}
 
 function setupRealtime(){
   sb.channel("pb-matches")
@@ -453,7 +448,7 @@ async function selectEvent(id){
   else{state.groups=[];state.groupTeams=[];}
   const {data:m}=await sb.from("matches").select("*").eq("event_id",state.currentEventId).order("match_seq");state.matches=m||[];
   ensureScheduleDefaults();
-  if(state.groupStage&&isAdmin())await refreshKnockout();
+  if(isAdmin())await refreshKnockout();
   if(state.groupStage){const {data:s}=await sb.from("group_standings").select("*").eq("stage_id",state.groupStage.id);state.standings=s||[];}else state.standings=[];
   if(isAdmin())await loadRefAssign();
   renderAll();
@@ -638,6 +633,7 @@ async function setupGroupStage6(){
   if(!stageId){const {data,error}=await sb.from("stages").insert({event_id:state.t6.eid,code:"GRP",name:"Vòng bảng",stage_type:"group_stage",stage_order:1}).select().single();if(error){alert(error.message);return;}stageId=data.id;}
   for(const c of GROUP_CODES){if(!state.t6.groups.find(g=>g.stage_id===stageId&&g.code===c)){await sb.from("groups").insert({stage_id:stageId,code:c,name:"Bảng "+c,max_teams:4});}}
   if(!state.t6.knockoutStage)await sb.from("stages").insert({event_id:state.t6.eid,code:"KO",name:"Knockout",stage_type:"knockout",stage_order:2});
+  await ensureKnockoutMatches();
   await setT6Event(state.t6.eid);
 }
 async function setTeamGroup6(teamId,groupId){
@@ -861,9 +857,9 @@ async function showPage(p){
     if(isAdmin()){
       await ensureEightCourts();
       if(state.users.length===0)await loadUsers();
+      await refreshKnockout();
     }
     ensureScheduleDefaults();computeScheduleInMemory();
-    if(state.groupStage&&isAdmin())await refreshKnockout();
     renderMatches();
   }
   if(p==="knockout"){
@@ -988,23 +984,7 @@ function knockoutTablesHTML(adminEdit){
     });
     return html||'<div class="card muted">Chưa có trận knockout.</div>';
   }
-  const qf=buildQFMap();
-  if(!qf)return '<div class="card muted">Cần đủ 4 bảng có VĐV + kết quả để xây vòng KO.</div>';
-  const nameOf=ref=>teamName(resolveRef(ref));
-  let html=`<div class="card"><h3>🔥 TỨ KẾT</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>`;
-  [1,2,3,4].forEach(s=>{
-    html+=`<tr><td><span class="ko-code">TK${s}</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td>${nameOf(qf[s].home)}</td><td><span class="muted">-</span></td><td>${nameOf(qf[s].away)}</td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>`;
-  });
-  html+=`</tbody></table></div></div>`;
-  html+=`<div class="card"><h3>🥈 BÁN KẾT</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>
-    <tr><td><span class="ko-code">BK1</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td><span class="muted">Thắng TK1</span></td><td><span class="muted">-</span></td><td><span class="muted">Thắng TK2</span></td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>
-    <tr><td><span class="ko-code">BK2</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td><span class="muted">Thắng TK3</span></td><td><span class="muted">-</span></td><td><span class="muted">Thắng TK4</span></td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>
-  </tbody></table></div></div>`;
-  html+=`<div class="card"><h3>🏅 CHUNG KẾT</h3><div class="table-wrap"><table><thead>${KO_HEAD}</thead><tbody>
-    <tr><td><span class="ko-code">CK</span></td><td><span class="muted">-</span></td><td class="col-court"><span class="muted">-</span></td><td><span class="muted">Thắng BK1</span></td><td><span class="muted">-</span></td><td><span class="muted">Thắng BK2</span></td><td><span class="muted">-</span></td><td><span class="badge b-blue">Chờ</span></td></tr>
-  </tbody></table></div></div>`;
-  if(adminEdit)html+=`<div class="actions"><button class="btn btn-primary" onclick="buildKO()">🔥 Xây vòng KO (lưu & chỉnh Giờ/Sân/Trọng tài)</button></div>`;
-  return html;
+  return '<div class="card muted">Chưa có vòng knockout. Vào Quản trị → Bước 6 → Thiết lập 4 bảng để tạo sẵn trận KO.</div>';
 }
 function renderMatches(){
   computeScheduleInMemory();
@@ -1123,7 +1103,7 @@ function renderAdmin(){
     <div class="sel-row"><select onchange="setT6Tournament(this.value)">${openTournamentOptions(state.t6.tid)}</select>
     <select onchange="setT6Event(this.value)" ${state.t6.tid?"":"disabled"}><option value="">— Chọn nội dung —</option>${state.t6.events.map(e=>`<option value="${e.id}" ${state.t6.eid===e.id?"selected":""}>${e.name} (${e.rating_limit??"mở"})</option>`).join("")}</select></div>
     ${state.t6.eid&&ev6?`
-    <div class="actions"><button class="btn btn-dark" onclick="setupGroupStage6()">🏆 Thiết lập 4 bảng</button><button class="btn btn-primary" onclick="runGenerateGroupFixtures6()">⚽ Sinh vòng bảng</button><button class="btn btn-blue" onclick="buildKO()">🔥 Xây vòng KO từ kết quả</button></div>
+    <div class="actions"><button class="btn btn-dark" onclick="setupGroupStage6()">🏆 Thiết lập 4 bảng (tạo sẵn TK/BK/CK)</button><button class="btn btn-primary" onclick="runGenerateGroupFixtures6()">⚽ Sinh vòng bảng</button></div>
     ${state.t6.groupStage?`<div class="group-grid">${groupCards6}</div>`:'<div class="alert-box">Bấm "Thiết lập 4 bảng".</div>'}
     `:'<div class="alert-box">🔒 Chọn giải + nội dung để xếp bảng.</div>'}
   </div>
