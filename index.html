@@ -564,14 +564,30 @@ async function toggleLock(tid){
   await loadTournaments();await refreshOpenTournaments();if(isAdmin())renderAdmin();
 }
 
-/* BƯỚC 1: CHỈ CẦN TÊN + NGÀY BẮT ĐẦU. MÃ TỰ SINH. */
+/* BƯỚC 1: CHỈ CẦN TÊN + NGÀY BẮT ĐẦU. MÃ TỰ SINH. KHÔNG CẦN NGÀY KẾT THÚC. */
 async function createTournament(){
   const name=el("t-name").value.trim();
+  const startDate=el("t-start").value;
   if(!name){alert("Nhập tên giải");return;}
+  if(!startDate){alert("Chọn ngày bắt đầu");return;}
+  
   const code=nextTournamentCode();
   const base=name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
   const slug=code.toLowerCase()+"-"+(base||"giai-dau")+"-"+Date.now().toString(36);
-  const {data,error}=await sb.from("tournaments").insert({code,name,slug,start_date:el("t-start").value||null,location_name:el("t-location").value||null,status:"in_progress"}).select().single();
+  
+  // Nếu không có end_date, tự động lấy start_date làm end_date
+  const endDate = el("t-end").value || startDate;
+  
+  const {data,error}=await sb.from("tournaments").insert({
+    code,
+    name,
+    slug,
+    start_date:startDate,
+    end_date:endDate,
+    location_name:el("t-location").value||null,
+    status:"in_progress"
+  }).select().single();
+  
   if(error){alert(/row-level security/i.test(error.message)?"❌ Bị chặn RLS.":"❌ "+error.message);return;}
   for(let i=1;i<=8;i++){await sb.from("courts").insert({tournament_id:data.id,name:"Sân "+i,display_order:i}).then(()=>{}).catch(()=>{});}
   alert("✅ Đã tạo giải '"+code+" - "+name+"' kèm 8 sân.");
@@ -583,6 +599,7 @@ async function createTournament(){
   // Xóa input
   el("t-name").value="";
   el("t-start").value="";
+  el("t-end").value="";
   el("t-location").value="";
 }
 function editEvent(id){state.editingEventId=id;renderAdmin();}
@@ -1088,10 +1105,11 @@ function renderAdmin(){
     <div class="form-grid">
       <input id="t-name" placeholder="Tên giải"/>
       <input id="t-start" type="date"/>
+      <input id="t-end" type="date" placeholder="Ngày kết thúc (tùy chọn)"/>
       <input id="t-location" placeholder="Địa điểm (tùy chọn)"/>
       <button class="btn btn-primary" onclick="createTournament()">➕ Tạo giải</button>
     </div>
-    <div class="muted">Mã giải (AAA) sẽ tự sinh theo thứ tự 001, 002, ...</div>
+    <div class="muted">Mã giải (AAA) tự sinh: 001, 002... | Nếu không nhập ngày kết thúc, tự lấy ngày bắt đầu</div>
   </div>
   <div class="card"><h3><span class="step-num">2</span> Chọn giải thiết lập</h3>
     <div class="form-grid"><select onchange="selectTournament(this.value)">${tOpts||'<option value="">— Chưa có giải —</option>'}</select>
@@ -1111,7 +1129,7 @@ function renderAdmin(){
       <button class="btn btn-primary" onclick="saveEvent()">${editingE?"💾 Cập nhật":"➕ Tạo mới"}</button>
       ${editingE?`<button class="btn btn-light" onclick="cancelEditEvent()">✕ Hủy</button>`:""}
     </div>
-    <div class="muted">Mã nội dung (BB) tự sinh: 01, 02, ...</div>
+    <div class="muted">Mã nội dung (BB) tự sinh: 01, 02...</div>
     <div class="table-wrap"><table><thead><tr><th>Mã</th><th>Tên</th><th>Trình</th><th>Luật</th><th></th></tr></thead><tbody>
     ${eventsSorted.map(e=>`<tr class="${state.editingEventId===e.id?"edit-row":(state.lastCreatedEventId===e.id?"new-row":"")}"><td>${e.code}</td><td>${e.name}</td><td>${e.rating_limit??"-"}</td><td>${e.rating_rule}</td><td><button class="btn btn-sm btn-warn" onclick="editEvent('${e.id}')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')">🗑️</button></td></tr>`).join("")||'<tr><td colspan="5" class="muted">Chưa có</td></tr>'}</tbody></table></div>`}
   </div>
