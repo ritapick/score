@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0"/>
 <meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
-<title>Pickleball Pro v4.0</title>
+<title>Pickleball Pro v4.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4?v=4.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4?v=4.1.0"></script>
 <style>
 :root{--bg:#0b1220;--nav:#0a101d;--surface:#111c31;--surface2:#0e1728;--line:rgba(148,163,184,.16);--text:#e6edf7;--muted:#8fa3bd;--lime:#a3e635;--cyan:#22d3ee;--orange:#fb923c;--red:#f87171;--radius:16px}
 *{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:radial-gradient(1100px 500px at 85% -10%,rgba(163,230,53,.10),transparent),radial-gradient(900px 500px at -10% 30%,rgba(34,211,238,.07),transparent),var(--bg);color:var(--text)}
@@ -108,7 +108,7 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 
 <nav class="topnav">
   <div class="brand-row">
-    <span class="logo">⚡ Pickle<span>ball Pro</span> <span class="version-tag">v4.0</span></span>
+    <span class="logo">⚡ Pickle<span>ball Pro</span> <span class="version-tag">v4.1</span></span>
     <div class="nav-right">
       <button id="pass-btn" class="btn btn-light hidden" onclick="openPassModal()">🔑 Đổi MK</button>
       <button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
@@ -177,13 +177,14 @@ td input[type=time]{width:96px;background:#0d1626;border:1px solid var(--line);b
 
 <script>
 console.log('===========================================');
-console.log('🏓 Pickleball Pro v4.0 - Auto codes');
+console.log('🏓 Pickleball Pro v4.1 - Login fix');
 console.log('===========================================');
 
 const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc";
 const SERVICE_KEY="";
 const DEFAULT_PASS="123@321";
+const EMAIL_DOMAIN="@pb-local.app";
 const GROUP_CODES=["A","B","C","D"];
 const TEAM_SELECT="id,name,seed,status,event_id,team_members(player_id,position,players(id,full_name,skill_rating))";
 const VN_OFFSET=7;
@@ -204,6 +205,8 @@ const state={session:null,user:null,role:null,username:null,
 function el(id){return document.getElementById(id);}
 function isLocked(){return state.tournament?.status==="completed";}
 function isAdmin(){return state.role==="admin"||state.role==="organizer";}
+/* FIX LOGIN: chấp nhận cả "admin" lẫn "admin@gmail.com" */
+function toEmail(u){u=u.trim();return u.includes("@")?u:u+EMAIL_DOMAIN;}
 function shortName(n){return (n||"").replace(/\s*\([\d.]+\)/g,"").trim();}
 function teamName(id){if(!id)return '<span class="muted">TBD</span>';const t=(state.teams.length?state.teams:state.t6.teams).find(x=>x.id===id)||state.t5.teams.find(x=>x.id===id);return t?shortName(t.name):"TBD";}
 function teamNameWithRating(id){const t=state.teams.find(x=>x.id===id);if(!t)return "TBD";return `<b>${shortName(t.name)}</b> <span class="muted">(${t.total_rating!=null?t.total_rating.toFixed(2):"0.00"})</span>`;}
@@ -220,7 +223,6 @@ function sortByTime(a,b){const ta=a.scheduled_at?new Date(a.scheduled_at).getTim
 function sortedTournaments(){return [...state.tournaments].sort((a,b)=>(a.created_at||"").localeCompare(b.created_at||""));}
 function timeOptions(sel){let o='<option value="">— Giờ —</option>';for(let h=5;h<=23;h++){for(let m=0;m<60;m+=5){const v=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");o+=`<option value="${v}" ${sel===v?"selected":""}>${v}</option>`;}}return o;}
 
-/* ===== MÃ TỰ SINH ===== */
 function pad(n,len){return String(n).padStart(len,"0");}
 function tournamentSeq(){const s=sortedTournaments();const i=s.findIndex(t=>t.id===state.tournament?.id);return i<0?1:i+1;}
 function eventSeq(){const s=[...state.events].sort((a,b)=>(a.created_at||"").localeCompare(b.created_at||""));const i=s.findIndex(e=>e.id===state.currentEventId);return i<0?1:i+1;}
@@ -378,7 +380,7 @@ async function setT5Event(id){state.t5.eid=id||null;const s=await loadScope(stat
 async function setT6Tournament(id){state.t6.tid=id||null;state.t6.eid=null;const s=await loadScope(id,null,true);state.t6.events=s.events;if(s.events.length){state.t6.eid=s.events[0].id;const s2=await loadScope(id,state.t6.eid,true);Object.assign(state.t6,s2);}else Object.assign(state.t6,{teams:[],groups:[],groupTeams:[],groupStage:null,knockoutStage:null});renderAdmin();}
 async function setT6Event(id){state.t6.eid=id||null;const s=await loadScope(state.t6.tid,id,true);Object.assign(state.t6,s);renderAdmin();}
 
-function openLogin(){el("login-modal").classList.add("show");}
+function openLogin(){el("login-modal").classList.add("show");el("login-message").className="msg";}
 function closeLogin(){el("login-modal").classList.remove("show");}
 function openPassModal(){el("pass-modal").classList.add("show");}
 function closePassModal(){el("pass-modal").classList.remove("show");}
@@ -388,16 +390,33 @@ function showToast(msg,type="ok"){
   if(type==="err"){t.style.background="var(--red)";t.style.color="#fff";clearTimeout(window._toastTO);window._toastTO=setTimeout(()=>t.classList.remove("show"),5000);}
   else{t.style.background="var(--lime)";t.style.color="#0b1220";clearTimeout(window._toastTO);window._toastTO=setTimeout(()=>t.classList.remove("show"),2000);}
 }
+/* FIX LOGIN: thử email thật trước, nếu không có @ thử nối đuôi; báo lỗi chi tiết */
 async function doLogin(){
-  const u=el("login-username").value.trim(),p=el("login-password").value;
-  if(!u||!p){loginMsg("error","Nhập đủ email và mật khẩu.");return;}
+  const raw=el("login-username").value.trim(),p=el("login-password").value;
+  if(!raw||!p){loginMsg("error","Nhập đủ email và mật khẩu.");return;}
   loginMsg("info","Đang đăng nhập...");
-  const {data,error}=await sb.auth.signInWithPassword({email:u,password:p});
-  if(error){loginMsg("error","❌ "+error.message);return;}
-  closeLogin();await loadMyProfile(data.session);applyAuthUI();
-  if(isAdmin()){await loadUsers();if(state.tournament)await ensureEightCourts();}
-  renderAll();
-  if(state.role==="referee")await loadRefereeData();
+  const candidates=raw.includes("@")?[raw]:[raw,raw+EMAIL_DOMAIN];
+  let lastErr=null;
+  for(const em of candidates){
+    const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
+    if(!error){
+      closeLogin();await loadMyProfile(data.session);applyAuthUI();
+      if(isAdmin()){await loadUsers();if(state.tournament)await ensureEightCourts();}
+      renderAll();
+      if(state.role==="referee")await loadRefereeData();
+      showToast("✅ Xin chào "+state.username);
+      return;
+    }
+    lastErr=error;
+  }
+  // Báo lỗi rõ ràng
+  let msg="❌ "+(lastErr?lastErr.message:"Lỗi đăng nhập");
+  if(lastErr&&/confirmed/i.test(lastErr.message)){
+    msg+="\n\n⚠️ Tài khoản chưa xác thực email.\nVào Supabase → Authentication → Settings → tắt 'Confirm email', hoặc xác thực email rồi đăng nhập lại.";
+  }else if(lastErr&&/invalid login/i.test(lastErr.message)){
+    msg+="\n\nKiểm tra lại email & mật khẩu (mặc định 123@321).";
+  }
+  loginMsg("error",msg);
 }
 async function logout(){await sb.auth.signOut();state.session=null;state.user=null;state.role=null;applyAuthUI();renderAll();}
 async function changePassword(){
@@ -529,7 +548,6 @@ async function toggleLock(tid){
   await loadTournaments();await refreshOpenTournaments();if(isAdmin())renderAdmin();
 }
 
-/* BƯỚC 1: chỉ cần TÊN + NGÀY BẮT ĐẦU, mã tự sinh */
 async function createTournament(){
   const name=el("t-name").value.trim();
   if(!name){alert("Nhập tên giải");return;}
@@ -539,7 +557,6 @@ async function createTournament(){
   const {data,error}=await sb.from("tournaments").insert({code,name,slug,start_date:el("t-start").value||null,location_name:el("t-location").value||null,status:"in_progress"}).select().single();
   if(error){alert(/row-level security/i.test(error.message)?"❌ Bị chặn RLS.":"❌ "+error.message);return;}
   for(let i=1;i<=8;i++){await sb.from("courts").insert({tournament_id:data.id,name:"Sân "+i,display_order:i}).then(()=>{}).catch(()=>{});}
-  // Cập nhật danh sách ngay, chọn giải mới, hiện ở Bước 2 không cần refresh
   state.tournaments.push(data);
   await refreshOpenTournaments();
   await selectTournament(data.id);
@@ -548,7 +565,6 @@ async function createTournament(){
 }
 function editEvent(id){state.editingEventId=id;renderAdmin();}
 function cancelEditEvent(){state.editingEventId=null;renderAdmin();}
-/* BƯỚC 3: chỉ cần TÊN + TRÌNH, mã nội dung tự sinh */
 async function saveEvent(){
   if(!state.tournament){alert("⚠️ Hãy chọn giải ở Bước 2 trước.");return;}
   const id=state.editingEventId;
