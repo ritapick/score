@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Pickleball Pro - Trang chủ</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+<style>
+:root{--bg:#0b1220;--sf:#111c31;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
+*{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+h1,h2,h3,.logo{font-family:'Oswald',sans-serif;letter-spacing:.03em}
+.topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.logo{color:var(--li);font-weight:700;font-size:20px;text-transform:uppercase;font-style:italic}.logo span{color:var(--tx)}
+.nav-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.user-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--li);padding:6px 12px;border-radius:999px}
+.btn{border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;transition:.15s}
+.btn-primary{background:var(--li);color:#0b1220}.btn-primary:hover{background:#bef264}
+.btn-blue{background:rgba(34,211,238,.15);color:var(--cy);border:1px solid rgba(34,211,238,.4)}
+.btn-light{background:rgba(148,163,184,.15);color:var(--mu)}.btn-danger{background:rgba(248,113,113,.15);color:var(--rd);border:1px solid rgba(248,113,113,.4)}
+.btn-sm{padding:4px 9px;font-size:11px}
+.hidden{display:none!important}
+.hero{padding:40px 20px;text-align:center;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);margin-bottom:20px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
+.hero h1{margin:0 0 8px;font-size:32px;text-transform:uppercase;position:relative;z-index:1}
+.hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.tournament-card{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:18px;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.tournament-card:hover{transform:translateY(-3px);border-color:var(--li);box-shadow:0 8px 24px rgba(163,230,53,.2)}
+.tournament-card .code{position:absolute;top:12px;right:12px;background:var(--cy);color:#0b1220;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;font-family:'Oswald'}
+.tournament-card h3{margin:0 0 8px;font-size:20px;color:var(--li);text-transform:uppercase;padding-right:50px}
+.tournament-card .meta{color:var(--mu);font-size:13px;margin-bottom:12px;line-height:1.5}
+.tournament-card .stats{display:flex;gap:12px;margin-bottom:12px}
+.tournament-card .stat{flex:1;text-align:center}
+.tournament-card .stat-label{font-size:10px;color:var(--mu);text-transform:uppercase;font-weight:700}
+.tournament-card .stat-value{font-size:18px;font-weight:700;color:var(--li);font-family:'Oswald'}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.b-green{background:rgba(163,230,53,.15);color:var(--li)}.b-red{background:rgba(248,113,113,.15);color:var(--rd)}.b-blue{background:rgba(34,211,238,.15);color:var(--cy)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(4,8,16,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+.modal-backdrop.show{display:flex}
+.modal{width:min(460px,100%);background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:22px}
+.modal h3{margin:0 0 4px;text-transform:uppercase;color:var(--li)}
+.modal .sub{color:var(--mu);font-size:13px;margin-bottom:16px}
+.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--mu);text-transform:uppercase}
+.field input{width:100%;background:#0d1626;border:1px solid var(--ln);border-radius:10px;padding:11px;color:var(--tx);font:inherit}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.msg{padding:10px;border-radius:10px;font-size:13px;margin-top:12px;display:none;white-space:pre-wrap}
+.msg.show{display:block}.msg-error{background:rgba(248,113,113,.15);color:var(--rd)}.msg-info{background:rgba(34,211,238,.15);color:var(--cy)}
+.empty{text-align:center;padding:60px 20px;color:var(--mu)}
+.empty h2{color:var(--li);margin-bottom:8px}
+@media(max-width:600px){.hero h1{font-size:24px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="topnav">
+<span class="logo">⚡ Pickle<span>ball Pro</span></span>
+<div class="nav-right">
+<span id="user-chip" class="user-chip hidden"></span>
+<button id="admin-btn" class="btn btn-blue hidden" onclick="location.href='admin.html'">⚙ Quản trị</button>
+<button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
+<button id="logout-btn" class="btn btn-light hidden" onclick="logout()">Đăng xuất</button>
+</div>
+</nav>
+<div class="hero">
+<h1>🏓 Pickleball Pro</h1>
+<p>Hệ thống quản lý giải đấu chuyên nghiệp</p>
+</div>
+<main>
+<h2 style="color:var(--li);margin:0 0 16px">🏆 Các giải đấu</h2>
+<div id="tournaments-grid" class="grid"></div>
+<div id="empty-state" class="empty hidden">
+<h2>Chưa có giải đấu nào</h2>
+<p>Đăng nhập với tài khoản admin để tạo giải đấu mới</p>
+</div>
+</main>
+<div id="login-modal" class="modal-backdrop"><div class="modal">
+<h3>🔐 Đăng nhập</h3><div class="sub">Mặc định <b>123@321</b> (có thể nhập <b>admin</b> hoặc email đầy đủ)</div>
+<div class="field"><label>Email</label><input id="login-username" placeholder="admin@gmail.com"/></div>
+<div class="field"><label>Mật khẩu</label><input id="login-password" type="password"/></div>
+<div class="actions"><button class="btn btn-light" onclick="closeLogin()">Đóng</button><button class="btn btn-primary" onclick="doLogin()">Đăng nhập</button></div>
+<div id="login-message" class="msg"></div>
+</div></div>
+<script>
+const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc";
+const EMAIL_DOMAIN="@pb-local.app";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let state={session:null,user:null,role:null,username:null,tournaments:[]};
+function el(id){return document.getElementById(id);}
+function isAdmin(){return state.role==="admin"||state.role==="organizer";}
+
+async function loadTournaments(){
+  const {data}=await sb.from("tournaments").select("id,code,name,slug,start_date,end_date,location_name,status").order("status",{ascending:true}).order("start_date",{ascending:false});
+  state.tournaments=data||[];
+  renderTournaments();
+}
+async function countTournamentStats(tid){
+  const [{count:ec},{count:tc},{count:mc}] = await Promise.all([
+    sb.from("events").select("id",{count:"exact",head:true}).eq("tournament_id",tid),
+    sb.from("teams").select("id",{count:"exact",head:true}).in("event_id",(await sb.from("events").select("id").eq("tournament_id",tid)).data?.map(e=>e.id)||[]),
+    sb.from("matches").select("id",{count:"exact",head:true}).eq("tournament_id",tid)
+  ]);
+  return {events:ec||0,teams:tc||0,matches:mc||0};
+}
+async function renderTournaments(){
+  const grid=el("tournaments-grid");
+  if(!state.tournaments.length){grid.innerHTML="";el("empty-state").classList.remove("hidden");return;}
+  el("empty-state").classList.add("hidden");
+  grid.innerHTML=state.tournaments.map(t=>{
+    const badge=t.status==="completed"?'<span class="badge b-red">Đã đóng</span>':'<span class="badge b-green">Đang mở</span>';
+    return `<div class="tournament-card" onclick="location.href='tournament.html?id=${t.id}'">
+      <span class="code">${t.code||"---"}</span>
+      <h3>${t.name||"Giải đấu"}</h3>
+      <div class="meta">${badge}<br>📅 ${t.start_date||"—"} ${t.end_date?"→ "+t.end_date:""}<br>📍 ${t.location_name||"Chưa có địa điểm"}</div>
+      <div class="stats" id="stats-${t.id}">
+        <div class="stat"><div class="stat-label">Nội dung</div><div class="stat-value">…</div></div>
+        <div class="stat"><div class="stat-label">Đội</div><div class="stat-value">…</div></div>
+        <div class="stat"><div class="stat-label">Trận</div><div class="stat-value">…</div></div>
+      </div>
+    </div>`;
+  }).join("");
+  for(const t of state.tournaments){
+    const s=await countTournamentStats(t.id);
+    const box=el("stats-"+t.id);
+    if(box)box.innerHTML=`
+      <div class="stat"><div class="stat-label">Nội dung</div><div class="stat-value">${s.events}</div></div>
+      <div class="stat"><div class="stat-label">Đội</div><div class="stat-value">${s.teams}</div></div>
+      <div class="stat"><div class="stat-label">Trận</div><div class="stat-value">${s.matches}</div></div>`;
+  }
+}
+
+function openLogin(){el("login-modal").classList.add("show");el("login-message").className="msg";el("login-username").value="";el("login-password").value="";setTimeout(()=>el("login-username").focus(),100);}
+function closeLogin(){el("login-modal").classList.remove("show");}
+function loginMsg(t,m){const b=el("login-message");b.className="msg show msg-"+t;b.textContent=m;}
+async function doLogin(){
+  const raw=el("login-username").value.trim(),p=el("login-password").value;
+  if(!raw||!p){loginMsg("error","Nhập đủ email và mật khẩu.");return;}
+  loginMsg("info","Đang đăng nhập...");
+  const candidates=raw.includes("@")?[raw]:[raw,raw+EMAIL_DOMAIN];
+  let lastErr=null;
+  for(const em of candidates){
+    const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
+    if(!error&&data.session){closeLogin();await loadMyProfile(data.session);applyAuthUI();return;}
+    if(error)lastErr=error;
+  }
+  let msg="❌ "+(lastErr?.message||"Lỗi đăng nhập");
+  if(lastErr&&/confirmed/i.test(lastErr.message))msg+="\n⚠️ Chưa xác thực email. Tắt Confirm email trong Supabase.";
+  else if(lastErr&&/invalid login/i.test(lastErr.message))msg+="\nKiểm tra email & mật khẩu (mặc định 123@321).";
+  loginMsg("error",msg);
+}
+async function logout(){await sb.auth.signOut();state.session=null;state.user=null;state.role=null;applyAuthUI();}
+async function loadMyProfile(session){
+  state.session=session;state.user=session.user;
+  const {data:r}=await sb.from("user_roles").select("role").eq("user_id",session.user.id);
+  const roles=(r||[]).map(x=>x.role);
+  state.role=roles.includes("admin")?"admin":roles.includes("organizer")?"organizer":roles.includes("referee")?"referee":null;
+  if(state.role==="admin"||state.role==="organizer")await sb.from("app_users").upsert({user_id:session.user.id,username:session.user.email,display_name:session.user.email});
+  const {data:au}=await sb.from("app_users").select("username").eq("user_id",session.user.id).maybeSingle();
+  state.username=au?.username||session.user.email;
+}
+function applyAuthUI(){
+  const logged=!!state.user;
+  el("login-btn").classList.toggle("hidden",logged);
+  el("logout-btn").classList.toggle("hidden",!logged);
+  el("user-chip").classList.toggle("hidden",!logged);
+  el("admin-btn").classList.toggle("hidden",!isAdmin());
+  if(logged)el("user-chip").textContent=(state.username||"")+(state.role?" • "+state.role:"");
+}
+(async()=>{
+  const {data}=await sb.auth.getSession();
+  if(data.session)await loadMyProfile(data.session);
+  applyAuthUI();
+  await loadTournaments();
+})();
+</script>
+</body>
+</html>
