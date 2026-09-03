@@ -1,504 +1,364 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Quản trị - Pickleball Pro</title>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Thông tin giải đấu</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 :root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
 *{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx)}
 button,input,select{font:inherit}.hidden{display:none!important}
-h1,h3,h4,.logo,.stat-value{font-family:'Oswald',sans-serif;letter-spacing:.03em}
-.topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h1,h3,h4,.logo,.stat-value,.ko-code,.time-chip,.ref-score{font-family:'Oswald',sans-serif}
+.topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.94);border-bottom:1px solid var(--ln);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .brand-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .back-btn{background:rgba(148,163,184,.15);color:var(--mu);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700}
 .logo{color:var(--li);font-weight:700;font-size:18px;text-transform:uppercase;font-style:italic}.logo span{color:var(--tx)}
 .nav-right{display:flex;gap:6px;flex-wrap:wrap}
 .user-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--li);padding:5px 10px;border-radius:999px}
-.btn{border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;transition:.15s}
-.btn-primary{background:var(--li);color:#0b1220}.btn-primary:hover{background:#bef264}
-.btn-blue{background:rgba(34,211,238,.15);color:var(--cy);border:1px solid rgba(34,211,238,.4)}
-.btn-dark{background:#1e293b;color:var(--tx);border:1px solid var(--ln)}
-.btn-light{background:rgba(148,163,184,.15);color:var(--mu)}
-.btn-danger{background:rgba(248,113,113,.15);color:var(--rd);border:1px solid rgba(248,113,113,.4)}
-.btn-warn{background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.4)}
+.btn{border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase}
+.btn-primary{background:var(--li);color:#0b1220}.btn-blue{background:rgba(34,211,238,.15);color:var(--cy);border:1px solid rgba(34,211,238,.4)}.btn-light{background:rgba(148,163,184,.15);color:var(--mu)}.btn-danger{background:rgba(248,113,113,.15);color:var(--rd);border:1px solid rgba(248,113,113,.4)}.btn-warn{background:rgba(251,146,60,.15);color:var(--or)}
 .btn-sm{padding:4px 9px;font-size:11px}
-.hero{padding:22px;margin:12px;border-radius:16px;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35);position:relative;overflow:hidden}
-.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
-.hero h1{margin:0 0 6px;font-size:24px;text-transform:uppercase;position:relative;z-index:1}
-.hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:13px}
+.hero{padding:22px;margin:12px;border-radius:16px;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35)}
+.hero h1{margin:0 0 6px;font-size:28px;text-transform:uppercase}.hero p{margin:0;opacity:.9}
+.hero .code-tag{display:inline-block;background:var(--cy);color:#0b1220;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:800;font-family:'Oswald';margin-right:8px}
 main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
-.card{background:transparent;padding:8px 2px;margin-bottom:14px;position:relative}
-.card h3{margin:0 0 12px;display:flex;gap:8px;text-transform:uppercase;font-size:15px;flex-wrap:wrap;color:var(--li);align-items:center}
-.card.disabled{opacity:.45;pointer-events:none}
-.step-num{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:8px;background:var(--li);color:#0b1220;font-size:14px;font-weight:700}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
-input,select{background:#0d1626;border:1px solid var(--ln);border-radius:10px;padding:9px 11px;color:var(--tx);width:100%}
-.sel-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ctx-bar{background:var(--sf2);border-bottom:1px solid var(--ln);padding:9px 12px;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;border-radius:10px}
+.ctx-bar select{background:#0d1626;border:1px solid var(--ln);color:var(--tx);border-radius:10px;padding:8px;flex:1;min-width:0}
+.ctx-bar .muted{color:var(--mu);font-size:11px;font-weight:700;text-transform:uppercase}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
 .b-green{background:rgba(163,230,53,.15);color:var(--li)}.b-blue{background:rgba(34,211,238,.15);color:var(--cy)}.b-red{background:rgba(248,113,113,.15);color:var(--rd)}.b-gray{background:rgba(148,163,184,.15);color:var(--mu)}.b-warn{background:rgba(251,146,60,.15);color:var(--or)}
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;min-width:400px}
+.card{padding:8px 2px;margin-bottom:16px}
+.card h3{margin:0 0 10px;color:var(--li);text-transform:uppercase;font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:520px}
 th,td{padding:9px 8px;border-bottom:1px solid var(--ln);text-align:left;font-size:13px;vertical-align:middle}
 th{color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0;background:var(--bg)}
-.edit-row{background:rgba(251,146,60,.12)!important}.new-row{background:rgba(163,230,53,.12)!important}
-.group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-.group-card{background:var(--sf2);border:1px solid var(--ln);border-radius:12px;padding:12px}
-.group-card h4{margin:0 0 8px;color:var(--li);text-transform:uppercase;font-size:13px;display:flex;justify-content:space-between}
-.group-team{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--ln);font-size:13px}
-.group-team:last-child{border-bottom:none}
-.group-team select{min-width:100px}
-.muted{color:var(--mu);font-size:13px}
-.preview{margin:6px 0 10px;font-size:13px;color:var(--mu)}.preview b{color:var(--li)}
-.alert-box{padding:12px;border-radius:12px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--or);font-size:13px;margin-bottom:12px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:10px 18px;border-radius:999px;font-weight:800;font-size:12px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase}
-.toast.show{opacity:1}
-.modal-backdrop{position:fixed;inset:0;background:rgba(4,8,16,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+.ko-code{font-size:16px;font-weight:700;color:var(--cy)}
+.score-cell{font-size:18px;font-weight:700;white-space:nowrap}.score-cell .winner{color:var(--li)}
+.time-chip{color:var(--cy);font-weight:600}
+.serve-dots{color:var(--rd);font-size:10px;margin-left:5px;letter-spacing:2px}
+.group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px}
+.group-card{background:var(--sf2);border:1px solid var(--ln);border-radius:12px;padding:14px}
+.group-card h4{margin:0 0 10px;color:var(--li);text-transform:uppercase;font-size:13px;display:flex;justify-content:space-between}
+.group-team{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ln);font-size:13px}
+.group-team:last-child{border-bottom:none}.group-team .rank{color:var(--mu);font-weight:700;min-width:20px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(4,8,16,.7);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-backdrop.show{display:flex}
 .modal{width:min(460px,100%);background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:22px}
 .modal h3{margin:0 0 4px;text-transform:uppercase;color:var(--li)}
-.modal .sub{color:var(--mu);font-size:13px;margin-bottom:16px}
-.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--mu);text-transform:uppercase}
+.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--mu)}
 .field input{width:100%;background:#0d1626;border:1px solid var(--ln);border-radius:10px;padding:11px;color:var(--tx)}
+.actions{display:flex;gap:10px;justify-content:flex-end}
 .msg{padding:10px;border-radius:10px;font-size:13px;margin-top:12px;display:none;white-space:pre-wrap}
 .msg.show{display:block}.msg-error{background:rgba(248,113,113,.15);color:var(--rd)}.msg-info{background:rgba(34,211,238,.15);color:var(--cy)}
-@media(max-width:760px){main{padding:0 8px 20px}.sel-row{grid-template-columns:1fr}.hero h1{font-size:20px}table{min-width:320px}th,td{padding:8px 6px;font-size:12px}}
+.ref-box{max-width:640px}
+.ref-header{display:flex;justify-content:space-between;color:var(--cy);margin-bottom:14px;text-transform:uppercase}
+.ref-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;margin-bottom:16px}
+.ref-team{background:var(--sf2);border:1px solid var(--ln);border-radius:12px;padding:14px;text-align:center}
+.ref-team .name{font-weight:700;margin-bottom:8px;min-height:20px}
+.ref-score{font-size:54px;color:var(--li);line-height:1}
+.ref-controls{display:flex;gap:8px;justify-content:center;margin:10px 0}
+.ref-controls button{width:44px;height:44px;border-radius:10px;border:1px solid var(--ln);background:#0d1626;color:var(--tx);font-size:22px;cursor:pointer}
+.ref-serve-inline{display:flex;gap:6px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+.serve-btn{border:1px solid var(--ln);background:#0d1626;color:var(--mu);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer}
+.serve-btn.active{background:var(--rd);color:#fff}
+.ref-vs{color:var(--mu);font-size:20px;align-self:center}
+.alert-box{padding:12px;border-radius:12px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--or);font-size:13px;margin-bottom:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:10px 18px;border-radius:999px;font-weight:800;font-size:12px;z-index:9999;opacity:0;transition:opacity .3s}.toast.show{opacity:1}
+.muted{color:var(--mu);font-size:13px}
+.ref-assign{min-width:110px}
+.ref-only-banner{padding:16px;margin:12px;background:rgba(34,211,238,.1);border:1px solid var(--cy);border-radius:12px;text-align:center;color:var(--cy);font-weight:700}
+.ref-only-banner .count{font-size:24px;color:var(--li);display:block;margin-top:4px}
+td select.ref-sel{background:#0d1626;border:1px solid var(--ln);border-radius:6px;padding:4px 6px;color:var(--tx);font-size:11px;min-width:90px}
+.col-court{}
+@media(max-width:760px){main{padding:0 8px 20px}.col-court{display:none}table{min-width:420px}th,td{padding:8px 6px;font-size:12px}.ref-teams{grid-template-columns:1fr}.hero h1{font-size:22px}}
 </style>
 </head>
 <body>
 <nav class="topnav">
-<div class="brand-row"><button class="back-btn" onclick="goHome()">← Trang chủ</button><span class="logo">⚙ Quản <span>trị</span></span></div>
+<div class="brand-row"><button class="back-btn" onclick="location.href='index.html'">← Trang chủ</button><span class="logo">⚡ Pickle<span>ball Pro</span></span></div>
 <div class="nav-right">
 <span id="user-chip" class="user-chip hidden"></span>
+<button id="admin-btn" class="btn btn-blue hidden" onclick="location.href='admin.html'">⚙ Quản trị</button>
 <button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
 <button id="logout-btn" class="btn btn-light hidden" onclick="logout()">Đăng xuất</button>
 </div></nav>
-<div class="hero"><h1>⚙ Bảng điều khiển quản trị</h1><p>Thiết lập giải đấu, nội dung, VĐV, đội, lịch thi đấu & trọng tài</p></div>
-<main><div id="admin-content"></div></main>
+<div id="tournament-hero"></div>
+<div class="ctx-bar">
+<span class="muted">Nội dung</span><select id="ctx-event" onchange="selectEvent(this.value)"></select>
+<span id="lock-badge"></span>
+</div>
+<main>
+<div id="referee-banner"></div>
+<div id="standings-section"></div>
+<div id="matches-section"></div>
+<div id="knockout-section"></div>
+</main>
 <div id="toast" class="toast"></div>
 <div id="login-modal" class="modal-backdrop"><div class="modal">
-<h3>🔐 Đăng nhập</h3><div class="sub">Mặc định 123@321 (có thể nhập <b>admin</b> hoặc email)</div>
+<h3>🔐 Đăng nhập</h3><div class="sub">Mặc định 123@321</div>
 <div class="field"><label>Email</label><input id="login-username" placeholder="admin@gmail.com"/></div>
 <div class="field"><label>Mật khẩu</label><input id="login-password" type="password"/></div>
-<div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="closeLogin()">Đóng</button><button class="btn btn-primary" onclick="doLogin()">Đăng nhập</button></div>
+<div class="actions"><button class="btn btn-light" onclick="closeLogin()">Đóng</button><button class="btn btn-primary" onclick="doLogin()">Đăng nhập</button></div>
 <div id="login-message" class="msg"></div>
 </div></div>
+<div id="ref-modal" class="modal-backdrop"><div class="modal ref-box">
+<div class="ref-header"><span id="ref-match-code"></span><span id="ref-group-code" class="badge b-blue"></span></div>
+<div class="ref-teams">
+<div class="ref-team"><div class="name" id="ref-home-name"></div><div class="ref-score" id="ref-home-score">0</div>
+<div class="ref-controls"><button onclick="refAdj('home',-1)">−</button><button onclick="refAdj('home',1)">+</button></div>
+<div class="ref-serve-inline"><button class="serve-btn" id="sb-h1" onclick="setServe('h1')">● Giao 1</button><button class="serve-btn" id="sb-h2" onclick="setServe('h2')">●● Giao 2</button></div></div>
+<div class="ref-vs">VS</div>
+<div class="ref-team"><div class="name" id="ref-away-name"></div><div class="ref-score" id="ref-away-score">0</div>
+<div class="ref-controls"><button onclick="refAdj('away',-1)">−</button><button onclick="refAdj('away',1)">+</button></div>
+<div class="ref-serve-inline"><button class="serve-btn" id="sb-a1" onclick="setServe('a1')">● Giao 1</button><button class="serve-btn" id="sb-a2" onclick="setServe('a2')">●● Giao 2</button></div></div></div>
+<div class="muted" style="text-align:center;margin-bottom:12px">Điểm & lượt giao tự lưu</div>
+<div class="actions" style="justify-content:space-between"><button class="btn btn-light" onclick="closeRefModal()">Đóng (đang đấu)</button><button class="btn btn-primary" onclick="refFinish()">🏁 Kết thúc</button></div>
+</div></div>
 <script>
-const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co",SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",DEFAULT_PASS="123@321",EMAIL_DOMAIN="@pb-local.app",GROUP_CODES=["A","B","C","D"],TEAM_SELECT="id,name,seed,status,event_id,team_members(player_id,position,players(id,full_name,skill_rating))";
+const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co",SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",EMAIL_DOMAIN="@pb-local.app",VN_OFFSET=7;
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const state={session:null,user:null,role:null,username:null,tournaments:[],tournament:null,events:[],currentEventId:null,courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],matches:[],groupStage:null,knockoutStage:null,users:[],refAssign:{},openTournaments:[],editingEventId:null,editingPlayerId:null,editingTeamId:null,editingTeamOriginal:null,lastCreatedEventId:null,t5:{tid:null,eid:null,events:[],teams:[]},t6:{tid:null,eid:null,events:[],teams:[],groups:[],groupTeams:[],groupStage:null,knockoutStage:null}};
+const params=new URLSearchParams(location.search);const TOURNAMENT_ID=params.get("id");
+if(!TOURNAMENT_ID){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Không tìm thấy giải</h2><a href="index.html">← Trang chủ</a></div>';}
+let state={session:null,user:null,role:null,username:null,tournament:null,events:[],currentEventId:null,teams:[],matches:[],groups:[],groupTeams:[],stages:[],standings:[],groupStage:null,knockoutStage:null,courts:[],users:[],referees:[],refAssign:{},myMatchIds:new Set(),refModalMatchId:null};
 function el(i){return document.getElementById(i);}
 function isLocked(){return state.tournament?.status==="completed";}
 function isAdmin(){return state.role==="admin"||state.role==="organizer";}
+function isReferee(){return state.role==="referee";}
+function canScore(m){if(m.status==="completed")return false;if(state.tournament?.status==="completed")return false;if(isAdmin())return true;if(isReferee())return state.myMatchIds.has(m.id);return false;}
 function shortName(n){return String(n||"").replace(/\s*\([\d.]+\)/g,"").trim();}
-function findTeam(id){var i;for(i=0;i<state.teams.length;i++)if(state.teams[i].id===id)return state.teams[i];for(i=0;i<state.t6.teams.length;i++)if(state.t6.teams[i].id===id)return state.t6.teams[i];for(i=0;i<state.t5.teams.length;i++)if(state.t5.teams[i].id===id)return state.t5.teams[i];return null;}
+function findTeam(id){return state.teams.find(x=>x.id===id)||null;}
 function teamName(id){if(!id)return '<span class="muted">TBD</span>';var t=findTeam(id);return t?shortName(t.name):"TBD";}
-function mapTeams(a){var o=[],i,k;a=a||[];for(i=0;i<a.length;i++){var t=a[i],m=t.team_members||[],tot=0;for(k=0;k<m.length;k++)tot+=(m[k].players&&m[k].players.skill_rating)||0;o.push(Object.assign({},t,{members:m,total_rating:Number(tot.toFixed(2))}));}return o;}
-function ratingCheck(t,ev){if(!ev||ev.rating_limit==null)return{ok:true,msg:""};var r=ev.rating_rule||"max_total";if(r==="open")return{ok:true,msg:""};if(r==="exact_total"){var ok=Math.abs(t-ev.rating_limit)<=0.005;return{ok:ok,msg:ok?"✅ Đúng "+ev.rating_limit:"❌ Phải đúng "+ev.rating_limit+" (hiện "+t.toFixed(2)+")"};}var ok2=t<=ev.rating_limit;return{ok:ok2,msg:ok2?"✅ Hợp lệ (≤ "+ev.rating_limit+")":"❌ Vượt "+ev.rating_limit+" (hiện "+t.toFixed(2)+")"};}
-function autoTeamName(a,b){return a&&b?a.full_name+" – "+b.full_name:"";}
-function playerLabel(p){return p.full_name+" ("+(p.skill_rating!=null?Number(p.skill_rating).toFixed(2):"")+")";}
-function pad(n,l){return String(n).padStart(l,"0");}
-function roundRobinPairs(){return[{round:1,slot:1,a:0,b:3},{round:1,slot:2,a:1,b:2},{round:2,slot:1,a:0,b:2},{round:2,slot:2,a:3,b:1},{round:3,slot:1,a:0,b:1},{round:3,slot:2,a:2,b:3}];}
-function sortedTournaments(){return state.tournaments.slice().sort(function(a,b){var ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(a.created_at||"").localeCompare(String(b.created_at||""));});}
-function tournamentSeq(){var s=sortedTournaments(),i;for(i=0;i<s.length;i++)if(s[i].id===state.tournament?.id)return i+1;return 1;}
-function eventSeq(){var s=state.events.slice().sort(function(a,b){return String(a.created_at||"").localeCompare(String(b.created_at||""));}),i;for(i=0;i<s.length;i++)if(s[i].id===state.currentEventId)return i+1;return 1;}
-function nextTournamentCode(){var used={},i;for(i=0;i<state.tournaments.length;i++)used[state.tournaments[i].code]=1;var n=1;while(used[pad(n,3)])n++;return pad(n,3);}
-function nextEventCode(){var used={},i;for(i=0;i<state.events.length;i++)used[state.events[i].code]=1;var n=1;while(used[pad(n,2)])n++;return pad(n,2);}
-function buildMatchCode(cc){return pad(tournamentSeq(),3)+pad(eventSeq(),1)+pad(cc,2);}
-function goHome(){location.href='index.html';}
-function showToast(msg,type){var t=el("toast");t.textContent=msg;t.className="toast show";t.style.background=type==="err"?"var(--rd)":"var(--li)";t.style.color=type==="err"?"#fff":"#0b1220";clearTimeout(window._tTO);window._tTO=setTimeout(()=>t.classList.remove("show"),type==="err"?5000:2000);}
+function teamNameWithRating(id){var t=findTeam(id);if(!t)return "TBD";return "<b>"+shortName(t.name)+"</b> <span class='muted'>("+(t.total_rating!=null?t.total_rating.toFixed(2):"0.00")+")</span>";}
+function statusBadge(s){return s==="completed"?'<span class="badge b-green">Xong</span>':s==="live"?'<span class="badge b-red">Đang đấu</span>':s==="scheduled"?'<span class="badge b-blue">Lịch</span>':'<span class="badge b-gray">'+(s||"-")+"</span>";}
+function fmtTime(s){if(!s)return "";var d=new Date(s);if(isNaN(d.getTime()))return "";return ("0"+((d.getUTCHours()+VN_OFFSET)%24)).slice(-2)+":"+("0"+d.getUTCMinutes()).slice(-2);}
+function koLabel(m){return m.round===1?"TK"+m.bracket_slot:m.round===2?"BK"+m.bracket_slot:"CK";}
+function serveDots(m,side){if(!m.serve||m.status==="completed")return "";var h=m.serve.charAt(0)==="h";if((side==="home")!==h)return "";var n=m.serve.slice(-1)==="2"?2:1,s="";for(var i=0;i<n;i++)s+="●";return '<span class="serve-dots">'+s+"</span>";}
+function scoreCell(m){var has=(m.home_score!=null&&m.away_score!=null&&(m.home_score>0||m.away_score>0||m.status==="completed"));if(!has)return '<span class="muted">-</span>';var d=m.status==="completed",hw=d&&m.home_score>m.away_score,aw=d&&m.away_score>m.home_score;return '<span class="score-cell">'+(hw?'<span class="winner">'+m.home_score+"</span>":m.home_score)+" - "+(aw?'<span class="winner">'+m.away_score+"</span>":m.away_score)+"</span>";}
+function activeGroups(){return state.groups.filter(g=>state.groupTeams.some(gt=>gt.group_id===g.id)).sort((a,b)=>a.code.localeCompare(b.code));}
 
-/* ===== AUTH ===== */
-function openLogin(){el("login-modal").classList.add("show");el("login-message").className="msg";el("login-username").value="";el("login-password").value="";setTimeout(()=>el("login-username").focus(),100);}
+async function loadTournament(){
+  var r=await sb.from("tournaments").select("*").eq("id",TOURNAMENT_ID).single();
+  if(!r.data){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Giải không tồn tại</h2><a href="index.html">← Trang chủ</a></div>';return;}
+  state.tournament=r.data;
+  el("tournament-hero").innerHTML='<div class="hero"><h1><span class="code-tag">'+r.data.code+"</span>"+r.data.name+"</h1><p>📅 "+(r.data.start_date||"—")+(r.data.end_date?" → "+r.data.end_date:"")+" • 📍 "+(r.data.location_name||"Chưa có địa điểm")+" • "+(r.data.status==="completed"?'<span class="badge b-red">Đã đóng</span>':'<span class="badge b-green">Đang mở</span>')+"</p></div>";
+  document.title=r.data.name+" - Pickleball Pro";
+}
+async function loadReferees(){
+  var ur=await sb.from("user_roles").select("user_id").eq("role","referee");
+  var uids=(ur.data||[]).map(r=>r.user_id);
+  if(uids.length){var au=await sb.from("app_users").select("user_id,username").in("user_id",uids);state.referees=au.data||[];}else state.referees=[];
+}
+async function loadRefAssign(){
+  state.refAssign={};if(!state.matches.length)return;
+  var ids=state.matches.map(m=>m.id);
+  var r=await sb.from("referee_matches").select("*").in("match_id",ids);
+  (r.data||[]).forEach(x=>state.refAssign[x.match_id]=x.user_id);
+}
+async function loadEvents(){
+  var r=await sb.from("events").select("*").eq("tournament_id",TOURNAMENT_ID).order("created_at");
+  state.events=r.data||[];
+  el("ctx-event").innerHTML=state.events.map(e=>'<option value="'+e.id+'">'+e.name+"</option>").join("")||'<option value="">Chưa có nội dung</option>';
+  if(state.events.length)await selectEvent(state.events[0].id);else renderAll();
+}
+async function selectEvent(id){
+  state.currentEventId=id||null;if(!state.currentEventId){renderAll();return;}
+  var t=await sb.from("teams").select("id,name,seed,status,event_id,team_members(player_id,position,players(id,full_name,skill_rating))").eq("event_id",id);
+  state.teams=(t.data||[]).map(x=>{var m=x.team_members||[],tot=m.reduce((s,y)=>s+(y.players?.skill_rating||0),0);return Object.assign({},x,{members:m,total_rating:Number(tot.toFixed(2))});});
+  var st=await sb.from("stages").select("*").eq("event_id",id).order("stage_order");
+  state.stages=st.data||[];
+  state.groupStage=state.stages.find(s=>s.stage_type==="group_stage")||null;
+  state.knockoutStage=state.stages.find(s=>s.stage_type==="knockout")||null;
+  var sids=state.stages.map(s=>s.id);
+  if(sids.length){
+    var g=await sb.from("groups").select("*").in("stage_id",sids).order("code");state.groups=g.data||[];
+    var gt=await sb.from("group_teams").select("*").in("stage_id",sids);state.groupTeams=gt.data||[];
+  }else{state.groups=[];state.groupTeams=[];}
+  var m=await sb.from("matches").select("*").eq("event_id",id).order("match_seq");state.matches=m.data||[];
+  if(state.groupStage){var s=await sb.from("group_standings").select("*").eq("stage_id",state.groupStage.id);state.standings=s.data||[];}else state.standings=[];
+  await loadRefAssign();
+  if(isReferee())await loadMyMatches();
+  renderAll();
+}
+async function loadMyMatches(){
+  if(!isReferee())return;
+  var r=await sb.from("referee_matches").select("match_id").eq("user_id",state.user.id);
+  state.myMatchIds=new Set((r.data||[]).map(x=>x.match_id));
+}
+async function loadUsers(){
+  var au=await sb.from("app_users").select("*");state.users=au.data||[];
+}
+
+function renderAll(){renderLockBadge();renderRefBanner();renderStandings();renderMatches();renderKnockout();}
+function renderLockBadge(){el("lock-badge").innerHTML=isLocked()?'<span class="badge b-red">🔒 Đã đóng</span>':(state.tournament?.status==="in_progress"?'<span class="badge b-green">Đang mở</span>':"");}
+function renderRefBanner(){
+  if(!isReferee()){el("referee-banner").innerHTML="";return;}
+  var count=state.matches.filter(m=>state.myMatchIds.has(m.id)).length;
+  el("referee-banner").innerHTML='<div class="ref-only-banner">🏁 Chế độ TRỌNG TÀI — Bạn được phân công <span class="count">'+count+' trận</span></div>';
+}
+function renderStandings(){
+  var groups=activeGroups();
+  if(!groups.length){el("standings-section").innerHTML="";return;}
+  el("standings-section").innerHTML='<div class="card"><h3>🏆 Bảng xếp hạng</h3></div>'+groups.map(g=>{
+    var rows=state.standings.filter(s=>s.group_id===g.id).sort((a,b)=>a.rank_no-b.rank_no);
+    return '<div class="card"><h3>Bảng '+g.code+'</h3><div class="table-wrap"><table><thead><tr><th>#</th><th>Đội</th><th>Trận</th><th>Thắng</th><th>Thua</th><th>HS</th><th>Điểm</th></tr></thead><tbody>'+(rows.map(r=>"<tr><td>"+r.rank_no+"</td><td>"+teamNameWithRating(r.team_id)+"</td><td>"+r.played+"</td><td>"+r.wins+"</td><td>"+r.losses+"</td><td>"+r.diff+"</td><td><b>"+r.points+"</b></td></tr>").join("")||'<tr><td colspan="7" class="muted">Chưa có</td></tr>')+"</tbody></table></div></div>";
+  }).join("");
+}
+function refOptions(matchId){
+  if(!state.referees.length)return '<span class="badge b-warn">⚠ Chưa có TT</span>';
+  var cur=state.refAssign[matchId]||null;
+  return '<select class="ref-sel" onchange="assignRef(\''+matchId+"',this.value)\"><option value=''>— TT —</option>"+state.referees.map(r=>'<option value="'+r.user_id+'"'+(cur===r.user_id?" selected":"")+">"+r.username+"</option>").join("")+"</select>";
+}
+function refNameOf(m){var u=state.users.find(x=>x.user_id===state.refAssign[m.id]);return u?u.username:"-";}
+function matchRow(m){
+  var committed=fmtTime(m.scheduled_at);
+  var courtName=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"-"):"-";
+  var can=canScore(m);
+  var codeCell=m.group_id?'<b>'+String(m.match_code||"").slice(-2)+"</b>":'<span class="ko-code">'+koLabel(m)+"</span>";
+  var refCol="";
+  if(isAdmin())refCol=refOptions(m.id);
+  else if(isReferee())refCol='<span class="muted">'+refNameOf(m)+"</span>";
+  else refCol=refNameOf(m);
+  var actCol="";
+  if(can)actCol='<button class="btn btn-primary btn-sm" onclick="openRefModal(\''+m.id+'\')">🎯 Bắt đầu</button>';
+  else if(isReferee()&&!state.myMatchIds.has(m.id))actCol='<span class="muted">—</span>';
+  return "<tr><td>"+codeCell+"</td><td>"+(committed?'<span class="time-chip">'+committed+"</span>":"-")+"</td><td class='col-court'>"+courtName+"</td><td>"+teamName(m.home_team_id)+serveDots(m,"home")+"</td><td>"+scoreCell(m)+"</td><td>"+teamName(m.away_team_id)+serveDots(m,"away")+"</td><td>"+refCol+"</td><td>"+statusBadge(m.status)+"</td>"+(actCol?"<td>"+actCol+"</td>":"")+"</tr>";
+}
+function renderMatches(){
+  var groups=activeGroups();
+  var showActCol=isAdmin()||isReferee();
+  var headerRef=isAdmin()?'<th>Trọng tài</th>':(isReferee()?'<th>TT</th>':'<th>TT</th>');
+  if(!groups.length){
+    el("matches-section").innerHTML='<div class="card"><div class="alert-box">Chưa có trận vòng bảng. Admin cần vào trang Quản trị → Bước 6 để thiết lập.</div></div>';return;
+  }
+  // Nếu là referee, chỉ hiển thị các bảng có trận được phân công
+  var groupsToShow=groups;
+  if(isReferee()){
+    groupsToShow=groups.filter(g=>state.matches.some(m=>m.group_id===g.id&&state.myMatchIds.has(m.id)));
+  }
+  if(!groupsToShow.length&&isReferee()){
+    el("matches-section").innerHTML='<div class="card"><div class="alert-box">Bạn chưa được phân công trận vòng bảng nào.</div></div>';
+  }else{
+    el("matches-section").innerHTML=groupsToShow.map(g=>{
+      var ms=state.matches.filter(m=>m.group_id===g.id).sort((a,b)=>(a.match_seq||0)-(b.match_seq||0));
+      if(isReferee())ms=ms.filter(m=>state.myMatchIds.has(m.id));
+      return '<div class="card"><h3>📅 Bảng '+g.code+' <span class="badge b-blue">'+ms.length+" trận</span></h3><div class='table-wrap'><table><thead><tr><th>Mã</th><th>Giờ</th><th class='col-court'>Sân</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th>"+headerRef+"<th>TT</th>"+(showActCol?"<th></th>":"")+"</tr></thead><tbody>"+(ms.map(m=>matchRow(m)).join("")||'<tr><td colspan="9" class="muted">Chưa có</td></tr>')+"</tbody></table></div></div>";
+    }).join("");
+  }
+}
+function renderKnockout(){
+  var ko=state.knockoutStage?state.matches.filter(m=>m.stage_id===state.knockoutStage.id):[];
+  if(!ko.length){el("knockout-section").innerHTML="";return;}
+  var showActCol=isAdmin()||isReferee();
+  var headerRef=isAdmin()?'<th>Trọng tài</th>':(isReferee()?'<th>TT</th>':'<th>TT</th>');
+  var rounds=[{r:1,t:"🔥 TỨ KẾT"},{r:2,t:"🥈 BÁN KẾT"},{r:3,t:"🏅 CHUNG KẾT"}];
+  // Referee chỉ xem KO được phân công
+  if(isReferee())ko=ko.filter(m=>state.myMatchIds.has(m.id));
+  el("knockout-section").innerHTML=rounds.map(rd=>{
+    var ms=ko.filter(m=>m.round===rd.r).sort((a,b)=>(a.bracket_slot||0)-(b.bracket_slot||0));
+    if(!ms.length)return "";
+    return '<div class="card"><h3>'+rd.t+"</h3><div class='table-wrap'><table><thead><tr><th>Mã</th><th>Giờ</th><th class='col-court'>Sân</th><th>Đội 1</th><th>Tỷ số</th><th>Đội 2</th>"+headerRef+"<th>TT</th>"+(showActCol?"<th></th>":"")+"</tr></thead><tbody>"+ms.map(m=>matchRow(m)).join("")+"</tbody></table></div></div>";
+  }).join("");
+}
+
+async function assignRef(matchId,userId){
+  await sb.from("referee_matches").delete().eq("match_id",matchId);
+  if(userId){var r=await sb.from("referee_matches").insert({user_id:userId,match_id:matchId});if(r.error){alert(r.error.message);return;}}
+  showToast(userId?"✅ Đã phân công TT":"✅ Đã bỏ phân công");
+  await loadRefAssign();renderAll();
+}
+
+function openLogin(){el("login-modal").classList.add("show");el("login-message").className="msg";}
 function closeLogin(){el("login-modal").classList.remove("show");}
 function loginMsg(t,m){var b=el("login-message");b.className="msg show msg-"+t;b.textContent=m;}
+function showToast(msg,type){var t=el("toast");t.textContent=msg;t.className="toast show";t.style.background=type==="err"?"var(--rd)":"var(--li)";t.style.color=type==="err"?"#fff":"#0b1220";clearTimeout(window._tTO);window._tTO=setTimeout(()=>t.classList.remove("show"),2500);}
 async function doLogin(){
-  const raw=el("login-username").value.trim(),p=el("login-password").value;
-  if(!raw||!p){loginMsg("error","Nhập đủ email và mật khẩu.");return;}
+  var raw=el("login-username").value.trim(),p=el("login-password").value;
+  if(!raw||!p){loginMsg("error","Nhập đủ email & mật khẩu.");return;}
   loginMsg("info","Đang đăng nhập...");
-  const cands=raw.includes("@")?[raw]:[raw,raw+EMAIL_DOMAIN];
-  let last=null;
-  for(const em of cands){
-    const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
-    if(!error&&data.session){closeLogin();await loadMyProfile(data.session);applyAuthUI();await loadUsers();renderAdmin();showToast("✅ Xin chào "+state.username);return;}
-    if(error)last=error;
+  var cands=raw.includes("@")?[raw]:[raw,raw+EMAIL_DOMAIN],last=null;
+  for(var i=0;i<cands.length;i++){
+    var r=await sb.auth.signInWithPassword({email:cands[i],password:p});
+    if(!r.error&&r.data.session){closeLogin();await loadMyProfile(r.data.session);applyAuthUI();await loadReferees();await loadUsers();if(isReferee())await loadMyMatches();await loadRefAssign();renderAll();showToast("✅ Xin chào "+state.username);return;}
+    if(r.error)last=r.error;
   }
-  let msg="❌ "+(last?.message||"Lỗi");
-  if(last&&/confirmed/i.test(last.message))msg+="\n⚠️ Chưa xác thực email.";
-  else if(last&&/invalid login/i.test(last.message))msg+="\nKiểm tra email & mật khẩu (123@321).";
-  loginMsg("error",msg);
+  loginMsg("error","❌ "+(last?.message||"Lỗi"));
 }
-async function logout(){await sb.auth.signOut();state.session=null;state.user=null;state.role=null;applyAuthUI();renderAdmin();}
+async function logout(){await sb.auth.signOut();state.session=null;state.user=null;state.role=null;applyAuthUI();state.myMatchIds=new Set();renderAll();}
 async function loadMyProfile(s){
   state.session=s;state.user=s.user;
-  const {data:r}=await sb.from("user_roles").select("role").eq("user_id",s.user.id);
-  const roles=(r||[]).map(x=>x.role);
+  var r=await sb.from("user_roles").select("role").eq("user_id",s.user.id);
+  var roles=(r.data||[]).map(x=>x.role);
   state.role=roles.includes("admin")?"admin":roles.includes("organizer")?"organizer":roles.includes("referee")?"referee":null;
-  if(state.role==="admin"||state.role==="organizer")await sb.from("app_users").upsert({user_id:s.user.id,username:s.user.email,display_name:s.user.email});
-  const {data:au}=await sb.from("app_users").select("username").eq("user_id",s.user.id).maybeSingle();
+  var au=await sb.from("app_users").select("username").eq("user_id",s.user.id).maybeSingle();
   state.username=au?.username||s.user.email;
 }
 function applyAuthUI(){
-  const logged=!!state.user;
-  el("login-btn").classList.toggle("hidden",logged);
-  el("logout-btn").classList.toggle("hidden",!logged);
-  el("user-chip").classList.toggle("hidden",!logged);
+  var logged=!!state.user;
+  el("login-btn").classList.toggle("hidden",logged);el("logout-btn").classList.toggle("hidden",!logged);el("user-chip").classList.toggle("hidden",!logged);el("admin-btn").classList.toggle("hidden",!isAdmin());
   if(logged)el("user-chip").textContent=(state.username||"")+(state.role?" • "+state.role:"");
-  if(!isAdmin()&&logged){document.querySelector("main").innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">⚠ Không có quyền quản trị</h2><p>Chỉ admin/organizer mới có thể truy cập trang này.</p><a href="index.html">← Về trang chủ</a></div>';}
 }
 
-/* ===== LOAD DATA ===== */
-async function loadTournaments(){
-  const {data}=await sb.from("tournaments").select("*").order("status",{ascending:true}).order("start_date",{ascending:false});
-  state.tournaments=data||[];
+function openRefModal(id){
+  var m=state.matches.find(x=>x.id===id);if(!m||!canScore(m)){alert("Không có quyền.");return;}
+  state.refModalMatchId=id;
+  el("ref-match-code").textContent="Trận "+m.match_code+(m.group_id?"":(" ("+koLabel(m)+")"));
+  var g=state.groups.find(x=>x.id===m.group_id);
+  el("ref-group-code").textContent=g?("Bảng "+g.code):(m.round===1?"Tứ kết":m.round===2?"Bán kết":"Chung kết");
+  el("ref-home-name").textContent=m.home_team_id?shortName(teamName(m.home_team_id)):"TBD";
+  el("ref-away-name").textContent=m.away_team_id?shortName(teamName(m.away_team_id)):"TBD";
+  el("ref-home-score").textContent=m.home_score??0;
+  el("ref-away-score").textContent=m.away_score??0;
+  ["h1","h2","a1","a2"].forEach(k=>{var b=el("sb-"+k);if(b)b.classList.toggle("active",m.serve===k);});
+  el("ref-modal").classList.add("show");
 }
-async function selectTournament(id){
-  state.tournament=null;
-  for(var i=0;i<state.tournaments.length;i++)if(state.tournaments[i].id===id)state.tournament=state.tournaments[i];
-  state.editingEventId=null;state.editingPlayerId=null;state.editingTeamId=null;
-  if(!state.tournament){renderAdmin();return;}
-  const {data:e}=await sb.from("events").select("*").eq("tournament_id",id);state.events=e||[];
-  const {data:c}=await sb.from("courts").select("*").eq("tournament_id",id).order("display_order");state.courts=c||[];
-  const {data:p}=await sb.from("players").select("*").order("full_name");state.players=p||[];
-  if(state.events.length)await selectEvent(state.events[0].id);
-  else{state.currentEventId=null;state.teams=[];state.matches=[];renderAdmin();}
+function closeRefModal(){el("ref-modal").classList.remove("show");state.refModalMatchId=null;}
+function refAdj(side,delta){var box=side==="home"?el("ref-home-score"):el("ref-away-score");var v=Math.max(0,(parseInt(box.textContent)||0)+delta);box.textContent=v;refPush();}
+async function refPush(){
+  var m=state.matches.find(x=>x.id===state.refModalMatchId);if(!m)return;
+  var h=parseInt(el("ref-home-score").textContent)||0,a=parseInt(el("ref-away-score").textContent)||0;
+  var pl={home_score:h,away_score:a};if(m.status==="scheduled")pl.status="live";
+  var r=await sb.from("matches").update(pl).eq("id",m.id);
+  if(r.error){alert(r.error.message);return;}
+  m.home_score=h;m.away_score=a;if(pl.status)m.status=pl.status;
 }
-async function selectEvent(id){
-  state.currentEventId=id||null;state.editingTeamId=null;
-  if(!state.currentEventId){renderAdmin();return;}
-  const {data:t}=await sb.from("teams").select(TEAM_SELECT).eq("event_id",id);state.teams=mapTeams(t);
-  const {data:st}=await sb.from("stages").select("*").eq("event_id",id).order("stage_order");state.stages=st||[];
-  state.groupStage=state.stages.find(s=>s.stage_type==="group_stage")||null;
-  state.knockoutStage=state.stages.find(s=>s.stage_type==="knockout")||null;
-  const sids=state.stages.map(s=>s.id);
-  if(sids.length){
-    const {data:g}=await sb.from("groups").select("*").in("stage_id",sids).order("code");state.groups=g||[];
-    const {data:gt}=await sb.from("group_teams").select("*").in("stage_id",sids);state.groupTeams=gt||[];
-  }else{state.groups=[];state.groupTeams=[];}
-  const {data:m}=await sb.from("matches").select("*").eq("event_id",id).order("match_seq");state.matches=m||[];
-  renderAdmin();
+async function setServe(v){
+  var m=state.matches.find(x=>x.id===state.refModalMatchId);if(!m)return;
+  var nv=m.serve===v?null:v;
+  var r=await sb.from("matches").update({serve:nv}).eq("id",m.id);
+  if(r.error){alert(r.error.message);return;}
+  m.serve=nv;
+  ["h1","h2","a1","a2"].forEach(k=>{var b=el("sb-"+k);if(b)b.classList.toggle("active",nv===k);});
 }
-async function loadScope(tId,eId,wg){
-  var out={events:[],teams:[],groups:[],groupTeams:[],groupStage:null,knockoutStage:null};
-  if(!tId)return out;
-  var e=await sb.from("events").select("*").eq("tournament_id",tId);out.events=e.data||[];
-  if(eId){
-    var tm=await sb.from("teams").select(TEAM_SELECT).eq("event_id",eId);out.teams=mapTeams(tm.data);
-    if(wg){
-      var st=await sb.from("stages").select("*").eq("event_id",eId).order("stage_order");
-      var ss=st.data||[],i;
-      for(i=0;i<ss.length;i++){if(ss[i].stage_type==="group_stage")out.groupStage=ss[i];if(ss[i].stage_type==="knockout")out.knockoutStage=ss[i];}
-      var ids=ss.map(s=>s.id);
-      if(ids.length){
-        var g=await sb.from("groups").select("*").in("stage_id",ids).order("code");out.groups=g.data||[];
-        var gt=await sb.from("group_teams").select("*").in("stage_id",ids);out.groupTeams=gt.data||[];
-      }
-    }
-  }
-  return out;
-}
-async function setT5Tournament(id){state.t5.tid=id||null;state.t5.eid=null;state.t5.teams=[];var s=await loadScope(id,null,false);state.t5.events=s.events;if(s.events.length){state.t5.eid=s.events[0].id;var s2=await loadScope(id,state.t5.eid,false);state.t5.teams=s2.teams;}renderAdmin();}
-async function setT5Event(id){state.t5.eid=id||null;var s=await loadScope(state.t5.tid,id,false);state.t5.teams=s.teams;renderAdmin();}
-async function setT6Tournament(id){state.t6.tid=id||null;state.t6.eid=null;var s=await loadScope(id,null,true);state.t6.events=s.events;if(s.events.length){state.t6.eid=s.events[0].id;var s2=await loadScope(id,state.t6.eid,true);Object.assign(state.t6,s2);}else Object.assign(state.t6,{teams:[],groups:[],groupTeams:[],groupStage:null,knockoutStage:null});renderAdmin();}
-async function setT6Event(id){state.t6.eid=id||null;var s=await loadScope(state.t6.tid,id,true);Object.assign(state.t6,s);renderAdmin();}
-async function refreshOpenTournaments(){var d=await sb.from("tournaments").select("*").neq("status","completed").order("start_date",{ascending:false});state.openTournaments=d.data||[];}
-async function loadUsers(){
-  var au=await sb.from("app_users").select("*"),ur=await sb.from("user_roles").select("*"),map={},i;
-  for(i=0;i<(au.data||[]).length;i++){var u=au.data[i];map[u.user_id]=Object.assign({},u,{role:null});}
-  for(i=0;i<(ur.data||[]).length;i++){var r=ur.data[i];if(!map[r.user_id])map[r.user_id]={user_id:r.user_id,username:"(chưa có)"};map[r.user_id].role=r.role;}
-  var arr=[];for(var k in map)arr.push(map[k]);state.users=arr;
-}
-async function loadRefAssign(){state.refAssign={};if(!state.matches.length)return;var ids=state.matches.map(m=>m.id);var d=await sb.from("referee_matches").select("*").in("match_id",ids);(d.data||[]).forEach(r=>{state.refAssign[r.match_id]=r.user_id;});}
-
-/* ===== BƯỚC 1: TẠO GIẢI ===== */
-async function createTournament(){
-  var name=el("t-name").value.trim(),startDate=el("t-start").value;
-  if(!name){alert("Nhập tên giải");return;}
-  if(!startDate){alert("Chọn ngày bắt đầu");return;}
-  var code=nextTournamentCode();
-  var base=name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
-  var endDate=el("t-end").value||startDate;
-  var r=await sb.from("tournaments").insert({code:code,name:name,slug:code+"-"+(base||"giai")+"-"+Date.now().toString(36),start_date:startDate,end_date:endDate,location_name:el("t-location").value||null,status:"in_progress"}).select().single();
-  if(r.error){alert("❌ "+r.error.message);return;}
-  for(var i=1;i<=8;i++){try{await sb.from("courts").insert({tournament_id:r.data.id,name:"Sân "+i,display_order:i});}catch(e){}}
-  showToast("✅ Đã tạo giải "+code+" - "+name);
-  state.tournaments.push(r.data);
-  await refreshOpenTournaments();
-  await loadTournaments();
-  await selectTournament(r.data.id);
-  el("t-name").value="";el("t-start").value="";el("t-end").value="";el("t-location").value="";
-  renderAdmin();
+async function refFinish(){
+  var m=state.matches.find(x=>x.id===state.refModalMatchId);if(!m)return;
+  var h=parseInt(el("ref-home-score").textContent)||0,a=parseInt(el("ref-away-score").textContent)||0;
+  if(h===a){alert("❌ Không có hòa. Điều chỉnh điểm trước khi kết thúc.");return;}
+  var w=h>a?m.home_team_id:m.away_team_id;
+  var r=await sb.from("matches").update({home_score:h,away_score:a,status:"completed",winner_team_id:w,serve:null}).eq("id",m.id);
+  if(r.error){alert(r.error.message);return;}
+  closeRefModal();await selectEvent(state.currentEventId);
+  showToast("✅ Trận đã kết thúc");
 }
 
-/* ===== XÓA GIẢI (CASCADE) ===== */
-async function deleteTournament(id){
-  var t=null,i;for(i=0;i<state.tournaments.length;i++)if(state.tournaments[i].id===id)t=state.tournaments[i];
-  if(!t)return;
-  if(!confirm("⚠️ XÓA GIẢI '"+t.name+"'?\nToàn bộ nội dung, đội, trận đấu, bảng sẽ bị xóa vĩnh viễn."))return;
-  try{
-    var ev=await sb.from("events").select("id").eq("tournament_id",id);
-    var eids=(ev.data||[]).map(e=>e.id);
-    if(eids.length){
-      await sb.from("matches").delete().in("event_id",eids);
-      var st=await sb.from("stages").select("id").in("event_id",eids);
-      var sids=(st.data||[]).map(s=>s.id);
-      if(sids.length){
-        await sb.from("group_teams").delete().in("stage_id",sids);
-        await sb.from("groups").delete().in("stage_id",sids);
-        await sb.from("stages").delete().in("stage_id",sids);
-      }
-      await sb.from("group_teams").delete().in("event_id",eids);
-      await sb.from("team_members").delete().in("event_id",eids);
-      await sb.from("teams").delete().in("event_id",eids);
-      await sb.from("events").delete().in("id",eids);
-    }
-    await sb.from("courts").delete().eq("tournament_id",id);
-    await sb.from("tournaments").delete().eq("id",id);
-    showToast("✅ Đã xóa giải "+t.name);
-    await loadTournaments();
-    await refreshOpenTournaments();
-    state.tournament=null;
-    renderAdmin();
-  }catch(e){alert("❌ Lỗi xóa: "+e.message);}
-}
-async function toggleLock(tid){
-  var t=null;for(var i=0;i<state.tournaments.length;i++)if(state.tournaments[i].id===tid)t=state.tournaments[i];
-  if(!t)return;
-  var s=t.status==="completed"?"in_progress":"completed";
-  var r=await sb.from("tournaments").update({status:s}).eq("id",tid);
-  if(r.error)alert(r.error.message);
-  await loadTournaments();await refreshOpenTournaments();renderAdmin();
-}
-
-/* ===== BƯỚC 3: NỘI DUNG ===== */
-function editEvent(id){state.editingEventId=id;renderAdmin();}
-function cancelEditEvent(){state.editingEventId=null;renderAdmin();}
-async function saveEvent(){
-  if(!state.tournament){alert("⚠️ Hãy chọn giải ở Bước 2 trước.");return;}
-  var id=state.editingEventId,name=el("e-name").value.trim();
-  if(!name){alert("Nhập tên nội dung");return;}
-  var limit=parseFloat(el("e-limit").value),pl={name:name,format:"doubles",team_size:2,rating_limit:isNaN(limit)?null:limit,rating_rule:el("e-rule").value},r;
-  if(id){r=await sb.from("events").update(pl).eq("id",id);}
-  else{pl.tournament_id=state.tournament.id;pl.code=nextEventCode();pl.status="open";r=await sb.from("events").insert(pl).select().single();if(r.data)state.lastCreatedEventId=r.data.id;}
-  if(r.error){alert("❌ "+r.error.message);return;}
-  showToast("✅ "+(id?"Đã cập nhật":"Đã tạo nội dung")+".");
-  state.editingEventId=null;
-  await selectTournament(state.tournament.id);
-}
-async function deleteEvent(id){if(!confirm("Xóa nội dung này?"))return;var r=await sb.from("events").delete().eq("id",id);if(r.error)alert(r.error.message);await selectTournament(state.tournament.id);}
-
-/* ===== BƯỚC 4: VĐV ===== */
-function editPlayer(id){state.editingPlayerId=id;renderAdmin();}
-function cancelEditPlayer(){state.editingPlayerId=null;renderAdmin();}
-async function savePlayer(){
-  var id=state.editingPlayerId,name=el("p-name").value.trim().toUpperCase();
-  if(!name){alert("Nhập họ tên");return;}
-  var r=parseFloat(el("p-rating").value),pl={full_name:name,gender:el("p-gender").value,skill_rating:isNaN(r)?null:r,club_name:(el("p-club").value||"").toUpperCase()},res;
-  if(id)res=await sb.from("players").update(pl).eq("id",id);else res=await sb.from("players").insert(pl);
-  if(res.error){alert(res.error.message);return;}
-  showToast("✅ "+(id?"Đã cập nhật":"Đã thêm")+" VĐV: "+name);
-  state.editingPlayerId=null;
-  var p=await sb.from("players").select("*").order("full_name");state.players=p.data||[];renderAdmin();
-}
-async function deletePlayer(id){if(!confirm("Xóa VĐV này?"))return;var r=await sb.from("players").delete().eq("id",id);if(r.error)alert(r.error.message);var p=await sb.from("players").select("*").order("full_name");state.players=p.data||[];renderAdmin();}
-
-/* ===== BƯỚC 5: ĐỘI ===== */
-function usedPlayerIdsT5(){var s=new Set();state.t5.teams.forEach(t=>t.members.forEach(m=>s.add(m.player_id)));return s;}
-function baseAvailablePlayers(){
-  var used=usedPlayerIdsT5(),et=null;
-  for(var i=0;i<state.t5.teams.length;i++)if(state.t5.teams[i].id===state.editingTeamId){et=state.t5.teams[i];break;}
-  if(et)et.members.forEach(m=>used.delete(m.player_id));
-  return state.players.filter(p=>!used.has(p.id));
-}
-function refreshTeamPlayerSelects(){
-  var s1=el("team-p1"),s2=el("team-p2");if(!s1||!s2)return;
-  var avail=baseAvailablePlayers(),v1=s1.value,v2=s2.value;
-  s1.innerHTML='<option value="">-- VĐV 1 --</option>'+avail.filter(p=>p.id!==v2).map(p=>'<option value="'+p.id+'">'+playerLabel(p)+'</option>').join("");
-  s2.innerHTML='<option value="">-- VĐV 2 --</option>'+avail.filter(p=>p.id!==v1).map(p=>'<option value="'+p.id+'">'+playerLabel(p)+'</option>').join("");
-  if(v1)s1.value=v1;if(v2)s2.value=v2;
-  updateTeamPreview();updateTeamEditButtons();
-}
-function onTeamP1Change(){refreshTeamPlayerSelects();}
-function onTeamP2Change(){refreshTeamPlayerSelects();}
-function teamChanged(){if(!state.editingTeamId||!state.editingTeamOriginal)return false;return el("team-p1").value!==state.editingTeamOriginal.p1||el("team-p2").value!==state.editingTeamOriginal.p2;}
-function updateTeamEditButtons(){var b=el("team-edit-actions");if(!b)return;if(!state.editingTeamId){b.classList.add("hidden");return;}b.classList.toggle("hidden",!teamChanged());}
-function updateTeamPreview(){
-  var b=el("team-preview");if(!b)return;
-  var p1=el("team-p1").value,p2=el("team-p2").value;
-  if(!p1||!p2){b.innerHTML="";return;}
-  var a=null,c=null;
-  for(var i=0;i<state.players.length;i++){if(state.players[i].id===p1)a=state.players[i];if(state.players[i].id===p2)c=state.players[i];}
-  var tot=(a?a.skill_rating||0:0)+(c?c.skill_rating||0:0);
-  var ev=null;for(i=0;i<state.t5.events.length;i++)if(state.t5.events[i].id===state.t5.eid){ev=state.t5.events[i];break;}
-  var chk=ratingCheck(tot,ev);
-  b.innerHTML="🏷️ Đội: <b>"+autoTeamName(a,c)+"</b> • Tổng: <b>"+tot.toFixed(2)+"</b> "+(chk.msg?'<span class="badge '+(chk.ok?"b-green":"b-red")+'">'+chk.msg+"</span>":"");
-}
-function editTeam(id){
-  state.editingTeamId=id;var t=null;
-  for(var i=0;i<state.t5.teams.length;i++)if(state.t5.teams[i].id===id){t=state.t5.teams[i];break;}
-  var p1=t?t.members.find(m=>m.position===1):null,p2=t?t.members.find(m=>m.position===2):null;
-  state.editingTeamOriginal={p1:p1?p1.player_id:"",p2:p2?p2.player_id:""};renderAdmin();
-}
-function cancelEditTeam(){state.editingTeamId=null;state.editingTeamOriginal=null;renderAdmin();}
-async function saveTeam(){
-  var ev=null;for(var i=0;i<state.t5.events.length;i++)if(state.t5.events[i].id===state.t5.eid){ev=state.t5.events[i];break;}
-  if(!state.t5.tid||!state.t5.eid||!ev){alert("⚠️ Chọn giải + nội dung ở Mục 5.");return;}
-  var id=state.editingTeamId,p1=el("team-p1").value,p2=el("team-p2").value;
-  if(!p1||!p2||p1===p2){alert("Chọn 2 VĐV khác nhau");return;}
-  var a=null,b=null;
-  for(i=0;i<state.players.length;i++){if(state.players[i].id===p1)a=state.players[i];if(state.players[i].id===p2)b=state.players[i];}
-  var name=autoTeamName(a,b);if(!name){alert("Lỗi tên đội");return;}
-  var used=usedPlayerIdsT5(),own=new Set();
-  if(id){var t=null;for(i=0;i<state.t5.teams.length;i++)if(state.t5.teams[i].id===id){t=state.t5.teams[i];break;}if(t)t.members.forEach(m=>own.add(m.player_id));}
-  var bad=null;[p1,p2].forEach(pid=>{if(used.has(pid)&&!own.has(pid))bad=pid;});
-  if(bad){alert("❌ VĐV đã ở đội khác.");return;}
-  var tot=(a?a.skill_rating||0:0)+(b?b.skill_rating||0:0),chk=ratingCheck(tot,ev);
-  if(!chk.ok){alert("❌ "+chk.msg);return;}
-  var teamId;
-  if(id){var r=await sb.from("teams").update({name:name}).eq("id",id);if(r.error){alert(r.error.message);return;}await sb.from("team_members").delete().eq("team_id",id);teamId=id;}
-  else{var r2=await sb.from("teams").insert({event_id:state.t5.eid,name:name}).select().single();if(r2.error){alert(r2.error.message);return;}teamId=r2.data.id;}
-  var r3=await sb.from("team_members").insert([{team_id:teamId,event_id:state.t5.eid,player_id:p1,position:1},{team_id:teamId,event_id:state.t5.eid,player_id:p2,position:2}]);
-  if(r3.error){alert(r3.error.message);return;}
-  showToast("✅ "+(id?"Cập nhật":"Tạo")+" đội: "+name);
-  state.editingTeamId=null;state.editingTeamOriginal=null;
-  await setT5Event(state.t5.eid);
-}
-async function deleteTeam(id){if(!confirm("Xóa đội?"))return;var r=await sb.from("teams").delete().eq("id",id);if(r.error)alert(r.error.message);await setT5Event(state.t5.eid);}
-
-/* ===== BƯỚC 6: THIẾT LẬP 31 TRẬN ===== */
-async function ensureEventMatches(){
-  if(!state.t6.eid||!state.t6.tid)return false;
-  var tId=state.t6.tid,eId=state.t6.eid;
-  var st=await sb.from("stages").select("*").eq("event_id",eId).order("stage_order");
-  var groupStage=(st.data||[]).find(s=>s.stage_type==="group_stage");
-  var knockoutStage=(st.data||[]).find(s=>s.stage_type==="knockout");
-  if(!groupStage){try{var r1=await sb.from("stages").insert({event_id:eId,code:"GRP",name:"Vòng bảng",stage_type:"group_stage",stage_order:1}).select().single();if(r1.data)groupStage=r1.data;}catch(e){}}
-  if(!knockoutStage){try{var r2=await sb.from("stages").insert({event_id:eId,code:"KO",name:"Knockout",stage_type:"knockout",stage_order:2}).select().single();if(r2.data)knockoutStage=r2.data;}catch(e){}}
-  if(!groupStage||!knockoutStage)return false;
-  var gi,i;
-  for(gi=0;gi<4;gi++){var code=GROUP_CODES[gi],found=false;
-    var g=await sb.from("groups").select("*").eq("stage_id",groupStage.id).eq("code",code);
-    if(g.data&&g.data.length>0)found=true;
-    if(!found){try{await sb.from("groups").insert({stage_id:groupStage.id,code:code,name:"Bảng "+code,max_teams:4});}catch(e){}}}
-  var existing=await sb.from("matches").select("match_code").eq("event_id",eId);
-  var existingCodes={};(existing.data||[]).forEach(m=>existingCodes[m.match_code]=1);
-  var ins=[];
-  var tournamentSeq2=sortedTournaments().findIndex(t=>t.id===tId)+1||1;
-  var eventsForT=state.tournaments.find(t=>t.id===tId)?state.events:[];
-  var eventSeq2=eventsForT.findIndex(e=>e.id===eId)+1||1;
-  function bc(cc){return pad(tournamentSeq2,3)+pad(eventSeq2,1)+pad(cc,2);}
-  for(gi=0;gi<4;gi++){
-    var g2=await sb.from("groups").select("*").eq("stage_id",groupStage.id).eq("code",GROUP_CODES[gi]);
-    if(!g2.data||!g2.data.length)continue;var gId=g2.data[0].id;
-    roundRobinPairs().forEach((pr,mi)=>{
-      var cc=gi*6+mi+1;
-      if(!existingCodes[bc(cc)])ins.push({event_id:eId,tournament_id:tId,stage_id:groupStage.id,group_id:gId,round:pr.round,bracket_slot:pr.slot,match_code:bc(cc),match_seq:cc,status:"scheduled"});
-    });
-  }
-  for(var s=1;s<=4;s++){var c1=24+s;if(!existingCodes[bc(c1)])ins.push({event_id:eId,tournament_id:tId,stage_id:knockoutStage.id,round:1,bracket_slot:s,match_code:bc(c1),match_seq:c1,status:"scheduled"});}
-  for(s=1;s<=2;s++){var c2=28+s;if(!existingCodes[bc(c2)])ins.push({event_id:eId,tournament_id:tId,stage_id:knockoutStage.id,round:2,bracket_slot:s,match_code:bc(c2),match_seq:c2,status:"scheduled"});}
-  var c3=31;if(!existingCodes[bc(c3)])ins.push({event_id:eId,tournament_id:tId,stage_id:knockoutStage.id,round:3,bracket_slot:1,match_code:bc(c3),match_seq:c3,status:"scheduled"});
-  if(ins.length){try{await sb.from("matches").insert(ins);}catch(e){}}
-  return ins.length>0;
-}
-async function setupGroupStage6(){
-  if(!state.t6.eid){alert("Chọn nội dung ở Mục 6 trước.");return;}
-  var added=await ensureEventMatches();
-  await setT6Event(state.t6.eid);
-  showToast(added?"✅ Đã tạo sẵn 31 trận (24 bảng + 7 KO)":"✅ Đã có sẵn trận");
-}
-async function setTeamGroup6(tid,gid){
-  if(!state.t6.groupStage){alert("Bấm 'Thiết lập lịch' trước.");return;}
-  await sb.from("group_teams").delete().eq("team_id",tid).eq("stage_id",state.t6.groupStage.id);
-  if(gid){var r=await sb.from("group_teams").insert({group_id:gid,stage_id:state.t6.groupStage.id,team_id:tid,event_id:state.t6.eid});if(r.error)alert(r.error.message);}
-  await setT6Event(state.t6.eid);
-}
-
-/* ===== BƯỚC 7: USER ===== */
-async function adminCreateUser(){
-  var email=el("nu-email").value.trim(),pass=el("nu-pass").value||DEFAULT_PASS,role=el("nu-role").value;
-  if(email.indexOf("@")<0){alert("Email không hợp lệ");return;}
-  var tmp=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{storageKey:"pb-temp",persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-  var r=await tmp.auth.signUp({email:email,password:pass});
-  if(r.error){alert("❌ "+r.error.message+"\n(Tắt Confirm email trong Supabase → Authentication)");return;}
-  var uid=r.data.user&&r.data.user.id;if(!uid){alert("User tồn tại hoặc cần xác nhận");return;}
-  await sb.from("app_users").upsert({user_id:uid,username:email,display_name:email});
-  var ir=await sb.from("user_roles").insert({user_id:uid,role:role});
-  if(ir.error)await sb.from("user_roles").update({role:role}).eq("user_id",uid);
-  showToast("✅ Đã tạo "+email+" / "+role);
-  await loadUsers();renderAdmin();
-}
-async function changeRole(uid,role){await sb.from("user_roles").delete().eq("user_id",uid);var r=await sb.from("user_roles").insert({user_id:uid,role:role});if(r.error)alert(r.error.message);await loadUsers();renderAdmin();}
-async function resetUserPassDefault(uid,email){
-  if(state.role!=="admin"){alert("Chỉ admin");return;}
-  var sbA=window.supabase.createClient(SUPABASE_URL,"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder");
-  try{var r=await sbA.auth.admin.updateUserById(uid,{password:DEFAULT_PASS});alert(r.error?"❌ "+r.error.message:"✅ Đã reset "+email);}
-  catch(e){alert("❌ Cần SERVICE_KEY để reset. Vào Supabase lấy service_role key.");}
-}
-
-/* ===== RENDER ADMIN ===== */
-function openTournamentOptions(sel){return '<option value="">— Chọn giải đang mở —</option>'+state.openTournaments.map(t=>'<option value="'+t.id+'"'+(sel===t.id?" selected":"")+">"+t.name+"</option>").join("");}
-function groupSelect6(tm){
-  var cur=null;for(var i=0;i<state.t6.groupTeams.length;i++)if(state.t6.groupTeams[i].team_id===tm.id)cur=state.t6.groupTeams[i];
-  var o='<option value="">— Chưa xếp —</option>';
-  GROUP_CODES.forEach(function(c){
-    var g=null;for(var k=0;k<state.t6.groups.length;k++)if(state.t6.groups[k].code===c&&state.t6.groups[k].stage_id===state.t6.groupStage?.id)g=state.t6.groups[k];
-    if(g)o+='<option value="'+g.id+'"'+(cur&&cur.group_id===g.id?" selected":"")+">Bảng "+c+"</option>";
-  });
-  return '<select onchange="setTeamGroup6(\''+tm.id+'\',this.value)">'+o+"</select>";
-}
-function renderAdmin(){
-  if(!isAdmin()){return;}
-  var t=state.tournament,locked=isLocked();
-  var tOpts=sortedTournaments().map(x=>'<option value="'+x.id+'"'+(t&&x.id===t.id?" selected":"")+">"+x.name+(x.status==="completed"?" (đóng)":"")+"</option>").join("");
-  var noT=!t;
-  var editingE=state.events.find(e=>e.id===state.editingEventId);
-  var editingP=state.players.find(p=>p.id===state.editingPlayerId);
-  var editingT=state.t5.teams.find(tm=>tm.id===state.editingTeamId);
-  var ev5=null;for(var i=0;i<state.t5.events.length;i++)if(state.t5.events[i].id===state.t5.eid)ev5=state.t5.events[i];
-  var ev6=null;for(i=0;i<state.t6.events.length;i++)if(state.t6.events[i].id===state.t6.eid)ev6=state.t6.events[i];
-  var eventsSorted=state.events.slice().sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")));
-  var groupCards6="";
-  if(state.t6.groupStage){
-    groupCards6=GROUP_CODES.map(function(c){
-      var g=null;for(var k=0;k<state.t6.groups.length;k++)if(state.t6.groups[k].code===c&&state.t6.groups[k].stage_id===state.t6.groupStage.id)g=state.t6.groups[k];
-      if(!g)return "";
-      var mb=state.t6.teams.filter(tm=>state.t6.groupTeams.some(gt=>gt.team_id===tm.id&&gt.group_id===g.id));
-      return "<div class='group-card'><h4>Bảng "+c+' <span class="badge b-blue">'+mb.length+"</span></h4>"+(mb.map(tm=>"<div class='group-team'><div><b>"+shortName(tm.name)+"</b> ("+tm.total_rating.toFixed(2)+")</div><div>"+groupSelect6(tm)+"</div></div>").join("")||'<div class="muted">Trống</div>')+"</div>";
-    }).join("");
-    var un=state.t6.teams.filter(tm=>!state.t6.groupTeams.some(gt=>gt.team_id===tm.id));
-    groupCards6+="<div class='group-card' style='border-color:rgba(251,146,60,.4)'><h4 style='color:var(--or)'>⚠ Chưa xếp <span class='badge b-warn'>"+un.length+"</span></h4>"+(un.map(tm=>"<div class='group-team'><div><b>"+shortName(tm.name)+"</b> ("+tm.total_rating.toFixed(2)+")</div><div>"+groupSelect6(tm)+"</div></div>").join("")||'<div class="muted">Hết</div>')+"</div>";
-  }
-  var H="";
-  H+='<div class="card"><h3><span class="step-num">1</span> Tạo giải mới</h3><div class="form-grid"><input id="t-name" placeholder="Tên giải"/><input id="t-start" type="date"/><input id="t-end" type="date" placeholder="Ngày kết thúc (tùy chọn)"/><input id="t-location" placeholder="Địa điểm (tùy chọn)"/><button class="btn btn-primary" onclick="createTournament()">➕ Tạo giải</button></div><div class="muted">Mã giải (001, 002...) tự sinh. Nếu không nhập ngày kết thúc, tự lấy ngày bắt đầu.</div></div>';
-  H+='<div class="card"><h3><span class="step-num">2</span> Chọn giải thiết lập</h3><div class="form-grid"><select onchange="selectTournament(this.value)">'+(tOpts||'<option value="">— Chưa có giải —</option>')+"</select>"+(t?'<button class="btn '+(locked?"btn-blue":"btn-danger")+'" onclick="toggleLock(\''+t.id+'\')">'+(locked?"🔓 Mở":"🔒 Đóng")+"</button> <button class='btn btn-danger' onclick='deleteTournament(\""+t.id+"\")'>🗑 Xóa giải</button>":"")+"</div>"+(t?"<div class='muted'>Đang chọn: <b>"+t.name+"</b> "+(locked?'<span class="badge b-red">Đã đóng</span>':'<span class="badge b-green">Đang mở</span>')+"</div>":'<div class="alert-box">Tạo giải ở Bước 1.</div>')+"</div>";
-  H+='<div class="card '+(noT?"disabled":"")+'"><h3><span class="step-num">3</span> Nội dung</h3>'+(noT?'<div class="alert-box">Chọn giải ở Bước 2.</div>':'<div class="form-grid"><input id="e-name" placeholder="Tên nội dung" value="'+(editingE?editingE.name:"")+'"/><input id="e-limit" type="number" step="0.05" placeholder="Trình" value="'+(editingE?.rating_limit??'')+'"/><select id="e-rule"><option value="max_total"'+(editingE?.rating_rule==="max_total"?" selected":"")+">Tổng &lt;=</option><option value='exact_total'"+(editingE?.rating_rule==="exact_total"?" selected":"")+">Tổng =</option><option value='open'"+(editingE?.rating_rule==="open"?" selected":"")+">Mở</option></select><button class='btn btn-primary' onclick='saveEvent()'>"+(editingE?"💾 Lưu":"➕ Tạo")+"</button>"+(editingE?'<button class="btn btn-light" onclick="cancelEditEvent()">✕</button>':"")+'</div><div class="muted">Mã nội dung tự sinh (01, 02...)</div><div class="table-wrap"><table><thead><tr><th>Tên</th><th>Trình</th><th>Luật</th><th></th></tr></thead><tbody>'+(eventsSorted.map(e=>'<tr class="'+(state.editingEventId===e.id?"edit-row":(state.lastCreatedEventId===e.id?"new-row":""))+'"><td>'+e.name+"</td><td>"+(e.rating_limit!=null?e.rating_limit:"-")+"</td><td>"+e.rating_rule+'</td><td><button class="btn btn-sm btn-warn" onclick="editEvent(\''+e.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deleteEvent(\''+e.id+'\')">🗑</button></td></tr>').join("")||'<tr><td colspan="4" class="muted">Chưa có</td></tr>')+"</tbody></table></div>")+"</div>";
-  H+='<div class="card '+(noT?"disabled":"")+'"><h3><span class="step-num">4</span> VĐV</h3>'+(noT?'<div class="alert-box">Chọn giải ở Bước 2.</div>':'<div class="form-grid"><input id="p-name" placeholder="Họ tên" value="'+(editingP?editingP.full_name:"")+'"/><select id="p-gender"><option value="male"'+(editingP?.gender==="male"?" selected":"")+">Nam</option><option value='female'"+(editingP?.gender==="female"?" selected":"")+">Nữ</option></select><input id='p-rating' type='number' step='0.05' placeholder='Rating' value='"+(editingP?.skill_rating??'')+"'/><input id='p-club' placeholder='Club' value='"+(editingP?.club_name||'')+"'/><button class='btn btn-primary' onclick='savePlayer()'>"+(editingP?"💾 Lưu":"➕ Thêm")+"</button>"+(editingP?'<button class="btn btn-light" onclick="cancelEditPlayer()">✕</button>':"")+'</div><div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>GT</th><th>Rating</th><th>Club</th><th></th></tr></thead><tbody>'+(state.players.map(p=>'<tr class="'+(state.editingPlayerId===p.id?"edit-row":"")+'"><td>'+p.full_name+"</td><td>"+(p.gender==="male"?"Nam":"Nữ")+"</td><td>"+(p.skill_rating!=null?p.skill_rating:"")+"</td><td>"+(p.club_name||'')+'</td><td><button class="btn btn-sm btn-warn" onclick="editPlayer(\''+p.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deletePlayer(\''+p.id+'\')">🗑</button></td></tr>').join("")||'<tr><td colspan="5" class="muted">Chưa có</td></tr>')+"</tbody></table></div>")+"</div>";
-  H+='<div class="card"><h3><span class="step-num">5</span> Đội</h3><div class="sel-row"><select onchange="setT5Tournament(this.value)">'+openTournamentOptions(state.t5.tid)+'</select><select onchange="setT5Event(this.value)" '+(state.t5.tid?"":"disabled")+"><option value=''>— Nội dung —</option>"+state.t5.events.map(e=>'<option value="'+e.id+'"'+(state.t5.eid===e.id?" selected":"")+">"+e.name+" ("+(e.rating_limit!=null?e.rating_limit:"mở")+")</option>").join("")+"</select></div>"+(state.t5.eid&&ev5?'<div class="form-grid"><select id="team-p1" onchange="onTeamP1Change()"><option value="">-- VĐV 1 --</option></select><select id="team-p2" onchange="onTeamP2Change()"><option value="">-- VĐV 2 --</option></select><button id="team-create-btn" class="btn btn-primary '+(editingT?"hidden":"")+'" onclick="saveTeam()">➕ Tạo đội</button><div id="team-edit-actions" class="hidden" style="display:flex;gap:8px"><button class="btn btn-primary" onclick="saveTeam()">💾</button><button class="btn btn-light" onclick="cancelEditTeam()">✕</button></div></div><div id="team-preview" class="preview"></div><div class="table-wrap"><table><thead><tr><th>Đội</th><th>Tổng</th><th></th></tr></thead><tbody>'+(state.t5.teams.map(x=>'<tr class="'+(state.editingTeamId===x.id?"edit-row":"")+'"><td>'+shortName(x.name)+"</td><td>"+x.total_rating.toFixed(2)+'</td><td><button class="btn btn-sm btn-warn" onclick="editTeam(\''+x.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deleteTeam(\''+x.id+'\')">🗑</button></td></tr>').join("")||'<tr><td colspan="3" class="muted">Chưa có</td></tr>')+"</tbody></table></div>":'<div class="alert-box">Chọn giải + nội dung.</div>')+"</div>";
-  H+='<div class="card"><h3><span class="step-num">6</span> Thiết lập lịch thi đấu (31 trận)</h3><div class="sel-row"><select onchange="setT6Tournament(this.value)">'+openTournamentOptions(state.t6.tid)+'</select><select onchange="setT6Event(this.value)" '+(state.t6.tid?"":"disabled")+"><option value=''>— Nội dung —</option>"+state.t6.events.map(e=>'<option value="'+e.id+'"'+(state.t6.eid===e.id?" selected":"")+">"+e.name+" ("+(e.rating_limit!=null?e.rating_limit:"mở")+")</option>").join("")+"</select></div>"+(state.t6.eid&&ev6?'<div class="actions"><button class="btn btn-dark" onclick="setupGroupStage6()">🏆 Thiết lập 4 bảng + 31 trận</button></div>'+(state.t6.groupStage?"<div class='group-grid'>"+groupCards6+"</div>":'<div class="alert-box">Bấm "Thiết lập 4 bảng" để tạo sẵn 24 trận vòng bảng + 7 trận KO. Sau đó qua <a href="tournament.html?id='+state.t6.tid+'" style="color:var(--cy)">trang giải đấu</a> để đặt giờ/sân/trọng tài.</div>'):'<div class="alert-box">Chọn giải + nội dung để xếp bảng.</div>')+"</div>";
-  H+='<div class="card"><h3><span class="step-num">7</span> Người dùng '+((state.role==="admin")?'<span class="badge b-blue">admin</span>':"")+"</h3><div class='form-grid'><input id='nu-email' placeholder='Email'/><input id='nu-pass' type='text' value='"+DEFAULT_PASS+"'/><select id='nu-role'><option value='referee'>referee</option><option value='organizer'>organizer</option><option value='admin'>admin</option></select><button class='btn btn-primary' onclick='adminCreateUser()'>➕ Tạo user</button></div><div class='table-wrap'><table><thead><tr><th>Email</th><th>Quyền</th><th>Đổi quyền</th>"+(state.role==="admin"?"<th>Reset</th>":"")+"</tr></thead><tbody>"+(state.users.map(u=>"<tr><td>"+u.username+"</td><td><span class='badge b-blue'>"+(u.role||"-")+"</span></td><td><select onchange='changeRole(\""+u.user_id+'",this.value)\'><option value="referee"'+(u.role==="referee"?" selected":"")+">referee</option><option value='organizer'"+(u.role==="organizer"?" selected":"")+">organizer</option><option value='admin'"+(u.role==="admin"?" selected":"")+">admin</option></select></td>"+(state.role==="admin"?'<td><button class="btn btn-sm btn-light" onclick="resetUserPassDefault(\''+u.user_id+'\',\''+u.username+'\')">↺ '+DEFAULT_PASS+"</button></td>":"")+"</tr>").join("")||'<tr><td colspan="4" class="muted">Chưa có</td></tr>')+"</tbody></table></div></div>";
-  el("admin-content").innerHTML=H;
-  if(editingT&&editingT.members){
-    var p1=editingT.members.find(m=>m.position===1),p2=editingT.members.find(m=>m.position===2);
-    if(p1)el("team-p1").value=p1.player_id;
-    if(p2)el("team-p2").value=p2.player_id;
-  }
-  refreshTeamPlayerSelects();updateTeamEditButtons();
-}
+sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"matches"},(p)=>{
+  var row=p.new||p.old;if(!row||row.tournament_id!==TOURNAMENT_ID)return;
+  if(p.eventType==="DELETE")state.matches=state.matches.filter(m=>m.id!==row.id);
+  else{var i=state.matches.findIndex(m=>m.id===row.id);if(i>=0)state.matches[i]=Object.assign({},state.matches[i],row);else state.matches.push(row);}
+  renderAll();
+}).subscribe();
+sb.channel("pb-ref-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"referee_matches"},async()=>{
+  await loadRefAssign();if(isReferee())await loadMyMatches();renderAll();
+}).subscribe();
 
 (async()=>{
-  const {data}=await sb.auth.getSession();
-  if(data.session)await loadMyProfile(data.session);
+  if(!TOURNAMENT_ID)return;
+  await loadTournament();
+  var d=await sb.auth.getSession();if(d.data.session)await loadMyProfile(d.data.session);
   applyAuthUI();
-  if(!isAdmin()&&state.user)return;
-  await refreshOpenTournaments();
-  await loadTournaments();
-  await loadUsers();
-  if(state.tournaments.length)await selectTournament(sortedTournaments()[0].id);
-  else renderAdmin();
+  await loadReferees();await loadUsers();
+  if(isReferee())await loadMyMatches();
+  await loadEvents();
 })();
 </script>
 </body>
