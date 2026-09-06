@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Quản trị - Pickleball Pro</title>
+<title>Quản trị - Pickleball Pro v8</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
@@ -62,12 +62,8 @@ th{color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0
 .match-row .vs{color:var(--mu);font-weight:700;padding:0 4px}
 .match-row select{padding:6px 8px;font-size:12px}
 .match-row .remove{background:rgba(248,113,113,.15);color:var(--rd);border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px}
-.ko-row{display:grid;grid-template-columns:1fr;gap:6px;padding:10px;background:var(--sf2);border:1px solid var(--ln);border-radius:8px;margin-bottom:8px;font-size:12px}
-@media(min-width:700px){.ko-row{grid-template-columns:140px 1fr auto 1fr auto;align-items:center}}
-.ko-row .label{font-weight:700;color:var(--cy);font-family:'Oswald'}
-.ko-row .vs{color:var(--mu);font-weight:700;padding:0 4px}
-.ko-row select{padding:6px 8px;font-size:11px}
-.ko-row.ck{border:2px solid var(--li);background:rgba(163,230,53,.05)}
+.ko-row{display:grid;grid-template-columns:80px 1fr auto 1fr auto;gap:6px;align-items:center;padding:10px;background:var(--sf2);border:1px solid var(--ln);border-radius:8px;margin-bottom:8px;font-size:12px}
+.ko-row .label{font-weight:700;color:var(--cy);font-family:'Oswald';font-size:12px;white-space:nowrap}
 .alert-box{padding:10px 12px;border-radius:10px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--or);font-size:12px;margin-bottom:10px}
 .info-box{padding:10px 12px;border-radius:10px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);color:var(--cy);font-size:12px;margin-bottom:10px}
 .success-box{padding:10px 12px;border-radius:10px;background:rgba(163,230,53,.1);border:1px solid rgba(163,230,53,.3);color:var(--li);font-size:12px;margin-bottom:10px}
@@ -87,7 +83,9 @@ th{color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0
 .unassigned-pool h5{margin:0 0 8px;color:var(--or);text-transform:uppercase;font-size:12px}
 .pill-list{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:var(--sf2);border:1px solid var(--ln);border-radius:999px;padding:4px 10px;font-size:11px;display:inline-flex;gap:6px;align-items:center}
-.match-code-display{font-family:'Oswald';font-weight:700;color:var(--cy);font-size:13px}
+.pill select{width:auto;display:inline;padding:2px 4px;font-size:10px}
+.code-display{font-family:'Oswald';color:var(--cy);font-weight:700}
+.code-full{font-family:monospace;font-size:10px;color:var(--mu)}
 @media(max-width:640px){
   .hero{padding:14px;margin:8px}.hero h1{font-size:18px}
   main{padding:0 6px 20px}
@@ -96,6 +94,8 @@ th{color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0
   .match-row{grid-template-columns:1fr;gap:4px}
   .match-row .num{margin-bottom:4px}
   .match-row .vs{text-align:center}
+  .ko-row{grid-template-columns:1fr;gap:4px}
+  .ko-row .label{margin-bottom:4px}
   table{min-width:320px}
   th,td{padding:6px 4px;font-size:11px}
 }
@@ -103,10 +103,10 @@ th{color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0
 </head>
 <body>
 <nav class="topnav">
-<div class="brand-row"><button class="back-btn" onclick="location.href='index.html'">← Trang chủ</button><span class="logo">⚙ Quản <span>trị</span></span></div>
+<div class="brand-row"><button class="back-btn" onclick="location.href='index.html'">← Trang chủ</button><span class="logo">⚡ Pickle<span>ball Pro</span> <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 8px;border-radius:4px;font-weight:800">v8</span></span></div>
 <div class="nav-right"><span id="user-chip" class="user-chip hidden"></span><button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button><button id="logout-btn" class="btn btn-light hidden" onclick="logout()">Đăng xuất</button></div>
 </nav>
-<div class="hero"><h1>⚙ Quản trị giải đấu</h1><p>Tạo giải → Nội dung → VĐV → Đội → <b>Lịch đấu + Trọng tài</b> → Người dùng</p></div>
+<div class="hero"><h1>⚙ Quản trị giải đấu</h1><p>Thiết lập giải → Nội dung → VĐV → Đội → <b>Lịch đấu + Trọng tài</b> → Người dùng</p></div>
 <main><div id="admin-content"></div></main>
 <div id="toast" class="toast"></div>
 <div id="login-modal" class="modal-backdrop"><div class="modal">
@@ -117,8 +117,15 @@ th{color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0
 <div id="login-message" class="msg"></div>
 </div></div>
 <script>
-var SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co",SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",DEFAULT_PASS="123@321",EMAIL_DOMAIN="@pb-local.app";
-var GROUP_CODES=["A","B","C","D"];
+/* ============================================================
+   PICKLEBALL PRO v8 — Mã trận AAAB + shortCode
+   Logic mã: 0011A1 (AAAB + shortCode)
+   Hiển thị: chỉ A1, A2... TK1, BK1, CK
+============================================================ */
+var SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co",
+    SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",
+    DEFAULT_PASS="123@321",EMAIL_DOMAIN="@pb-local.app",
+    GROUP_CODES=["A","B","C","D"];
 var TEAM_SELECT="id,name,seed,status,event_id,team_members(player_id,position,players(id,full_name,skill_rating))";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 var state={
@@ -137,31 +144,22 @@ function el(i){return document.getElementById(i);}
 function isLocked(){return state.tournament&&state.tournament.status==="completed";}
 function isAdmin(){return state.role==="admin"||state.role==="organizer";}
 function shortName(n){return String(n||"").replace(/\s*\([\d.]+\)/g,"").trim();}
-function findTeam(id){var i;for(i=0;i<state.teams.length;i++)if(state.teams[i].id===id)return state.teams[i];return null;}
+function findTeam(id){var i;for(i=0;i<state.teams.length;i++)if(state.teams[i].id===id)return state.teams[i];for(i=0;i<state.t6?.teams?.length||0;i++)if(state.t6.teams[i].id===id)return state.t6.teams[i];return null;}
 function teamName(id){if(!id)return '<span class="muted" style="color:var(--mu)">TBD</span>';var t=findTeam(id);return t?shortName(t.name):"TBD";}
 function mapTeams(a){var o=[],i,k;a=a||[];for(i=0;i<a.length;i++){var t=a[i],m=t.team_members||[],tot=0;for(k=0;k<m.length;k++)tot+=(m[k].players&&m[k].players.skill_rating)||0;o.push(Object.assign({},t,{members:m,total_rating:Number(tot.toFixed(2))}));}return o;}
 function ratingCheck(t,ev){if(!ev||ev.rating_limit==null)return{ok:true,msg:""};var r=ev.rating_rule||"max_total";if(r==="open")return{ok:true,msg:""};if(r==="exact_total"){var ok=Math.abs(t-ev.rating_limit)<=0.005;return{ok:ok,msg:ok?"✅ "+ev.rating_limit:"❌ Phải đúng "+ev.rating_limit+" (hiện "+t.toFixed(2)+")"};}var ok2=t<=ev.rating_limit;return{ok:ok2,msg:ok2?"✅ ≤ "+ev.rating_limit:"❌ Vượt "+ev.rating_limit+" (hiện "+t.toFixed(2)+")"};}
 function autoTeamName(a,b){return a&&b?a.full_name+" – "+b.full_name:"";}
 function playerLabel(p){return p.full_name+" ("+(p.skill_rating!=null?Number(p.skill_rating).toFixed(2):"-")+")";}
 function pad(n,l){return String(n).padStart(l,"0");}
+
+/* ===== MÃ TRẬN THÔNG MINH ===== */
 function sortedTournaments(){return state.tournaments.slice().sort(function(a,b){var ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(a.created_at||"").localeCompare(String(b.created_at||""));});}
 function nextTournamentCode(){var used={},i;for(i=0;i<state.tournaments.length;i++)used[state.tournaments[i].code]=1;var n=1;while(used[pad(n,3)])n++;return pad(n,3);}
 function nextEventCode(){var used={},i;for(i=0;i<state.events.length;i++)used[state.events[i].code]=1;var n=1;while(used[pad(n,2)])n++;return pad(n,2);}
-
-/* ===== MÃ TRẬN AAAB-X1 ===== */
-/* Prefix: AAA = số giải (001, 002...), B = ký tự nội dung (A, B, C...) */
-function getEventPrefix(){
-  if(!state.tournament||!state.currentEventId)return "000A";
-  var allT=state.tournaments.slice().sort(function(a,b){var ao=a.status==="completed"?1:0,bo=b.status==="completed"?1:0;if(ao!==bo)return ao-bo;return String(a.created_at||"").localeCompare(String(b.created_at||""));});
-  var tSeq=allT.findIndex(function(t){return t.id===state.tournament.id;})+1||1;
-  var evArr=state.events.slice().sort(function(a,b){return String(a.created_at||"").localeCompare(String(b.created_at||""));});
-  var eSeq=evArr.findIndex(function(e){return e.id===state.currentEventId;})+1||1;
-  return pad(tSeq,3)+String.fromCharCode(64+eSeq); // 001 + A/B/C...
-}
-/* match_code = "{AAAB}-{suffix}" ví dụ: 001A-A1, 001A-TK1, 001A-CK */
-function buildMatchCode(suffix){return getEventPrefix()+"-"+suffix;}
-/* Hiển thị chỉ lấy phần sau dấu - */
-function displayCode(m){if(!m||!m.match_code)return "-";var parts=m.match_code.split("-");return parts.length>1?parts.slice(1).join("-"):m.match_code;}
+function tournamentSeq(){var s=sortedTournaments(),i;for(i=0;i<s.length;i++)if(s[i].id===state.tournament.id)return i+1;return 1;}
+function eventSeq(){var s=state.events.slice().sort(function(a,b){return String(a.created_at||"").localeCompare(String(b.created_at||""));});var i;for(i=0;i<s.length;i++)if(s[i].id===state.currentEventId)return i+1;return 1;}
+function buildMatchCode(shortCode){return pad(tournamentSeq(),3)+pad(eventSeq(),1)+shortCode;}
+function displayCode(matchCode){return (matchCode||"").slice(4);}
 function showToast(msg,type){var t=el("toast");t.textContent=msg;t.className="toast show";t.style.background=type==="err"?"var(--rd)":"var(--li)";t.style.color=type==="err"?"#fff":"#0b1220";clearTimeout(window._tTO);window._tTO=setTimeout(function(){t.classList.remove("show");},type==="err"?4000:2000);}
 
 /* ===== AUTH ===== */
@@ -211,16 +209,15 @@ async function selectTournament(id){
   if(state.events.length)await selectEvent(state.events[0].id);else{state.currentEventId=null;state.teams=[];state.matches=[];renderAdmin();}
 }
 async function selectEvent(id){
-  state.currentEventId=id||null;state.editingTeamId=null;
+  state.currentEventId=id||null;state.editingTeamId=null;state.draftMatches=[];
   if(!state.currentEventId){renderAdmin();return;}
   var t=await sb.from("teams").select(TEAM_SELECT).eq("event_id",id);state.teams=mapTeams(t.data);
   var st=await sb.from("stages").select("*").eq("event_id",id).order("stage_order");state.stages=st.data||[];
-  state.groupStage=null;state.knockoutStage=null;var i;
-  for(i=0;i<state.stages.length;i++){if(state.stages[i].stage_type==="group_stage")state.groupStage=state.stages[i];if(state.stages[i].stage_type==="knockout")state.knockoutStage=state.stages[i];}
+  state.groupStage=state.stages.find(function(s){return s.stage_type==="group_stage";})||null;
+  state.knockoutStage=state.stages.find(function(s){return s.stage_type==="knockout";})||null;
   var sids=state.stages.map(function(s){return s.id;});
   if(sids.length){var g=await sb.from("groups").select("*").in("stage_id",sids).order("code");state.groups=g.data||[];var gt=await sb.from("group_teams").select("*").in("stage_id",sids);state.groupTeams=gt.data||[];}else{state.groups=[];state.groupTeams=[];}
   var m=await sb.from("matches").select("*").eq("event_id",id).order("match_seq");state.matches=m.data||[];
-  state.draftMatches=[];
   await loadRefAssign();renderAdmin();
 }
 async function refreshOpenTournaments(){var d=await sb.from("tournaments").select("*").neq("status","completed").order("start_date",{ascending:false});state.openTournaments=d.data||[];}
@@ -243,6 +240,7 @@ async function loadRefAssign(){
 }
 async function loadAll(){await refreshOpenTournaments();await loadTournaments();await loadUsers();await loadReferees();if(state.tournaments.length)await selectTournament(sortedTournaments()[0].id);else renderAdmin();}
 
+/* ===== ACCORDION ===== */
 function toggleAccordion(step){state.accordion[step]=!state.accordion[step];renderAdmin();}
 
 /* ===== BƯỚC 1: TẠO GIẢI ===== */
@@ -366,7 +364,7 @@ async function saveTeam(){
 }
 async function deleteTeam(id){if(!confirm("Xóa đội?"))return;var r=await sb.from("teams").delete().eq("id",id);if(r.error)alert(r.error.message);await selectEvent(state.currentEventId);}
 
-/* ===== BƯỚC 6: PHÂN BẢNG + LỊCH + KO ===== */
+/* ===== BƯỚC 6: PHÂN BẢNG + LỊCH + KO + TT ===== */
 function getUnassignedTeams(){var assigned=new Set(state.groupTeams.map(function(gt){return gt.team_id;}));return state.teams.filter(function(t){return !assigned.has(t.id);});}
 function getTeamsInGroup(groupId){var tids=state.groupTeams.filter(function(gt){return gt.group_id===groupId;}).map(function(gt){return gt.team_id;});return state.teams.filter(function(t){return tids.indexOf(t.id)>=0;});}
 
@@ -417,13 +415,14 @@ async function resetAllGroups(){
   await selectEvent(state.currentEventId);showToast("✅ Đã reset");
 }
 
+/* Draft matches */
 function getDraftForGroup(groupId){return state.draftMatches.filter(function(m){return m.groupId===groupId;});}
 function addDraftMatch(groupId){state.draftMatches.push({groupId:groupId,homeTeamId:null,awayTeamId:null});renderAdmin();}
 function removeDraftMatch(idx){state.draftMatches.splice(idx,1);renderAdmin();}
-function updateDraftMatch(idx,field,val){state.draftMatches[idx][field]=val||null;renderAdmin();}
+function updateDraftMatch(idx,field,val){state.draftMatches[idx][field]=val;renderAdmin();}
 function autoSuggestRoundRobin(groupId){
   var teams=getTeamsInGroup(groupId);
-  if(teams.length!==4){alert("Bảng cần đúng 4 đội.");return;}
+  if(teams.length!==4){alert("Bảng cần đúng 4 đội để auto.");return;}
   state.draftMatches=state.draftMatches.filter(function(m){return m.groupId!==groupId;});
   var pairs=[{a:0,b:1},{a:2,b:3},{a:0,b:2},{a:1,b:3},{a:0,b:3},{a:1,b:2}];
   pairs.forEach(function(p){state.draftMatches.push({groupId:groupId,homeTeamId:teams[p.a].id,awayTeamId:teams[p.b].id});});
@@ -445,14 +444,13 @@ function validateDraftForGroup(groupId){
     countMap[m.homeTeamId]=(countMap[m.homeTeamId]||0)+1;
     countMap[m.awayTeamId]=(countMap[m.awayTeamId]||0)+1;
     var key=[m.homeTeamId,m.awayTeamId].sort().join("-");
-    if(seen[key])return{ok:false,msg:"Trận "+(i+1)+": trùng cặp đấu"};
+    if(seen[key])return{ok:false,msg:"Trận "+(i+1)+": trùng cặp"};
     seen[key]=1;
   }
   for(var tid in countMap){if(countMap[tid]!==3)return{ok:false,msg:"Mỗi đội phải đấu 3 trận"};}
   return{ok:true,msg:""};
 }
 
-/* ===== LƯU 6 TRẬN VÒNG BẢNG ===== */
 async function saveGroupMatches(groupId){
   var v=validateDraftForGroup(groupId);
   if(!v.ok){alert("❌ "+v.msg);return;}
@@ -466,20 +464,16 @@ async function saveGroupMatches(groupId){
     await sb.from("referee_matches").delete().in("match_id",ids);
     await sb.from("matches").delete().in("id",ids);
   }
-  // match_seq offset: A=1-6, B=7-12, C=13-18, D=19-24
-  var gIdx=GROUP_CODES.indexOf(group.code);
-  var offset=gIdx*6;
+  // Mã trận: A1-A6, B1-B6, C1-C6, D1-D6
   var ins=[];
   draft.forEach(function(m,i){
-    var seq=offset+i+1; // 1..24
-    var suffix=group.code+(i+1); // "A1".."A6"
+    var shortCode=group.code+(i+1); // A1, A2... D6
+    var fullCode=buildMatchCode(shortCode);
     ins.push({
       event_id:state.currentEventId,tournament_id:state.tournament.id,
       stage_id:state.groupStage.id,group_id:groupId,
-      round:0,                    // Vòng bảng = 0 (KO dùng 1,2,3)
-      bracket_slot:seq,           // 1..24 → unique trong event
-      match_code:buildMatchCode(suffix), // "001A-A1"
-      match_seq:seq,
+      round:0,bracket_slot:i+1,
+      match_code:fullCode,match_seq:GROUP_CODES.indexOf(group.code)*6+i+1,
       home_team_id:m.homeTeamId,away_team_id:m.awayTeamId,
       home_score:0,away_score:0,status:"scheduled"
     });
@@ -488,7 +482,7 @@ async function saveGroupMatches(groupId){
     var ir=await sb.from("matches").insert(ins);
     if(ir.error){alert("❌ "+ir.error.message);return;}
   }
-  showToast("✅ Đã lưu 6 trận bảng "+group.code);
+  showToast("✅ Đã lưu 6 trận bảng "+group.code+" (A1-A6)");
   await selectEvent(state.currentEventId);
 }
 
@@ -526,7 +520,6 @@ function calculateGroupStandings(groupId){
   return arr;
 }
 
-/* ===== TẠO 7 TRẬN KO ===== */
 async function createKnockoutMatches(){
   if(!state.knockoutStage||!state.groupStage){alert("Khởi tạo bảng trước.");return;}
   var ready=true;
@@ -534,7 +527,7 @@ async function createKnockoutMatches(){
     var g=state.groups.find(function(x){return x.code===c&&x.stage_id===state.groupStage.id;});
     if(g&&getTeamsInGroup(g.id).length!==4)ready=false;
   });
-  if(!ready){alert("Mỗi bảng cần đủ 4 đội.");return;}
+  if(!ready){alert("Mỗi bảng cần 4 đội.");return;}
   // Xóa trận KO cũ
   var oldKo=state.matches.filter(function(m){return m.stage_id===state.knockoutStage.id;});
   if(oldKo.length){
@@ -542,7 +535,7 @@ async function createKnockoutMatches(){
     await sb.from("referee_matches").delete().in("match_id",ids);
     await sb.from("matches").delete().in("id",ids);
   }
-  // Lấy top 2 mỗi bảng
+  // Top 2 mỗi bảng
   var tops={};
   GROUP_CODES.forEach(function(c){
     var g=state.groups.find(function(x){return x.code===c&&x.stage_id===state.groupStage.id;});
@@ -550,32 +543,22 @@ async function createKnockoutMatches(){
     var st=calculateGroupStandings(g.id);
     tops[c]={first:st[0]?st[0].team_id:null,second:st[1]?st[1].team_id:null};
   });
+  // Logic TK: TK1=1A-2B, TK2=1B-2A, TK3=1C-2D, TK4=1D-2C
   var ins=[];
-  // TK1: 1A vs 2B, TK2: 1B vs 2A, TK3: 1C vs 2D, TK4: 1D vs 2C
   var qf=[
-    {slot:1,home:tops.A.first,away:tops.B.second},
-    {slot:2,home:tops.B.first,away:tops.A.second},
-    {slot:3,home:tops.C.first,away:tops.D.second},
-    {slot:4,home:tops.D.first,away:tops.C.second}
+    {slot:1,short:"TK1",home:tops.A.first,away:tops.B.second},
+    {slot:2,short:"TK2",home:tops.B.first,away:tops.A.second},
+    {slot:3,short:"TK3",home:tops.C.first,away:tops.D.second},
+    {slot:4,short:"TK4",home:tops.D.first,away:tops.C.second}
   ];
-  qf.forEach(function(m,i){
-    ins.push({
-      event_id:state.currentEventId,tournament_id:state.tournament.id,
-      stage_id:state.knockoutStage.id,group_id:null,
-      round:1,bracket_slot:m.slot,
-      match_code:buildMatchCode("TK"+m.slot), // "001A-TK1"
-      match_seq:25+i,
-      home_team_id:m.home,away_team_id:m.away,
-      home_score:0,away_score:0,status:"scheduled"
-    });
-  });
-  // BK1, BK2
+  qf.forEach(function(m,i){ins.push({event_id:state.currentEventId,tournament_id:state.tournament.id,stage_id:state.knockoutStage.id,group_id:null,round:1,bracket_slot:m.slot,match_code:buildMatchCode(m.short),match_seq:25+i,home_team_id:m.home,away_team_id:m.away,home_score:0,away_score:0,status:"scheduled"});});
+  // BK: BK1, BK2
   ins.push({event_id:state.currentEventId,tournament_id:state.tournament.id,stage_id:state.knockoutStage.id,group_id:null,round:2,bracket_slot:1,match_code:buildMatchCode("BK1"),match_seq:29,home_team_id:null,away_team_id:null,home_score:0,away_score:0,status:"scheduled"});
   ins.push({event_id:state.currentEventId,tournament_id:state.tournament.id,stage_id:state.knockoutStage.id,group_id:null,round:2,bracket_slot:2,match_code:buildMatchCode("BK2"),match_seq:30,home_team_id:null,away_team_id:null,home_score:0,away_score:0,status:"scheduled"});
   // CK
   ins.push({event_id:state.currentEventId,tournament_id:state.tournament.id,stage_id:state.knockoutStage.id,group_id:null,round:3,bracket_slot:1,match_code:buildMatchCode("CK"),match_seq:31,home_team_id:null,away_team_id:null,home_score:0,away_score:0,status:"scheduled"});
   if(ins.length){var ir=await sb.from("matches").insert(ins);if(ir.error){alert("❌ "+ir.error.message);return;}}
-  showToast("✅ Đã tạo 7 trận KO");await selectEvent(state.currentEventId);
+  showToast("✅ Đã tạo 7 trận KO (TK1-TK4, BK1-BK2, CK)");await selectEvent(state.currentEventId);
 }
 
 async function updateKOMatch(matchId,field,val){
@@ -633,25 +616,31 @@ function renderAdmin(){
   var editingE=state.events.find(function(e){return e.id===state.editingEventId;});
   var editingP=state.players.find(function(p){return p.id===state.editingPlayerId;});
   var editingT=state.teams.find(function(tm){return tm.id===state.editingTeamId;});
+  var currentEv=null,i;for(i=0;i<state.events.length;i++)if(state.events[i].id===state.currentEventId)currentEv=state.events[i];
   var eventsSorted=state.events.slice().sort(function(a,b){return String(b.created_at||"").localeCompare(String(a.created_at||""));});
+
   var groupMatches=state.matches.filter(function(m){return m.group_id;});
   var koMatches=state.matches.filter(function(m){return !m.group_id;});
+
   var s1Status=state.tournaments.length?{type:"done",text:state.tournaments.length+" giải"}:{type:"empty",text:"Chưa có"};
   var s2Status=t?{type:"done",text:t.code}:{type:"empty",text:"Chưa chọn"};
   var s3Status=state.events.length?{type:"done",text:state.events.length+" ND"}:{type:"empty",text:"Chưa có"};
   var s4Status=state.players.length?{type:"done",text:state.players.length+" VĐV"}:{type:"empty",text:"Chưa có"};
-  var s5Status=state.teams.length?{type:state.teams.length>=16?"done":"partial",text:state.teams.length+"/16"}:{type:"empty",text:"Chưa có"};
+  var s5Status=state.teams.length?{type:state.teams.length>=16?"done":"partial",text:state.teams.length+"/16 đội"}:{type:"empty",text:"Chưa có"};
   var s6Status=(groupMatches.length===24&&koMatches.length===7)?{type:"done",text:"31 trận"}:groupMatches.length||koMatches.length?{type:"partial",text:groupMatches.length+"/24 + "+koMatches.length+"/7"}:{type:"empty",text:"Chưa tạo"};
   var s7Status=state.users.length?{type:"done",text:state.users.length+" user"}:{type:"empty",text:"Chưa có"};
 
   var H="";
+
+  /* BƯỚC 1 */
   H+='<div class="card">'+accordionHeader("1","Tạo giải mới","s1",s1Status.type,s1Status.text);
   H+='<div class="accordion-body'+(state.accordion.s1?" open":"")+'">';
   H+='<div class="form-grid"><input id="t-name" placeholder="Tên giải"/><input id="t-start" type="date"/><input id="t-end" type="date" placeholder="Ngày kết thúc"/><input id="t-location" placeholder="Địa điểm"/><button class="btn btn-primary" onclick="createTournament()">➕ Tạo giải</button></div>';
-  H+='<div class="info-box">Mã giải tự sinh (001, 002...). Mã trận: <b>AAAB-X1</b> (VD: 001A-A1, 001A-TK1)</div>';
+  H+='<div class="info-box">Mã giải tự sinh (001, 002...). Mã trận ví dụ: <span class="code-display">0011A1</span> (giải 001, ND 1, bảng A trận 1)</div>';
   H+='</div></div>';
 
-  H+='<div class="card">'+accordionHeader("2","Chọn giải","s2",s2Status.type,s2Status.text);
+  /* BƯỚC 2 */
+  H+='<div class="card">'+accordionHeader("2","Chọn giải để thiết lập","s2",s2Status.type,s2Status.text);
   H+='<div class="accordion-body'+(state.accordion.s2?" open":"")+'">';
   H+='<div class="form-grid"><select onchange="selectTournament(this.value)">'+(tOpts||'<option value="">— Chưa có —</option>')+'</select>';
   if(t)H+='<button class="btn '+(locked?"btn-blue":"btn-danger")+'" onclick="toggleLock(\''+t.id+'\')">'+(locked?"🔓 Mở":"🔒 Đóng")+'</button><button class="btn btn-danger" onclick="deleteTournament(\''+t.id+'\')">🗑 Xóa</button>';
@@ -660,33 +649,38 @@ function renderAdmin(){
   else H+='<div class="alert-box">Tạo giải ở Bước 1.</div>';
   H+='</div></div>';
 
-  H+='<div class="card '+(noT?"disabled":"")+'">'+accordionHeader("3","Nội dung","s3",s3Status.type,s3Status.text);
+  /* BƯỚC 3 */
+  H+='<div class="card '+(noT?"disabled":"")+'">'+accordionHeader("3","Nội dung thi đấu","s3",s3Status.type,s3Status.text);
   H+='<div class="accordion-body'+(state.accordion.s3?" open":"")+'">';
   if(noT)H+='<div class="alert-box">Chọn giải ở Bước 2.</div>';
   else{
     H+='<div class="form-grid"><input id="e-name" placeholder="Tên" value="'+(editingE?editingE.name:"")+'"/><input id="e-limit" type="number" step="0.05" placeholder="Trình" value="'+(editingE&&editingE.rating_limit!=null?editingE.rating_limit:"")+'"/><select id="e-rule"><option value="max_total"'+(editingE&&editingE.rating_rule==="max_total"?" selected":"")+">Tổng &lt;=</option><option value='exact_total'"+(editingE&&editingE.rating_rule==="exact_total"?" selected":"")+">Tổng =</option><option value='open'"+(editingE&&editingE.rating_rule==="open"?" selected":"")+">Mở</option></select><button class='btn btn-primary' onclick='saveEvent()'>"+(editingE?"💾 Lưu":"➕ Tạo")+"</button>";
     if(editingE)H+='<button class="btn btn-light" onclick="cancelEditEvent()">✕</button>';
-    H+='</div><div class="table-wrap"><table><thead><tr><th>Tên</th><th>Trình</th><th>Luật</th><th></th></tr></thead><tbody>';
-    H+=eventsSorted.map(function(e){return '<tr><td>'+e.name+'</td><td>'+(e.rating_limit!=null?e.rating_limit:"-")+'</td><td>'+e.rating_rule+'</td><td><button class="btn btn-sm btn-warn" onclick="editEvent(\''+e.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deleteEvent(\''+e.id+'\')">🗑</button></td></tr>';}).join("")||'<tr><td colspan="4" class="muted" style="color:var(--mu)">Chưa có</td></tr>';
+    H+='</div>';
+    H+='<div class="table-wrap"><table><thead><tr><th>Mã</th><th>Tên</th><th>Trình</th><th>Luật</th><th></th></tr></thead><tbody>';
+    H+=eventsSorted.map(function(e){return '<tr><td><span class="code-display">'+e.code+'</span></td><td>'+e.name+'</td><td>'+(e.rating_limit!=null?e.rating_limit:"-")+'</td><td>'+e.rating_rule+'</td><td><button class="btn btn-sm btn-warn" onclick="editEvent(\''+e.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deleteEvent(\''+e.id+'\')">🗑</button></td></tr>';}).join("")||'<tr><td colspan="5" class="muted" style="color:var(--mu)">Chưa có</td></tr>';
     H+='</tbody></table></div>';
   }
   H+='</div></div>';
 
-  H+='<div class="card '+(noT?"disabled":"")+'">'+accordionHeader("4","VĐV","s4",s4Status.type,s4Status.text);
+  /* BƯỚC 4 */
+  H+='<div class="card '+(noT?"disabled":"")+'">'+accordionHeader("4","Vận động viên","s4",s4Status.type,s4Status.text);
   H+='<div class="accordion-body'+(state.accordion.s4?" open":"")+'">';
   if(noT)H+='<div class="alert-box">Chọn giải ở Bước 2.</div>';
   else{
     H+='<div class="form-grid"><input id="p-name" placeholder="Họ tên" value="'+(editingP?editingP.full_name:"")+'"/><select id="p-gender"><option value="male"'+(editingP&&editingP.gender==="male"?" selected":"")+">Nam</option><option value='female'"+(editingP&&editingP.gender==="female"?" selected":"")+">Nữ</option></select><input id='p-rating' type='number' step='0.05' placeholder='Rating' value='"+(editingP&&editingP.skill_rating!=null?editingP.skill_rating:"")+"'/><input id='p-club' placeholder='Club' value='"+(editingP?editingP.club_name||"":'')+"'/><button class='btn btn-primary' onclick='savePlayer()'>"+(editingP?"💾 Lưu":"➕ Thêm")+"</button>";
     if(editingP)H+='<button class="btn btn-light" onclick="cancelEditPlayer()">✕</button>';
-    H+='</div><div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>GT</th><th>Rating</th><th>Club</th><th></th></tr></thead><tbody>';
+    H+='</div>';
+    H+='<div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>GT</th><th>Rating</th><th>Club</th><th></th></tr></thead><tbody>';
     H+=state.players.map(function(p){return '<tr><td>'+p.full_name+'</td><td>'+(p.gender==="male"?"Nam":"Nữ")+'</td><td>'+(p.skill_rating!=null?p.skill_rating:"")+'</td><td>'+(p.club_name||'')+'</td><td><button class="btn btn-sm btn-warn" onclick="editPlayer(\''+p.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="deletePlayer(\''+p.id+'\')">🗑</button></td></tr>';}).join("")||'<tr><td colspan="5" class="muted" style="color:var(--mu)">Chưa có</td></tr>';
     H+='</tbody></table></div>';
   }
   H+='</div></div>';
 
+  /* BƯỚC 5 */
   H+='<div class="card">'+accordionHeader("5","Tạo đội","s5",s5Status.type,s5Status.text);
   H+='<div class="accordion-body'+(state.accordion.s5?" open":"")+'">';
-  if(!state.currentEventId||noT){H+='<div class="alert-box">Chọn giải và nội dung.</div>';}
+  if(!state.currentEventId||noT){H+='<div class="alert-box">Chọn giải và nội dung trước.</div>';}
   else{
     H+='<div class="stat-row"><div class="stat-chip"><div class="label">Đội hiện có</div><div class="value">'+state.teams.length+'/16</div></div><div class="stat-chip"><div class="label">VĐV đã dùng</div><div class="value">'+usedPlayerIdsT5().size+'</div></div><div class="stat-chip"><div class="label">VĐV còn trống</div><div class="value">'+baseAvailablePlayers().length+'</div></div></div>';
     H+='<div class="form-grid"><select id="team-p1" onchange="onTeamP1Change()"><option value="">-- VĐV 1 --</option></select><select id="team-p2" onchange="onTeamP2Change()"><option value="">-- VĐV 2 --</option></select><button id="team-create-btn" class="btn btn-primary '+(editingT?"hidden":"")+'" onclick="saveTeam()">➕ Tạo đội</button>';
@@ -698,20 +692,24 @@ function renderAdmin(){
   }
   H+='</div></div>';
 
+  /* BƯỚC 6 */
   H+='<div class="card">'+accordionHeader("6","Lịch thi đấu + Trọng tài","s6",s6Status.type,s6Status.text);
   H+='<div class="accordion-body'+(state.accordion.s6?" open":"")+'">';
   if(!state.currentEventId||noT){H+='<div class="alert-box">Chọn giải và nội dung.</div>';}
   else{
     if(!state.groupStage){
-      H+='<div class="info-box">Bấm nút dưới để tạo 4 bảng A/B/C/D và vòng KO.</div>';
+      H+='<div class="info-box">Chưa khởi tạo hệ thống bảng. Bấm nút dưới để tạo 4 bảng A/B/C/D và vòng KO.</div>';
       H+='<button class="btn btn-primary" onclick="initGroupStage()">🏆 Khởi tạo 4 bảng + KO</button>';
     }else{
-      H+='<div class="info-box">💡 <b>Quy trình:</b> Phân 16 đội → Chọn 6 cặp/bảng → Lưu → Tạo 7 trận KO (auto theo BXH) → Phân TT</div>';
-      H+='<div class="stat-row"><div class="stat-chip"><div class="label">Đã xếp</div><div class="value">'+(state.teams.length-getUnassignedTeams().length)+'/16</div></div><div class="stat-chip"><div class="label">Trận bảng</div><div class="value">'+groupMatches.length+'/24</div></div><div class="stat-chip"><div class="label">Trận KO</div><div class="value">'+koMatches.length+'/7</div></div><div class="stat-chip"><div class="label">Prefix</div><div class="value" style="font-size:14px">'+getEventPrefix()+'</div></div></div>';
+      H+='<div class="info-box">💡 <b>Quy trình:</b> Phân 16 đội → Chọn 6 trận mỗi bảng (A1-A6, B1-B6...) → Tạo 7 trận KO (TK1-TK4, BK1-BK2, CK) → Phân TT.</div>';
+      H+='<div class="info-box">📛 <b>Mã trận:</b> Lưu dạng <span class="code-display">0011A1</span> (AAAB + shortCode), hiển thị <span class="code-display">A1</span>.</div>';
 
+      H+='<div class="stat-row"><div class="stat-chip"><div class="label">Đội đã xếp</div><div class="value">'+(state.teams.length-getUnassignedTeams().length)+'/16</div></div><div class="stat-chip"><div class="label">Trận bảng</div><div class="value">'+groupMatches.length+'/24</div></div><div class="stat-chip"><div class="label">Trận KO</div><div class="value">'+koMatches.length+'/7</div></div></div>';
+
+      /* Phân bảng */
       H+='<div class="section-title">📋 Phân 16 đội vào 4 bảng</div>';
       H+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-blue" onclick="autoAssignGroups()">⚡ Xếp tự động</button><button class="btn btn-warn" onclick="resetAllGroups()">↺ Reset</button></div>';
-      
+
       var un=getUnassignedTeams();
       if(un.length){
         H+='<div class="unassigned-pool"><h5>⚠ Chưa xếp ('+un.length+' đội)</h5><div class="pill-list">';
@@ -720,7 +718,7 @@ function renderAdmin(){
         });
         H+='</div></div>';
       }
-      
+
       H+='<div class="group-grid">';
       GROUP_CODES.forEach(function(c){
         var g=state.groups.find(function(x){return x.code===c&&x.stage_id===state.groupStage.id;});
@@ -731,84 +729,92 @@ function renderAdmin(){
           mb.forEach(function(tm){
             H+='<div class="group-team"><div class="name"><b>'+shortName(tm.name)+'</b> <span class="muted" style="color:var(--mu)">('+tm.total_rating.toFixed(2)+')</span></div><button onclick="removeTeamFromGroup(\''+tm.id+'\')">✕</button></div>';
           });
-        }else H+='<div class="muted" style="color:var(--mu);padding:6px 0">Trống</div>';
+        }else{
+          H+='<div class="muted" style="color:var(--mu);padding:6px 0">Trống</div>';
+        }
         H+='</div>';
       });
       H+='</div>';
 
-      H+='<div class="section-title">🎯 Chọn 6 trận vòng bảng</div>';
-      H+='<div class="info-box">Mỗi bảng 4 đội → 6 cặp (mỗi đội đấu 3 trận). Dùng "Auto đề xuất" hoặc tự chọn.</div>';
-      
-      GROUP_CODES.forEach(function(c){
+      /* Chọn 6 trận mỗi bảng */
+      H+='<div class="section-title">🎯 Chọn 6 trận vòng bảng (A1-A6, B1-B6, C1-C6, D1-D6)</div>';
+      H+='<div class="info-box">Mỗi bảng 4 đội → chọn đúng 6 cặp (mỗi đội đấu 3 trận). Có thể dùng "Auto đề xuất".</div>';
+
+      GROUP_CODES.forEach(function(c,gi){
         var g=state.groups.find(function(x){return x.code===c&&x.stage_id===state.groupStage.id;});
         if(!g)return;
         var mb=getTeamsInGroup(g.id);
         var v=validateDraftForGroup(g.id);
         var existingMatches=state.matches.filter(function(m){return m.group_id===g.id;});
         var draftForG=getDraftForGroup(g.id);
-        
+
         H+='<div class="group-card" style="margin-bottom:10px"><h4>Bảng '+c+' <span class="badge '+(v.ok?"b-green":draftForG.length?"b-warn":"b-gray")+'">'+(v.ok?"✓ Sẵn sàng":draftForG.length+"/6 trận")+'</span></h4>';
-        
+
         if(mb.length!==4){
-          H+='<div class="alert-box">Cần đủ 4 đội.</div>';
+          H+='<div class="alert-box">Cần đủ 4 đội trong bảng để chọn trận.</div>';
         }else{
           var teamOpts=mb.map(function(tm){return '<option value="'+tm.id+'">'+shortName(tm.name)+'</option>';}).join("");
+
           draftForG.forEach(function(m,idx){
             var realIdx=state.draftMatches.indexOf(m);
             H+='<div class="match-row"><span class="num">'+c+(idx+1)+'</span><select onchange="updateDraftMatch('+realIdx+',\'homeTeamId\',this.value)"><option value="">-- Đội nhà --</option>'+teamOpts+'</select><span class="vs">vs</span><select onchange="updateDraftMatch('+realIdx+',\'awayTeamId\',this.value)"><option value="">-- Đội khách --</option>'+teamOpts+'</select><button class="remove" onclick="removeDraftMatch('+realIdx+')">✕</button></div>';
           });
-          
+
           H+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">';
-          if(draftForG.length<6)H+='<button class="btn btn-sm btn-light" onclick="addDraftMatch(\''+g.id+'\')">➕ Thêm</button>';
-          H+='<button class="btn btn-sm btn-blue" onclick="autoSuggestRoundRobin(\''+g.id+'\')">⚡ Auto 6 trận</button>';
+          if(draftForG.length<6)H+='<button class="btn btn-sm btn-light" onclick="addDraftMatch(\''+g.id+'\')">➕ Thêm trận</button>';
+          H+='<button class="btn btn-sm btn-blue" onclick="autoSuggestRoundRobin(\''+g.id+'\')">⚡ Auto đề xuất</button>';
           if(draftForG.length)H+='<button class="btn btn-sm btn-warn" onclick="clearDraftForGroup(\''+g.id+'\')">🗑 Xóa nháp</button>';
           if(v.ok)H+='<button class="btn btn-sm btn-primary" onclick="saveGroupMatches(\''+g.id+'\')">💾 Lưu 6 trận</button>';
-          if(existingMatches.length&&!draftForG.length)H+='<button class="btn btn-sm btn-light" onclick="loadExistingToDraft(\''+g.id+'\')">📥 Sửa đã có</button>';
+          if(existingMatches.length&&!draftForG.length)H+='<button class="btn btn-sm btn-light" onclick="loadExistingToDraft(\''+g.id+'\')">📥 Sửa trận</button>';
           H+='</div>';
+
           if(existingMatches.length){
-            H+='<div class="success-box" style="margin-top:8px">✓ Đã có '+existingMatches.length+' trận: '+existingMatches.map(function(m){return displayCode(m);}).join(", ")+'</div>';
+            H+='<div class="success-box" style="margin-top:8px">✓ Đã có '+existingMatches.length+' trận (';
+            H+=existingMatches.map(function(m){return '<span class="code-display">'+displayCode(m.match_code)+'</span>';}).join(", ");
+            H+=')</div>';
           }
         }
         H+='</div>';
       });
 
-      H+='<div class="section-title">🔥 Vòng KO (7 trận)</div>';
+      /* Vòng KO */
+      H+='<div class="section-title">🔥 Vòng loại trực tiếp (TK1-TK4, BK1-BK2, CK)</div>';
       H+='<div class="info-box"><b>Logic:</b> TK1: 1A-2B • TK2: 1B-2A • TK3: 1C-2D • TK4: 1D-2C • BK1: W(TK1)-W(TK2) • BK2: W(TK3)-W(TK4) • CK: W(BK1)-W(BK2)</div>';
-      
+
       if(koMatches.length===0){
-        H+='<button class="btn btn-primary" onclick="createKnockoutMatches()">🏆 Tạo 7 trận KO (auto)</button>';
+        H+='<button class="btn btn-primary" onclick="createKnockoutMatches()">🏆 Tạo 7 trận KO</button>';
       }else{
-        H+='<div class="success-box">✓ 7 trận KO sẵn sàng. Override đội nếu cần.</div>';
-        
-        H+='<h4 style="color:var(--cy);margin:12px 0 6px">Tứ kết (4 trận)</h4>';
+        H+='<div class="success-box">✓ Đã có 7 trận KO. Admin có thể chỉnh đội nếu cần.</div>';
+
+        H+='<h4 style="color:var(--cy);margin:12px 0 6px">Tứ kết (TK1-TK4)</h4>';
         var tkMatches=koMatches.filter(function(m){return m.round===1;}).sort(function(a,b){return a.bracket_slot-b.bracket_slot;});
         var tkLabels=["TK1: 1A vs 2B","TK2: 1B vs 2A","TK3: 1C vs 2D","TK4: 1D vs 2C"];
-        var allTeamOpts=state.teams.map(function(t){return '<option value="'+t.id+'">'+shortName(t.name)+'</option>';}).join("");
         tkMatches.forEach(function(m,i){
           var mRef=state.refAssign[m.id]||null;
           H+='<div class="ko-row"><span class="label">'+tkLabels[i]+'</span><select class="ref-sel" onchange="updateKOMatch(\''+m.id+"','home_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội nhà --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(m.home_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><span class='vs' style='color:var(--mu);font-weight:700'>vs</span><select class='ref-sel' onchange=\"updateKOMatch('"+m.id+"','away_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội khách --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(m.away_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><select class='ref-sel' onchange='assignMatchRef(\""+m.id+"\",this.value)'><option value=''>-- TT --</option>"+state.referees.map(function(r){return '<option value="'+r.user_id+'"'+(mRef===r.user_id?" selected":"")+">"+r.username+"</option>";}).join("")+"</select></div>";
         });
-        
-        H+='<h4 style="color:var(--cy);margin:12px 0 6px">Bán kết (2 trận)</h4>';
+
+        H+='<h4 style="color:var(--cy);margin:12px 0 6px">Bán kết (BK1-BK2)</h4>';
         var bkMatches=koMatches.filter(function(m){return m.round===2;}).sort(function(a,b){return a.bracket_slot-b.bracket_slot;});
         var bkLabels=["BK1: Thắng TK1 vs Thắng TK2","BK2: Thắng TK3 vs Thắng TK4"];
         bkMatches.forEach(function(m,i){
           var mRef=state.refAssign[m.id]||null;
           H+='<div class="ko-row"><span class="label">'+bkLabels[i]+'</span><select class="ref-sel" onchange="updateKOMatch(\''+m.id+"','home_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội nhà --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(m.home_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><span class='vs' style='color:var(--mu);font-weight:700'>vs</span><select class='ref-sel' onchange=\"updateKOMatch('"+m.id+"','away_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội khách --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(m.away_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><select class='ref-sel' onchange='assignMatchRef(\""+m.id+"\",this.value)'><option value=''>-- TT --</option>"+state.referees.map(function(r){return '<option value="'+r.user_id+'"'+(mRef===r.user_id?" selected":"")+">"+r.username+"</option>";}).join("")+"</select></div>";
         });
-        
-        H+='<h4 style="color:var(--cy);margin:12px 0 6px">🏆 Chung kết</h4>';
+
+        H+='<h4 style="color:var(--cy);margin:12px 0 6px">🏆 Chung kết (CK)</h4>';
         var ckMatch=koMatches.find(function(m){return m.round===3;});
         if(ckMatch){
           var mRef=state.refAssign[ckMatch.id]||null;
-          H+='<div class="ko-row ck"><span class="label" style="color:var(--li)">CK: Thắng BK1 vs Thắng BK2</span><select class="ref-sel" onchange="updateKOMatch(\''+ckMatch.id+"','home_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội nhà --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(ckMatch.home_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><span class='vs' style='color:var(--mu);font-weight:700'>vs</span><select class='ref-sel' onchange=\"updateKOMatch('"+ckMatch.id+"','away_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội khách --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(ckMatch.away_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><select class='ref-sel' onchange='assignMatchRef(\""+ckMatch.id+"\",this.value)'><option value=''>-- TT --</option>"+state.referees.map(function(r){return '<option value="'+r.user_id+'"'+(mRef===r.user_id?" selected":"")+">"+r.username+"</option>";}).join("")+"</select></div>";
+          H+='<div class="ko-row" style="border:2px solid var(--li)"><span class="label" style="color:var(--li)">CK: Thắng BK1 vs Thắng BK2</span><select class="ref-sel" onchange="updateKOMatch(\''+ckMatch.id+"','home_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội nhà --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(ckMatch.home_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><span class='vs' style='color:var(--mu);font-weight:700'>vs</span><select class='ref-sel' onchange=\"updateKOMatch('"+ckMatch.id+"','away_team_id',this.value)\" style='padding:6px'><option value=''>-- Đội khách --</option>"+state.teams.map(function(t){return '<option value="'+t.id+'"'+(ckMatch.away_team_id===t.id?" selected":"")+">"+shortName(t.name)+"</option>";}).join("")+"</select><select class='ref-sel' onchange='assignMatchRef(\""+ckMatch.id+"\",this.value)'><option value=''>-- TT --</option>"+state.referees.map(function(r){return '<option value="'+r.user_id+'"'+(mRef===r.user_id?" selected":"")+">"+r.username+"</option>";}).join("")+"</select></div>";
         }
-        
-        H+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-warn" onclick="deleteAllSchedule()">🗑 Xóa toàn bộ lịch</button><button class="btn btn-blue" onclick="location.href=\'tournament.html?id='+state.tournament.id+'\'">→ Xem trang giải</button></div>';
+
+        H+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-warn" onclick="deleteAllSchedule()">🗑 Xóa toàn bộ lịch</button><button class="btn btn-blue" onclick="location.href=\'tournament.html?id='+state.tournament.id+'\'">→ Xem trang giải đấu</button></div>';
       }
-      
+
+      /* Phân TT bảng bulk */
       if(groupMatches.length&&state.referees.length){
-        H+='<div class="section-title">👨‍⚖️ Phân TT nhanh vòng bảng</div>';
+        H+='<div class="section-title">👨‍⚖️ Phân công TT nhanh cho vòng bảng</div>';
         GROUP_CODES.forEach(function(c){
           var g=state.groups.find(function(x){return x.code===c&&x.stage_id===state.groupStage.id;});
           if(!g)return;
@@ -822,15 +828,17 @@ function renderAdmin(){
   }
   H+='</div></div>';
 
-  H+='<div class="card">'+accordionHeader("7","Quản lý user","s7",s7Status.type,s7Status.text);
+  /* BƯỚC 7 */
+  H+='<div class="card">'+accordionHeader("7","Quản lý người dùng","s7",s7Status.type,s7Status.text);
   H+='<div class="accordion-body'+(state.accordion.s7?" open":"")+'">';
-  H+='<div class="form-grid"><input id="nu-email" placeholder="Email"/><input id="nu-pass" type="text" value="'+DEFAULT_PASS+'"/><select id="nu-role"><option value="referee">referee</option><option value="organizer">organizer</option><option value="admin">admin</option></select><button class="btn btn-primary" onclick="adminCreateUser()">➕ Tạo user</button></div>';
+  H+='<div class="form-grid"><input id="nu-email" placeholder="Email"/><input id="nu-pass" type="text" value="'+DEFAULT_PASS+'" placeholder="Mật khẩu"/><select id="nu-role"><option value="referee">referee (TT)</option><option value="organizer">organizer</option><option value="admin">admin</option></select><button class="btn btn-primary" onclick="adminCreateUser()">➕ Tạo user</button></div>';
   H+='<div class="table-wrap"><table><thead><tr><th>Email</th><th>Quyền</th><th>Đổi</th></tr></thead><tbody>';
   H+=state.users.map(function(u){return '<tr><td>'+u.username+'</td><td><span class="badge b-blue">'+(u.role||"-")+'</span></td><td><select onchange="changeRole(\''+u.user_id+"',this.value)\" style='font-size:11px;padding:4px'><option value='referee'"+(u.role==="referee"?" selected":"")+">referee</option><option value='organizer'"+(u.role==="organizer"?" selected":"")+">organizer</option><option value='admin'"+(u.role==="admin"?" selected":"")+">admin</option></select></td></tr>";}).join("")||'<tr><td colspan="3" class="muted" style="color:var(--mu)">Chưa có</td></tr>';
-  H+='</tbody></table></div></div></div>';
+  H+='</tbody></table></div>';
+  H+='</div></div>';
 
   el("admin-content").innerHTML=H;
-  
+
   setTimeout(function(){
     state.draftMatches.forEach(function(m,idx){
       var rows=document.querySelectorAll(".match-row");
