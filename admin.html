@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Quản trị - Pickleball Pro v22</title>
+<title>Quản trị - Pickleball Pro v23</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 :root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
@@ -84,7 +84,7 @@ table.match-table td.m-status{min-width:80px}
 .status-tag.scheduled{background:rgba(148,163,184,.2);color:var(--mu)}
 .status-tag.completed{background:rgba(163,230,53,.2);color:var(--li)}
 
-/* ===== BẢNG XẾP HẠNG (BXH) ===== */
+/* ===== BẢNG XẾP HẠNG (BXH) V23 ===== */
 table.bxh-table{width:100%;border-collapse:collapse;background:#0a1020;border-radius:8px;overflow:hidden;margin-bottom:8px;font-size:12px}
 table.bxh-table thead{background:#1a2540}
 table.bxh-table th{padding:6px 8px;color:var(--cy);font-size:10px;text-transform:uppercase;font-weight:800;text-align:center;border-bottom:1px solid var(--ln);letter-spacing:.5px}
@@ -95,13 +95,20 @@ table.bxh-table tr.top-2 td:first-child::before{content:"✓ ";color:var(--li)}
 table.bxh-table td.rank{font-weight:800;font-size:13px;color:var(--li)}
 table.bxh-table tr:not(.top-2) td.rank{color:var(--mu)}
 table.bxh-table td.team-name{text-align:left;font-weight:700;color:var(--tx);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.bxh-table td.played{font-family:monospace;font-weight:700}
+table.bxh-table td.played.full{color:var(--li)}
+table.bxh-table td.played.partial{color:var(--or)}
+table.bxh-table td.played .warn{color:var(--or);font-weight:800;margin-left:2px}
 table.bxh-table td.wins{color:var(--li);font-weight:800;font-family:monospace}
 table.bxh-table td.diff{font-family:monospace;font-weight:700}
 table.bxh-table td.diff.positive{color:var(--li)}
 table.bxh-table td.diff.negative{color:var(--rd)}
 table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
-.bxh-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:6px 10px;background:rgba(34,211,238,.08);border-radius:6px;font-size:11px;color:var(--cy);font-weight:700}
+.bxh-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:6px 10px;background:rgba(34,211,238,.08);border-radius:6px;font-size:11px;color:var(--cy);font-weight:700;flex-wrap:wrap;gap:6px}
 .bxh-header .legend{font-size:10px;color:var(--mu);font-weight:500;font-style:italic}
+.bxh-status{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;margin-left:6px}
+.bxh-status.complete{background:rgba(163,230,53,.2);color:var(--li)}
+.bxh-status.partial{background:rgba(251,146,60,.2);color:var(--or)}
 
 @media(max-width:900px){
   table.match-table{min-width:780px}
@@ -117,7 +124,7 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 </head>
 <body>
 <nav class="topnav">
-<span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v22</span></span>
+<span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v23</span></span>
 <div>
 <span id="user-chip" class="chip hidden"></span>
 <button id="login-btn" class="btn btn-p" onclick="openLogin()">Đăng nhập</button>
@@ -140,7 +147,7 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 </div>
 <script>
 "use strict";
-var CFG={URL:"https://mvefkcaqvjflrgmaybev.supabase.co",KEY:"sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",PASS:"123@321",DOMAIN:"@pb-local.app",GROUPS:["A","B","C","D"],KO_SLOTS:["TK1","TK2","TK3","TK4","BK1","BK2","CK"]};
+var CFG={URL:"https://mvefkcaqvjflrgmaybev.supabase.co",KEY:"sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",PASS:"123@321",DOMAIN:"@pb-local.app",GROUPS:["A","B","C","D"],KO_SLOTS:["TK1","TK2","TK3","TK4","BK1","BK2","CK"],MATCHES_PER_TEAM:3};
 var sb;
 try{sb=window.supabase.createClient(CFG.URL,CFG.KEY);}catch(e){console.error("Supabase init error:",e);}
 var S={user:null,role:null,username:null,tournaments:[],tournament:null,events:[],eid:null,courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],matches:[],gStage:null,kStage:null,users:[],refs:[],refAssign:{},draft:[],acc:{s1:true,s2:false,s3:false,s4:false,s5:false,s6:false,s7:false}};
@@ -166,7 +173,6 @@ function isoFromTime(hhmm){if(!hhmm)return null;return getMatchDate()+"T"+hhmm+"
 function autoStatus(m){var h=Number(m.home_score)||0,a=Number(m.away_score)||0;return(h>0||a>0)?"completed":"scheduled";}
 function statusTag(m){var st=autoStatus(m);return '<span class="status-tag '+st+'">'+(st==="completed"?"✅ Xong":"⏳ Chưa đấu")+'</span>';}
 
-/* ===== PLACEHOLDER KO (theo yêu cầu) ===== */
 function koPlaceholder(code){
   var c=dCode(code);
   var map={
@@ -242,19 +248,24 @@ function valDraft(g){var t=teamsInG(g);if(t.length!==4)return"Bảng cần 4 đ�
 async function saveGroup(g){var err=valDraft(g);if(err){alert("❌ "+err);return;}var grp=S.groups.find(function(x){return x.id===g;});var old=S.matches.filter(function(m){return m.group_id===g;});if(old.length){var ids=old.map(function(m){return m.id;});await sb.from("referee_matches").delete().in("match_id",ids);await sb.from("matches").delete().in("id",ids);}var base=CFG.GROUPS.indexOf(grp.code)*6;var ins=[];draftOf(g).forEach(function(m,i){ins.push({event_id:S.eid,tournament_id:S.tournament.id,stage_id:S.gStage.id,group_id:g,round:1,bracket_slot:base+i+1,match_code:bCode(grp.code+(i+1)),match_seq:base+i+1,home_team_id:m.h,away_team_id:m.a,home_score:0,away_score:0,status:"scheduled"});});var r=await sb.from("matches").insert(ins);if(r.error){alert("❌ "+r.error.message);return;}toast("✅ Lưu 6 trận "+grp.code);await createKO();await selE(S.eid);}
 async function delAll(){if(!confirm("Xóa toàn bộ trận + TT?"))return;try{var mr=await sb.from("matches").select("id").eq("event_id",S.eid);var ids=(mr.data||[]).map(function(m){return m.id;});if(ids.length)await sb.from("referee_matches").delete().in("match_id",ids);await sb.from("matches").delete().eq("event_id",S.eid);toast("✅ Đã xóa");await selE(S.eid);}catch(e){alert("❌ "+e.message);}}
 
-/* ===== XẾP HẠNG BẢNG (W → PF-PA → PF) ===== */
+/* ===== XẾP HẠNG BẢNG V23: THÊM "played" ĐỂ KIỂM TRA ĐIỀU KIỆN ===== */
 function standings(g){
   var t=teamsInG(g);
   var st={};
-  t.forEach(function(x){st[x.id]={id:x.id,w:0,pf:0,pa:0};});
-  S.matches.filter(function(m){return m.group_id===g&&autoStatus(m)==="completed";}).forEach(function(m){
+  t.forEach(function(x){
+    st[x.id]={id:x.id,w:0,pf:0,pa:0,played:0};
+  });
+  S.matches.filter(function(m){
+    return m.group_id===g&&autoStatus(m)==="completed";
+  }).forEach(function(m){
     var h=st[m.home_team_id],a=st[m.away_team_id];
     if(!h||!a)return;
-    h.pf+=m.home_score;h.pa+=m.away_score;
-    a.pf+=m.away_score;a.pa+=m.home_score;
+    h.pf+=m.home_score;h.pa+=m.away_score;h.played++;
+    a.pf+=m.away_score;a.pa+=m.home_score;a.played++;
     if(m.home_score>m.away_score)h.w++;else a.w++;
   });
   var arr=[];for(var k in st)arr.push(st[k]);
+  // Xếp hạng: W → PF-PA → PF (logic cũ)
   return arr.sort(function(x,y){
     if(y.w!==x.w)return y.w-x.w;
     var dx=x.pf-x.pa,dy=y.pf-y.pa;
@@ -266,46 +277,57 @@ function standings(g){
 function koBy(code){return S.matches.find(function(m){return m.match_code===code;});}
 function winnerOf(code){var m=koBy(code);if(!m||autoStatus(m)!=="completed")return null;if(m.winner_team_id)return m.winner_team_id;if(m.home_score>m.away_score)return m.home_team_id;if(m.away_score>m.home_score)return m.away_team_id;return null;}
 
+/* ===== LOGIC MỚI V23: CHỈ LẤY TOP 1/TOP 2 KHI ĐỘI ĐÃ ĐỦ 3 TRẬN ===== */
+function computeKOTeams(){
+  var tops={};
+  CFG.GROUPS.forEach(function(c){
+    var g=S.groups.find(function(x){return x.code===c&&S.gStage&&x.stage_id===S.gStage.id;});
+    if(!g){tops[c]={f:null,s:null};return;}
+    var st=standings(g.id);
+    // Top 1 chỉ được điền nếu đã đấu đủ 3 trận
+    var top1=(st[0]&&st[0].played>=CFG.MATCHES_PER_TEAM)?st[0].id:null;
+    // Top 2 chỉ được điền nếu đã đấu đủ 3 trận
+    var top2=(st[1]&&st[1].played>=CFG.MATCHES_PER_TEAM)?st[1].id:null;
+    tops[c]={f:top1,s:top2};
+  });
+  var w1=winnerOf(bCode("TK1")),w2=winnerOf(bCode("TK2"));
+  var w3=winnerOf(bCode("TK3")),w4=winnerOf(bCode("TK4"));
+  var bw1=winnerOf(bCode("BK1")),bw2=winnerOf(bCode("BK2"));
+  return{
+    "TK1":{h:tops.A.f,a:tops.B.s},
+    "TK2":{h:tops.B.f,a:tops.A.s},
+    "TK3":{h:tops.C.f,a:tops.D.s},
+    "TK4":{h:tops.D.f,a:tops.C.s},
+    "BK1":{h:w1,a:w2},
+    "BK2":{h:w3,a:w4},
+    "CK": {h:bw1,a:bw2}
+  };
+}
+
 async function createKO(){
   if(!S.kStage){try{var r=await sb.from("stages").insert({event_id:S.eid,code:"KO",name:"Knockout",stage_type:"knockout",stage_order:2}).select().single();S.kStage=r.data;}catch(e){return;}}
-  var tops={};
-  CFG.GROUPS.forEach(function(c){var g=S.groups.find(function(x){return x.code===c&&x.stage_id===S.gStage.id;});if(!g){tops[c]={f:null,s:null};return;}var st=standings(g.id);tops[c]={f:st[0]?st[0].id:null,s:st[1]?st[1].id:null};});
+  var teamsMap=computeKOTeams();
   var old=S.matches.filter(function(m){return m.stage_id===S.kStage.id;});
   if(old.length){var ids=old.map(function(m){return m.id;});await sb.from("referee_matches").delete().in("match_id",ids);await sb.from("matches").delete().in("id",ids);}
-  var w1=winnerOf(bCode("TK1")),w2=winnerOf(bCode("TK2")),w3=winnerOf(bCode("TK3")),w4=winnerOf(bCode("TK4"));
-  var bw1=winnerOf(bCode("BK1")),bw2=winnerOf(bCode("BK2"));
-  var payload=[
-    {s:25,c:"TK1",r:2,h:tops.A.f,a:tops.B.s},
-    {s:26,c:"TK2",r:2,h:tops.B.f,a:tops.A.s},
-    {s:27,c:"TK3",r:2,h:tops.C.f,a:tops.D.s},
-    {s:28,c:"TK4",r:2,h:tops.D.f,a:tops.C.s},
-    {s:29,c:"BK1",r:3,h:w1,a:w2},
-    {s:30,c:"BK2",r:3,h:w3,a:w4},
-    {s:31,c:"CK",r:4,h:bw1,a:bw2}
-  ].map(function(m){return{event_id:S.eid,tournament_id:S.tournament.id,stage_id:S.kStage.id,round:m.r,bracket_slot:m.s,match_code:bCode(m.c),match_seq:m.s,home_team_id:m.h,away_team_id:m.a,home_score:0,away_score:0,status:"scheduled"};});
+  var payload=CFG.KO_SLOTS.map(function(slot,idx){
+    var seq=25+idx;
+    var round=slot.indexOf("TK")===0?2:(slot.indexOf("BK")===0?3:4);
+    var t=teamsMap[slot]||{h:null,a:null};
+    return{event_id:S.eid,tournament_id:S.tournament.id,stage_id:S.kStage.id,round:round,bracket_slot:seq,match_code:bCode(slot),match_seq:seq,home_team_id:t.h,away_team_id:t.a,home_score:0,away_score:0,status:"scheduled"};
+  });
   try{var r2=await sb.from("matches").insert(payload);if(r2.error){alert("❌ "+r2.error.message+"\n\nChạy SQL:\nALTER TABLE matches DROP CONSTRAINT matches_home_away_different;\nALTER TABLE matches ADD CONSTRAINT matches_home_away_different CHECK (home_team_id IS NULL OR away_team_id IS NULL OR home_team_id <> away_team_id);");return;}toast("✅ Đã tạo 7 trận KO");}catch(e){alert("❌ "+e.message);}
 }
 
 async function syncKO(){
   if(!S.kStage||!S.eid)return;
-  var tops={};
-  CFG.GROUPS.forEach(function(c){var g=S.groups.find(function(x){return x.code===c&&x.stage_id===S.gStage.id;});if(!g)return;var st=standings(g.id);tops[c]={f:st[0]?st[0].id:null,s:st[1]?st[1].id:null};});
-  var w1=winnerOf(bCode("TK1")),w2=winnerOf(bCode("TK2")),w3=winnerOf(bCode("TK3")),w4=winnerOf(bCode("TK4"));
-  var bw1=winnerOf(bCode("BK1")),bw2=winnerOf(bCode("BK2"));
-  var updates=[
-    {c:"TK1",h:tops.A.f,a:tops.B.s},
-    {c:"TK2",h:tops.B.f,a:tops.A.s},
-    {c:"TK3",h:tops.C.f,a:tops.D.s},
-    {c:"TK4",h:tops.D.f,a:tops.C.s},
-    {c:"BK1",h:w1,a:w2},
-    {c:"BK2",h:w3,a:w4},
-    {c:"CK",h:bw1,a:bw2}
-  ];
-  for(var i=0;i<updates.length;i++){
-    var u=updates[i],m=koBy(bCode(u.c));
+  var teamsMap=computeKOTeams();
+  for(var i=0;i<CFG.KO_SLOTS.length;i++){
+    var slot=CFG.KO_SLOTS[i];
+    var t=teamsMap[slot];
+    var m=koBy(bCode(slot));
     if(!m)continue;
-    if(m.home_team_id!==u.h||m.away_team_id!==u.a){
-      try{await sb.from("matches").update({home_team_id:u.h,away_team_id:u.a}).eq("id",m.id);m.home_team_id=u.h;m.away_team_id=u.a;}catch(e){}
+    if(m.home_team_id!==t.h||m.away_team_id!==t.a){
+      try{await sb.from("matches").update({home_team_id:t.h,away_team_id:t.a}).eq("id",m.id);m.home_team_id=t.h;m.away_team_id=t.a;}catch(e){}
     }
   }
 }
@@ -364,7 +386,6 @@ async function chRole(uid,ro){try{await sb.from("user_roles").delete().eq("user_
 
 function courtOptsHtml(sel){var html='<option value="">--</option>';S.courts.forEach(function(c){var s=sel===c.id?" selected":"";html+='<option value="'+c.id+'"'+s+'>'+esc(c.name)+'</option>';});return html;}
 
-/* ===== RENDER 1 HÀNG TRẬN ĐẤU (table row) ===== */
 function renderMatchRow(m,isKO){
   var hn=tName(m.home_team_id),an=tName(m.away_team_id);
   var ph=koPlaceholder(m.match_code);
@@ -404,23 +425,34 @@ function renderMatchTable(matches,isKO){
   return H;
 }
 
-/* ===== RENDER BXH BẢNG ===== */
+/* ===== RENDER BXH V23: THÊM CỘT "TRẬN" + MARKER ⚠ ===== */
 function renderBXH(gid,groupCode){
   var st=standings(gid);
   if(!st.length)return '';
-  var H='<div class="bxh-header"><span>📊 BẢNG XẾP HẠNG BẢNG '+groupCode+'</span><span class="legend">✓ = Đủ điều kiện vào KO (Top 2)</span></div>';
+  // Kiểm tra bảng đã hoàn thành chưa (tất cả 4 đội đã đấu đủ 3 trận)
+  var allComplete=st.every(function(t){return t.played>=CFG.MATCHES_PER_TEAM;});
+  var completedCount=st.filter(function(t){return t.played>=CFG.MATCHES_PER_TEAM;}).length;
+  var statusHtml=allComplete
+    ?'<span class="bxh-status complete">✅ Hoàn thành</span>'
+    :'<span class="bxh-status partial">⏳ '+completedCount+'/4 đội đủ điều kiện</span>';
+  var H='<div class="bxh-header"><span>📊 BXH BẢNG '+groupCode+statusHtml+'</span><span class="legend">✓ = Đủ điều kiện KO (Top 2 + 3 trận)</span></div>';
   H+='<table class="bxh-table"><thead><tr>';
-  H+='<th>#</th><th style="text-align:left">Đội</th><th>W</th><th>PF-PA</th><th>PF</th>';
+  H+='<th>#</th><th style="text-align:left">Đội</th><th>Trận</th><th>W</th><th>PF-PA</th><th>PF</th>';
   H+='</tr></thead><tbody>';
   st.forEach(function(t,i){
     var name=tName(t.id)||"—";
     var diff=t.pf-t.pa;
     var diffClass=diff>0?"positive":(diff<0?"negative":"");
     var diffText=diff>0?"+"+diff:(diff<0?diff:"0");
-    var topClass=i<2?"top-2":"";
+    var qualified=t.played>=CFG.MATCHES_PER_TEAM;
+    // Top 2 + đã đủ 3 trận → đánh dấu ✓
+    var topClass=(i<2&&qualified)?"top-2":"";
+    var playedClass=qualified?"full":"partial";
+    var warnIcon=qualified?"":"<span class=\"warn\">⚠</span>";
     H+='<tr class="'+topClass+'">';
     H+='<td class="rank">'+(i+1)+'</td>';
     H+='<td class="team-name">'+esc(name)+'</td>';
+    H+='<td class="played '+playedClass+'">'+t.played+'/'+CFG.MATCHES_PER_TEAM+warnIcon+'</td>';
     H+='<td class="wins">'+t.w+'</td>';
     H+='<td class="diff '+diffClass+'">'+diffText+'</td>';
     H+='<td class="pf">'+t.pf+'</td>';
@@ -435,11 +467,12 @@ function toggleAcc(key){S.acc[key]=!S.acc[key];render();}
 
 function renderKOSection(km){
   var H='';
-  var countTime=0,countCourt=0,countRef=0;
+  var countTime=0,countCourt=0,countRef=0,countTeams=0;
   km.forEach(function(m){
     if(m.scheduled_at)countTime++;
     if(m.court_id)countCourt++;
     if(S.refAssign[m.id])countRef++;
+    if(m.home_team_id||m.away_team_id)countTeams++;
   });
   H+='<div class="ko-section">';
   H+='<h4>🔥 VÒNG LOẠI TRỰC TIẾP <span class="status-tag '+(km.length===7?"completed":"scheduled")+'">'+km.length+'/7 trận</span></h4>';
@@ -449,7 +482,9 @@ function renderKOSection(km){
     H+='</div>';
     return H;
   }
+  H+='<div class="info" style="margin-bottom:10px">💡 <b>Logic điền đội:</b> Đội phải <b>đấu đủ 3 trận</b> vòng bảng mới được điền tên vào KO. Nếu chưa đủ → giữ placeholder <i>Nhất A, Nhì B, Thắng TK1...</i></div>';
   H+='<div class="ko-stats">';
+  H+='<div class="k">👥 Đội <b>'+countTeams+'/14</b></div>';
   H+='<div class="k">⏰ Giờ <b>'+countTime+'/7</b></div>';
   H+='<div class="k">🏟️ Sân <b>'+countCourt+'/7</b></div>';
   H+='<div class="k">👨‍⚖️ TT <b>'+countRef+'/7</b></div>';
@@ -467,7 +502,7 @@ function renderKOSection(km){
 function renderStep6(){
   if(!S.eid||!S.tournament)return '<div class="alert">Chọn giải + nội dung.</div>';
   if(!S.gStage)return '<div class="info">Chưa tạo bảng.</div><button class="btn btn-p" onclick="initGroups()">🏆 Tạo 4 bảng A/B/C/D</button>';
-  var H='<div class="info">💡 Phân 16 đội → Lưu 6 trận/bảng → <b>KO tự sinh</b>. BXH tính theo: Thắng (W) → Hiệu PF-PA → Tổng PF.</div>';
+  var H='<div class="info">💡 Phân 16 đội → Lưu 6 trận/bảng → <b>KO tự sinh</b>. BXH: <b>W → PF-PA → PF</b>. Đội vào KO phải <b>đấu đủ 3 trận</b>.</div>';
   H+='<div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-b" onclick="autoAssign()">⚡ Xếp tự động</button></div>';
   var un=unassigned();if(un.length)H+='<div class="alert">⚠ Chưa xếp: '+un.length+' đội</div>';
   H+='<div class="tw"><table><tr><th>Bảng</th><th>Đội</th><th>Chuyển</th></tr>';
@@ -483,7 +518,6 @@ function renderStep6(){
     if(mb.length!==4){
       H+='<div class="alert">Cần 4 đội (hiện '+mb.length+').</div>';
     }else{
-      /* ===== BXH BẢNG ===== */
       H+=renderBXH(g.id,c);
       var teamOpts=mb.map(function(t){return '<option value="'+t.id+'">'+esc(sn(t.name))+'</option>';}).join("");
       d.forEach(function(m,i){
