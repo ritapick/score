@@ -44,6 +44,14 @@ main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
 .tab-content.hidden{display:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
+/* ===== V7: STATUS LEGEND ===== */
+.status-legend{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--sf2);border-radius:10px;margin-bottom:12px;border:1px solid var(--ln)}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.legend-dot.scheduled{background:var(--cy)}
+.legend-dot.live{background:var(--rd);animation:pulse 1.5s infinite}
+.legend-dot.completed{background:var(--li)}
+
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
 .b-green{background:rgba(163,230,53,.15);color:var(--li)}
 .b-blue{background:rgba(34,211,238,.15);color:var(--cy)}
@@ -51,7 +59,10 @@ main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
 .b-gray{background:rgba(148,163,184,.15);color:var(--mu)}
 .b-warn{background:rgba(251,146,60,.15);color:var(--or)}
 
+/* ===== V7: 3 TRẠNG THÁI RÕ RÀNG ===== */
+.status-scheduled{background:rgba(34,211,238,.15);color:var(--cy)}
 .status-live{background:rgba(248,113,113,.2);color:var(--rd);animation:pulse 1.5s infinite}
+.status-completed{background:rgba(163,230,53,.15);color:var(--li)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 
 .card{padding:14px;margin-bottom:16px;background:var(--sf);border:1px solid var(--ln);border-radius:12px}
@@ -62,8 +73,12 @@ table{width:100%;border-collapse:collapse;min-width:540px;background:var(--sf2);
 th,td{padding:9px 8px;border-bottom:1px solid var(--ln);text-align:center;font-size:13px;vertical-align:middle}
 th{color:var(--mu);font-size:10px;text-transform:uppercase;font-weight:800;letter-spacing:.5px;background:#1a2540}
 tbody tr:hover{background:rgba(34,211,238,.04)}
-tbody tr.live-row{background:rgba(248,113,113,.06)}
+
+/* ===== V7: ROW HIGHLIGHT THEO TRẠNG THÁI ===== */
+tbody tr.live-row{background:rgba(248,113,113,.06);border-left:3px solid var(--rd)}
 tbody tr.live-row:hover{background:rgba(248,113,113,.1)}
+tbody tr.scheduled-row{border-left:3px solid transparent}
+tbody tr.completed-row{border-left:3px solid var(--li)}
 
 .match-code{font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;color:var(--li)}
 .match-code.ko{color:var(--or)}
@@ -158,7 +173,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
 
 .ref-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--ln)}
 .ref-footer-right{display:flex;gap:8px;flex-wrap:wrap}
-.ref-hint{font-size:10px;color:var(--mu);text-align:center;margin-top:6px}
+.ref-hint{font-size:10px;color:var(--mu);text-align:center;margin-top:8px;line-height:1.5}
 
 .alert-box{padding:12px;border-radius:12px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--or);font-size:13px;margin-bottom:12px}
 .info-box{padding:12px;border-radius:12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);color:var(--cy);font-size:13px;margin-bottom:12px}
@@ -194,6 +209,8 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
   .ref-footer{flex-direction:column;align-items:stretch}
   .ref-footer-right{justify-content:stretch}
   .ref-footer-right .btn{flex:1}
+  .status-legend{gap:8px;padding:8px 10px}
+  .legend-item{font-size:11px}
 }
 
 @media(max-width:400px){
@@ -248,7 +265,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
 <div id="login-message" class="msg"></div>
 </div></div>
 
-<!-- ===== REF MODAL V6 ===== -->
+<!-- ===== REF MODAL V7 ===== -->
 <div id="ref-modal" class="modal-backdrop"><div class="modal ref-box">
   <div class="ref-header">
     <span id="ref-match-code"></span>
@@ -292,7 +309,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
   </div>
   
   <div class="muted" style="text-align:center;margin-bottom:8px;font-size:11px">
-    💡 Điểm & lượt giao lưu <b>thời gian thực</b>. Bấm <b>✕ Đóng</b> để thoát nhưng giữ trận đang đấu.
+    💡 Điểm & lượt giao lưu <b>thời gian thực</b>.
   </div>
   
   <div class="ref-footer">
@@ -334,11 +351,17 @@ function shortName(n){return String(n||"").replace(/\s*\([\d.]+\)/g,"").trim();}
 function findTeam(id){return state.teams.find(x=>x.id===id)||null;}
 function teamName(id){if(!id)return null;var t=findTeam(id);return t?shortName(t.name):null;}
 
+/* ===== V7: matchStatus - 3 trạng thái rõ ràng =====
+   - scheduled: chưa có điểm (0-0), chưa mở ghi điểm
+   - live: có điểm > 0 nhưng chưa kết thúc
+   - completed: đã bấm Kết thúc
+*/
 function matchStatus(m){
   if(m.status === "completed") return "completed";
   if(m.status === "live") return "live";
   const h=Number(m.home_score)||0, a=Number(m.away_score)||0;
-  return (h>0||a>0) ? "live" : "scheduled";
+  if(h>0 || a>0) return "live";
+  return "scheduled";
 }
 
 function canScore(m){
@@ -348,11 +371,12 @@ function canScore(m){
   return false;
 }
 
+/* ===== V7: statusBadge với 3 class riêng ===== */
 function statusBadge(m){
   const st=matchStatus(m);
-  if(st==="completed") return '<span class="badge b-green">✅ Xong</span>';
+  if(st==="completed") return '<span class="badge status-completed">✅ Xong</span>';
   if(st==="live") return '<span class="badge status-live">🔴 Đang đấu</span>';
-  return '<span class="badge b-blue">⏳ Chưa đấu</span>';
+  return '<span class="badge status-scheduled">⏳ Chưa đấu</span>';
 }
 
 function fmtTime(s){if(!s)return "";var d=new Date(s);if(isNaN(d.getTime()))return "";return ("0"+((d.getUTCHours()+VN_OFFSET)%24)).slice(-2)+":"+("0"+d.getUTCMinutes()).slice(-2);}
@@ -476,14 +500,6 @@ async function selectEvent(id){
   state.courts=c||[];
   const {data:m}=await sb.from("matches").select("*").eq("event_id",id).order("match_seq");
   state.matches=m||[];
-  // V6: Debug log BXH
-  console.log("📊 BXH Debug:",{
-    event:id,
-    groups:state.groups.length,
-    groupTeams:state.groupTeams.length,
-    matches:state.matches.length,
-    completed:state.matches.filter(m=>matchStatus(m)==="completed").length
-  });
   renderAll();
 }
 
@@ -491,10 +507,8 @@ function renderAll(){renderLockBadge();renderStandings();renderMatches();renderK
 
 function renderLockBadge(){el("lock-badge").innerHTML=isLocked()?'<span class="badge b-red">🔒 Đã đóng</span>':(state.tournament?.status==="in_progress"?'<span class="badge b-green">Đang mở</span>':"");}
 
-/* ===== V6: calcStandings VỚI FALLBACK ===== */
 function calcStandings(gid){
   const teamIds=state.groupTeams.filter(gt=>gt.group_id===gid).map(gt=>gt.team_id);
-  console.log(`📊 Bảng ${gid}: ${teamIds.length} teams`);
   const st={};
   teamIds.forEach(id=>{st[id]={id,w:0,l:0,pf:0,pa:0,played:0};});
   state.matches
@@ -508,14 +522,12 @@ function calcStandings(gid){
       if(hs>as){h.w++;a.l++;}
       else if(as>hs){a.w++;h.l++;}
     });
-  const result=Object.values(st).sort((x,y)=>{
+  return Object.values(st).sort((x,y)=>{
     if(y.w!==x.w) return y.w-x.w;
     const dx=x.pf-x.pa,dy=y.pf-y.pa;
     if(dy!==dx) return dy-dx;
     return y.pf-x.pf;
   });
-  console.log(`📊 Bảng ${gid} standings:`,result);
-  return result;
 }
 
 function completedCountInGroup(gid){
@@ -528,11 +540,8 @@ function isGroupComplete(gid){
   return completedCountInGroup(gid)>=MATCHES_PER_GROUP;
 }
 
-/* ===== V6: BXH VỚI FALLBACK KHI RỖNG ===== */
 function renderStandings(){
   const groups=activeGroups();
-  console.log("📊 Render BXH:",groups.length,"groups");
-  
   if(!groups.length){
     el("standings-section").innerHTML=`
       <div class="info-box">
@@ -544,7 +553,6 @@ function renderStandings(){
       </div>`;
     return;
   }
-  
   const cards=groups.map(g=>{
     const rows=calcStandings(g.id);
     const completed=completedCountInGroup(g.id);
@@ -552,8 +560,6 @@ function renderStandings(){
     const statusHtml=isComplete
       ?'<span class="bxh-status complete">✅ '+completed+'/6</span>'
       :'<span class="bxh-status partial">⏳ '+completed+'/6</span>';
-    
-    // V6: Hiển thị BXH ngay cả khi chưa có data
     let tbody='';
     if(rows.length===0){
       tbody='<tr><td colspan="6" class="bxh-empty">Chưa có đội trong bảng này.<br>Vào admin.html để phân đội.</td></tr>';
@@ -574,7 +580,6 @@ function renderStandings(){
         </tr>`;
       }).join("");
     }
-    
     return `<div class="bxh-card">
       <div class="bxh-card-header">
         <h4>🏆 Bảng ${g.code}</h4>
@@ -589,7 +594,6 @@ function renderStandings(){
       </table>
     </div>`;
   }).join("");
-  
   el("standings-section").innerHTML=`
     <div class="info-box" style="margin-bottom:12px">
       💡 <b>Cách xếp hạng:</b> Số trận <b>Thắng</b> → Hiệu số <b>HS</b> (điểm ghi − điểm thủng). 
@@ -599,6 +603,7 @@ function renderStandings(){
   `;
 }
 
+/* ===== V7: MATCH ROW VỚI ROW CLASS THEO TRẠNG THÁI ===== */
 function matchRow(m){
   const time=fmtTime(m.scheduled_at);
   const court=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"—"):"—";
@@ -607,7 +612,8 @@ function matchRow(m){
   const t1=teamDisplay(m,"home");
   const t2=teamDisplay(m,"away");
   const st=matchStatus(m);
-  const rowClass=st==="live"?"live-row":"";
+  // V7: Row class theo trạng thái
+  const rowClass=st==="live"?"live-row":(st==="completed"?"completed-row":"scheduled-row");
   return `<tr class="${rowClass}">
     <td><span class="match-code">${escapeHtml(code)}</span></td>
     <td>${time?`<span class="time-chip">${time}</span>`:'<span class="muted">—</span>'}</td>
@@ -627,7 +633,8 @@ function koRow(m){
   const code=displayCode(m);
   const st=matchStatus(m);
   const baseRowClass=Number(m.round)===4?"ck-row":"ko-row";
-  const rowClass=st==="live"?"live-row":baseRowClass;
+  const statusRowClass=st==="live"?"live-row":(st==="completed"?"completed-row":"");
+  const rowClass=statusRowClass||baseRowClass;
   const codeClass=Number(m.round)===4?"ck":"ko";
   const t1=teamDisplay(m,"home");
   const t2=teamDisplay(m,"away");
@@ -654,10 +661,20 @@ function renderMatches(){
     <th>Team 1</th><th>🏓 Tỉ số</th><th>Team 2</th>
     <th>TT</th>${isAdmin()||isReferee()?'<th></th>':''}
   </tr></thead>`;
+  
+  // V7: Status legend
+  const legend=`
+    <div class="status-legend">
+      <div class="legend-item"><span class="legend-dot scheduled"></span>⏳ Chưa đấu</div>
+      <div class="legend-item"><span class="legend-dot live"></span>🔴 Đang đấu</div>
+      <div class="legend-item"><span class="legend-dot completed"></span>✅ Xong</div>
+    </div>`;
+  
   const sections=groups.map(g=>{
     const ms=state.matches.filter(m=>m.group_id===g.id).sort((a,b)=>Number(a.bracket_slot)-Number(b.bracket_slot));
     const completed=completedCountInGroup(g.id);
     const live=ms.filter(m=>matchStatus(m)==="live").length;
+    const scheduled=ms.filter(m=>matchStatus(m)==="scheduled").length;
     const isComplete=isGroupComplete(g.id);
     const statusHtml=isComplete
       ?'<span class="bxh-status complete">✅ '+completed+'/6</span>'
@@ -673,11 +690,9 @@ function renderMatches(){
       </table></div>
     </div>`;
   }).join("");
+  
   el("matches-section").innerHTML=`
-    <div class="info-box" style="margin-bottom:12px">
-      💡 <b>Trạng thái:</b> 🔴 <b>Đang đấu</b> (live) · ✅ <b>Xong</b> · ⏳ <b>Chưa đấu</b>. 
-      Dấu <b style="color:var(--rd)">● ●</b> = đội đang giao banh.
-    </div>
+    ${legend}
     <h3 style="color:var(--li);margin-bottom:12px">🎾 VÒNG BẢNG</h3>${sections}`;
 }
 
@@ -692,8 +707,17 @@ function renderKnockout(){
     <th>Team 1</th><th>🏓 Tỉ số</th><th>Team 2</th>
     <th>TT</th>${isAdmin()||isReferee()?'<th></th>':''}
   </tr></thead>`;
+  
+  const legend=`
+    <div class="status-legend">
+      <div class="legend-item"><span class="legend-dot scheduled"></span>⏳ Chưa đấu</div>
+      <div class="legend-item"><span class="legend-dot live"></span>🔴 Đang đấu</div>
+      <div class="legend-item"><span class="legend-dot completed"></span>✅ Xong</div>
+    </div>`;
+  
   let html='<h3 style="color:var(--or);margin:20px 0 12px">🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
-  html+='<div class="info-box" style="margin-bottom:12px">💡 Đội tự động điền vào KO khi <b>bảng hoàn thành 6 trận</b>. Đội thắng được <b style="color:var(--li)">in đậm + xanh lá</b>. Trọng tài có thể bấm <b>▶️ Tiếp tục</b> hoặc <b>🔄 Đấu lại</b> với trận đã xong.</div>';
+  html+=legend;
+  html+='<div class="info-box" style="margin-bottom:12px">💡 Đội tự động điền vào KO khi <b>bảng hoàn thành 6 trận</b>. Đội thắng được <b style="color:var(--li)">in đậm + xanh lá</b>.</div>';
   if(tkMatches.length){
     html+=`<div class="ko-group">
       <div class="ko-group-header tk">🎯 TỨ KẾT <span class="sub">Nhất A vs Nhì B · Nhất B vs Nhì A · Nhất C vs Nhì D · Nhất D vs Nhì C</span></div>
@@ -784,7 +808,7 @@ function openRefModal(id){
   el("ref-modal").classList.add("show");
 }
 
-/* ===== V6: UPDATE REF MODAL UI - LUÔN HIỆN NÚT KẾT THÚC ===== */
+/* ===== V7: UPDATE REF MODAL UI VỚI 3 TRẠNG THÁI ===== */
 function updateRefModalUI(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
@@ -801,12 +825,12 @@ function updateRefModalUI(){
   homeTeam.classList.remove("winner-highlight");
   awayTeam.classList.remove("winner-highlight");
   
-  // V6: LUÔN hiện nút Kết thúc (trừ khi giải đã đóng)
+  // Luôn hiện nút Kết thúc (trừ khi giải đã đóng)
   const canFinish=!isLocked();
   btnFinish.classList.toggle("hidden",!canFinish);
   
   if(st==="completed"){
-    statusEl.innerHTML='<span class="badge b-green">✅ Xong</span>';
+    statusEl.innerHTML='<span class="badge status-completed">✅ Xong</span>';
     const w=m.winner_team_id;
     if(w){
       const wName=teamName(w)||"?";
@@ -818,19 +842,19 @@ function updateRefModalUI(){
     }
     btnContinue.classList.remove("hidden");
     btnRematch.classList.remove("hidden");
-    hintText.textContent="💡 Trận đã kết thúc. Bấm ▶️ Tiếp tục để chỉnh điểm, hoặc 🔄 Đấu lại để reset.";
+    hintText.textContent="💡 Trận đã kết thúc. Bấm ▶️ Tiếp tục để chỉnh điểm, hoặc 🔄 Đấu lại để reset về 0-0.";
   } else if(st==="live"){
     statusEl.innerHTML='<span class="badge status-live">🔴 Đang đấu</span>';
     winnerEl.innerHTML='';
     btnContinue.classList.add("hidden");
     btnRematch.classList.add("hidden");
-    hintText.textContent="💡 Trận đang đấu. Bấm ✕ Đóng để thoát (vẫn giữ đang đấu).";
+    hintText.textContent="💡 Trận đang đấu. Bấm ✕ Đóng để thoát (vẫn giữ đang đấu). Bấm 🏁 Kết thúc khi trận kết thúc.";
   } else {
-    statusEl.innerHTML='<span class="badge b-blue">⏳ Chưa đấu</span>';
+    statusEl.innerHTML='<span class="badge status-scheduled">⏳ Chưa đấu</span>';
     winnerEl.innerHTML='';
     btnContinue.classList.add("hidden");
     btnRematch.classList.add("hidden");
-    hintText.textContent="💡 Nhập điểm để bắt đầu. Trận sẽ tự chuyển sang Đang đấu.";
+    hintText.textContent="💡 Nhập điểm để bắt đầu. Trận sẽ tự chuyển sang 🔴 Đang đấu.";
   }
 }
 
@@ -847,6 +871,7 @@ function refAdj(side,delta){
   refPush();
 }
 
+/* ===== V7: refPush - TỰ ĐỘNG SET LIVE KHI CÓ ĐIỂM ===== */
 async function refPush(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
@@ -854,7 +879,7 @@ async function refPush(){
   const a=parseInt(el("ref-away-score").textContent)||0;
   const payload={home_score:h,away_score:a};
   const currentSt=matchStatus(m);
-  // V6: Cho phép update điểm ngay cả khi completed
+  // V7: Tự động set live khi scheduled và có điểm
   if(currentSt==="scheduled" && (h>0||a>0)){
     payload.status="live";
   }
@@ -922,6 +947,7 @@ async function syncKO(){
   }
 }
 
+/* ===== V7: FINISH - KẾT THÚC TRẬN ===== */
 async function refFinish(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
