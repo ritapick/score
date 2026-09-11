@@ -77,7 +77,6 @@ tbody tr.live-row:hover{background:rgba(248,113,113,.1)}
 tbody tr.scheduled-row{border-left:3px solid transparent}
 tbody tr.completed-row{border-left:3px solid var(--li)}
 
-/* Highlight animation cho KO vừa update */
 tbody tr.ko-row.just-updated,tbody tr.ck-row.just-updated{animation:koHighlight 2s ease}
 @keyframes koHighlight{
   0%{background:rgba(163,230,53,.4)}
@@ -344,7 +343,6 @@ const MATCHES_PER_GROUP=6, MATCHES_PER_TEAM=3;
 
 let state={session:null,user:null,role:null,username:null,tournament:null,events:[],currentEventId:null,teams:[],matches:[],groups:[],groupTeams:[],stages:[],groupStage:null,knockoutStage:null,courts:[],refModalMatchId:null,myMatchIds:new Set()};
 
-// V9.1: Debounce realtime + track KO slots vừa update
 let _renderDebounceTimer=null;
 const _recentlyUpdatedSlots=new Set();
 
@@ -903,6 +901,7 @@ async function setServe(v){
   ["h1","h2","a1","a2"].forEach(k=>{const b=el("sb-"+k);if(b)b.classList.toggle("active",nv===k);});
 }
 
+/* ===== V9.2: computeKOTeams - winnerOfSlot FIX ===== */
 function computeKOTeams(){
   const tops={};
   ["A","B","C","D"].forEach(c=>{
@@ -912,12 +911,22 @@ function computeKOTeams(){
     const st=calcStandings(g.id);
     tops[c]={f:st[0]?st[0].id:null,s:st[1]?st[1].id:null};
   });
+  
+  // V9.2 FIX: Dùng winner_team_id TRƯỚC, fallback về score, KHÔNG check status
   function winnerOfSlot(slot){
     const m=state.matches.find(x=>Number(x.bracket_slot)===slot);
-    if(!m||matchStatus(m)!=="completed") return null;
-    const h=Number(m.home_score)||0,a=Number(m.away_score)||0;
-    return h>a?m.home_team_id:m.away_team_id;
+    if(!m) return null;
+    
+    // Ưu tiên 1: winner_team_id đã set (từ DB hoặc optimistic)
+    if(m.winner_team_id) return m.winner_team_id;
+    
+    // Ưu tiên 2: Tính từ score (không phụ thuộc status)
+    const h=Number(m.home_score)||0, a=Number(m.away_score)||0;
+    if(h===0 && a===0) return null; // Chưa có điểm
+    if(h===a) return null; // Hòa (không nên xảy ra)
+    return h>a ? m.home_team_id : m.away_team_id;
   }
+  
   const w1=winnerOfSlot(25),w2=winnerOfSlot(26),w3=winnerOfSlot(27),w4=winnerOfSlot(28);
   const bw1=winnerOfSlot(29),bw2=winnerOfSlot(30);
   const result={};
@@ -931,7 +940,7 @@ function computeKOTeams(){
   return result;
 }
 
-/* ===== V9.1: applyOptimisticKO - Update KO local state NGAY LẬP TỨC ===== */
+/* ===== V9.2: applyOptimisticKO - preserve winner ===== */
 function applyOptimisticKO(){
   const teamsMap=computeKOTeams();
   const slots=[25,26,27,28,29,30,31];
@@ -940,17 +949,35 @@ function applyOptimisticKO(){
     const t=teamsMap[slot];
     const m=state.matches.find(x=>Number(x.bracket_slot)===slot);
     if(!m) continue;
-    if(m.home_team_id!==t.h||m.away_team_id!==t.a){
+    
+    // Chỉ update home/away team, preserve winner/status/score
+    if(m.home_team_id!==t.h || m.away_team_id!==t.a){
+      // Nếu match đã completed và teams mới khác teams cũ
+      // Kiểm tra winner có còn hợp lệ không
+      if(m.status==="completed" && m.winner_team_id){
+        if(m.winner_team_id!==t.h && m.winner_team_id!==t.a){
+          // Winner không còn trong match mới → reset
+          m.home_team_id=t.h;
+          m.away_team_id=t.a;
+          m.winner_team_id=null;
+          m.status="scheduled";
+          m.home_score=0;
+          m.away_score=0;
+          count++;
+          _recentlyUpdatedSlots.add(slot);
+          continue;
+        }
+      }
+      
       m.home_team_id=t.h;
       m.away_team_id=t.a;
-      _recentlyUpdatedSlots.add(slot);
       count++;
+      _recentlyUpdatedSlots.add(slot);
     }
   }
   return count;
 }
 
-/* ===== V9.1: syncKO giữ lại cho các trường hợp manual sync ===== */
 async function syncKO(){
   if(!state.knockoutStage||!state.currentEventId) return 0;
   const count=applyOptimisticKO();
@@ -982,7 +1009,7 @@ async function syncKO(){
   return updated;
 }
 
-/* ===== V9.1: refFinish với OPTIMISTIC KO UPDATE ===== */
+/* ===== V9.2: refFinish với OPTIMISTIC KO UPDATE ===== */
 async function refFinish(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
@@ -998,7 +1025,7 @@ async function refFinish(){
   m.winner_team_id=w;
   m.serve=null;
   
-  // ===== OPTIMISTIC KO: Tính và apply KO teams mới dựa trên local state =====
+  // ===== OPTIMISTIC KO: Tính và apply KO teams mới =====
   const koUpdated=applyOptimisticKO();
   
   // ===== RENDER NGAY LẬP TỨC =====
@@ -1009,7 +1036,6 @@ async function refFinish(){
   // ===== BACKGROUND: Persist to DB (parallel) =====
   (async()=>{
     try{
-      // Update match hiện tại
       const matchPromise=sb.from("matches").update({
         home_score:h, away_score:a,
         status:"completed",
@@ -1017,7 +1043,6 @@ async function refFinish(){
         serve:null
       }).eq("id",m.id);
       
-      // Update KO matches (tính lại teamsMap từ local state đã update)
       const teamsMap=computeKOTeams();
       const slots=[25,26,27,28,29,30,31];
       const koPromises=[];
@@ -1033,7 +1058,6 @@ async function refFinish(){
         );
       }
       
-      // Chạy TẤT CẢ song song
       const results=await Promise.all([matchPromise,...koPromises]);
       const errors=results.filter(r=>r.error);
       
@@ -1043,7 +1067,6 @@ async function refFinish(){
         await reloadMatchesOnly();
       }
       
-      // Clear highlight sau 2s
       setTimeout(()=>{
         if(_recentlyUpdatedSlots.size>0){
           _recentlyUpdatedSlots.clear();
@@ -1103,15 +1126,40 @@ async function refRematch(){
   })();
 }
 
+/* ===== V9.2: Realtime với race condition fix ===== */
 sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"matches"},(p)=>{
   const row=p.new||p.old;
   if(!row||row.tournament_id!==TOURNAMENT_ID) return;
-  if(p.eventType==="DELETE") state.matches=state.matches.filter(m=>m.id!==row.id);
-  else{
+  
+  if(p.eventType==="DELETE"){
+    state.matches=state.matches.filter(m=>m.id!==row.id);
+  } else {
     const i=state.matches.findIndex(m=>m.id===row.id);
-    if(i>=0) state.matches[i]={...state.matches[i],...row};
-    else state.matches.push(row);
+    if(i>=0){
+      const local=state.matches[i];
+      const merged={...local,...row};
+      
+      // V9.2 FIX: Tránh race condition - giữ lại optimistic completed
+      if(local.status==="completed" 
+         && row.status 
+         && row.status!=="completed" 
+         && local.winner_team_id){
+        merged.status="completed";
+        merged.winner_team_id=local.winner_team_id;
+      }
+      
+      // Giữ lại winner_team_id nếu DB trả về null nhưng local có
+      if(!merged.winner_team_id && local.winner_team_id 
+         && merged.status==="completed"){
+        merged.winner_team_id=local.winner_team_id;
+      }
+      
+      state.matches[i]=merged;
+    } else {
+      state.matches.push(row);
+    }
   }
+  
   if(_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
   _renderDebounceTimer=setTimeout(()=>{
     renderAll();
