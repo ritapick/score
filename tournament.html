@@ -26,11 +26,21 @@ h1,h3,h4,.logo,.stat-value,.match-code,.time-chip,.ref-score{font-family:'Oswald
 .btn-rematch{background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.4)}
 .btn-sm{padding:4px 9px;font-size:11px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.hero{padding:22px;margin:12px;border-radius:16px;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35);position:relative;overflow:hidden}
+
+/* ===== V9.3: HERO GỌN - CHỈ TÊN + NGÀY ===== */
+.hero{padding:22px;margin:12px;border-radius:16px;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35);position:relative;overflow:hidden;text-align:center}
 .hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
 .hero h1{margin:0 0 6px;font-size:28px;text-transform:uppercase;position:relative;z-index:1}
-.hero p{margin:0;opacity:.9;position:relative;z-index:1}
-.hero .code-tag{display:inline-block;background:var(--cy);color:#0b1220;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:800;font-family:'Oswald';margin-right:8px}
+.hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
+
+/* ===== V9.3: SPONSOR LOGOS ===== */
+.sponsor-wrap{padding:6px 12px 14px;text-align:center}
+.sponsor-title{color:var(--mu);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'Oswald',sans-serif}
+.sponsor-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:540px;margin:0 auto}
+.sponsor-item{flex:0 0 168px;width:168px;height:88px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:12px;padding:8px;transition:all .2s;text-decoration:none}
+.sponsor-item:hover{transform:translateY(-2px);border-color:var(--li);background:rgba(255,255,255,.1);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.sponsor-item img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+
 main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
 .ctx-bar{background:var(--sf2);border-bottom:1px solid var(--ln);padding:9px 12px;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;border-radius:10px 10px 0 0}
 .ctx-bar select{background:#0d1626;border:1px solid var(--ln);color:var(--tx);border-radius:10px;padding:8px;flex:1;min-width:0}
@@ -43,13 +53,6 @@ main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
 .tab-content{display:block;animation:fadeIn .3s ease}
 .tab-content.hidden{display:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-
-.status-legend{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--sf2);border-radius:10px;margin-bottom:12px;border:1px solid var(--ln)}
-.legend-item{display:flex;align-items:center;gap:6px;font-size:12px}
-.legend-dot{width:10px;height:10px;border-radius:50%}
-.legend-dot.scheduled{background:var(--cy)}
-.legend-dot.live{background:var(--rd);animation:pulse 1.5s infinite}
-.legend-dot.completed{background:var(--li)}
 
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
 .b-green{background:rgba(163,230,53,.15);color:var(--li)}
@@ -210,19 +213,19 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
   .ref-footer{flex-direction:column;align-items:stretch}
   .ref-footer-right{justify-content:stretch}
   .ref-footer-right .btn{flex:1}
-  .status-legend{gap:8px;padding:8px 10px}
-  .legend-item{font-size:11px}
+  .sponsor-item{flex:0 0 140px;width:140px;height:74px}
 }
 
 @media(max-width:400px){
   .hero h1{font-size:17px}
-  .hero .code-tag{font-size:10px;padding:2px 8px}
   table{min-width:480px}
   .team-cell{max-width:100px;font-size:10px}
   .bxh-card td.team-name{max-width:90px;font-size:10px}
   .score-cell{font-size:14px}
   .tab-btn{padding:10px 6px;font-size:10px;letter-spacing:0}
   .ref-score{font-size:40px}
+  .sponsor-item{flex:0 0 110px;width:110px;height:60px}
+  .sponsor-grid{gap:10px}
 }
 </style>
 </head>
@@ -235,7 +238,13 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
 <button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
 <button id="logout-btn" class="btn btn-light hidden" onclick="logout()">Đăng xuất</button>
 </div></nav>
+
+<!-- V9.3: Hero chỉ tên giải + ngày mở giải -->
 <div id="tournament-hero"></div>
+
+<!-- V9.3: Logo nhà tài trợ -->
+<div id="sponsor-section"></div>
+
 <div class="ctx-bar">
 <span class="muted">Nội dung</span><select id="ctx-event" onchange="selectEvent(this.value)"></select>
 <span id="lock-badge"></span>
@@ -329,6 +338,18 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const params=new URLSearchParams(location.search);
 const TOURNAMENT_ID=params.get("id");
 if(!TOURNAMENT_ID){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Không tìm thấy giải đấu</h2><a href="index.html">← Quay về trang chủ</a></div>';}
+
+/* ===== V9.3: DANH SÁCH NHÀ TÀI TRỢ =====
+   Logo lưu tại thư mục gốc (main) của repo github:
+   https://ritapick.github.io/score/logo1.jpeg ...
+   Dùng đường dẫn tương đối để hoạt động cả local lẫn github pages */
+const SPONSORS=[
+  {img:"logo1.jpeg", url:"https://www.logo1.com"},
+  {img:"logo2.jpeg", url:"https://www.logo2.com"},
+  {img:"logo3.jpeg", url:"https://www.logo3.com"},
+  {img:"logo4.jpeg", url:"https://www.logo4.com"},
+  {img:"logo5.jpeg", url:"https://www.logo5.com"}
+];
 
 const KO_DEFS=[
   {slot:25,code:"TK1",round:2,group:"tk",ph:{h:"Nhất A",a:"Nhì B"}},
@@ -463,11 +484,33 @@ function switchTab(tab){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+/* ===== V9.3: RENDER SPONSORS =====
+   3 logo/dòng, dư xuống dòng căn giữa, click mở tab mới */
+function renderSponsors(){
+  const box=el("sponsor-section");
+  if(!box) return;
+  const items=SPONSORS.map(s=>{
+    const href=s.url.startsWith("http")?s.url:("https://"+s.url);
+    return `<a class="sponsor-item" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(href)}">
+      <img src="${escapeHtml(s.img)}" alt="Nhà tài trợ" loading="lazy" onerror="this.parentElement.style.display='none'">
+    </a>`;
+  }).join("");
+  box.innerHTML=`
+    <div class="sponsor-wrap">
+      <div class="sponsor-title">🤝 Nhà tài trợ</div>
+      <div class="sponsor-grid">${items}</div>
+    </div>`;
+}
+
+/* ===== V9.3: HERO CHỈ TÊN + NGÀY MỞ GIẢI ===== */
 async function loadTournament(){
   const {data}=await sb.from("tournaments").select("*").eq("id",TOURNAMENT_ID).single();
   if(!data){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Giải đấu không tồn tại</h2><a href="index.html">← Quay về trang chủ</a></div>';return;}
   state.tournament=data;
-  el("tournament-hero").innerHTML=`<div class="hero"><h1><span class="code-tag">${data.code}</span>${data.name}</h1><p>📅 ${data.start_date||"—"} ${data.end_date?"→ "+data.end_date:""} • 📍 ${data.location_name||"Chưa có địa điểm"} • ${data.status==="completed"?'<span class="badge b-red">Đã đóng</span>':'<span class="badge b-green">Đang mở</span>'}</p></div>`;
+  el("tournament-hero").innerHTML=`<div class="hero">
+    <h1>${escapeHtml(data.name)}</h1>
+    <p>📅 ${data.start_date||""}</p>
+  </div>`;
   document.title=data.name+" - Pickleball Pro";
 }
 
@@ -657,6 +700,7 @@ function koRow(m){
   </tr>`;
 }
 
+/* ===== V9.3: BỎ LEGEND ĐẦU TRANG ===== */
 function renderMatches(){
   const groups=activeGroups();
   if(!groups.length){
@@ -668,13 +712,6 @@ function renderMatches(){
     <th>Team 1</th><th>🏓 Tỉ số</th><th>Team 2</th>
     <th>TT</th>${isAdmin()||isReferee()?'<th></th>':''}
   </tr></thead>`;
-  
-  const legend=`
-    <div class="status-legend">
-      <div class="legend-item"><span class="legend-dot scheduled"></span>⏳ Chưa đấu</div>
-      <div class="legend-item"><span class="legend-dot live"></span>🔴 Đang đấu</div>
-      <div class="legend-item"><span class="legend-dot completed"></span>✅ Xong</div>
-    </div>`;
   
   const sections=groups.map(g=>{
     const ms=state.matches.filter(m=>m.group_id===g.id).sort((a,b)=>Number(a.bracket_slot)-Number(b.bracket_slot));
@@ -697,10 +734,10 @@ function renderMatches(){
   }).join("");
   
   el("matches-section").innerHTML=`
-    ${legend}
     <h3 style="color:var(--li);margin-bottom:12px">🎾 VÒNG BẢNG</h3>${sections}`;
 }
 
+/* ===== V9.3: BỎ LEGEND + INFO-BOX DƯỚI KO ===== */
 function renderKnockout(){
   const ko=state.knockoutStage?state.matches.filter(m=>m.stage_id===state.knockoutStage.id):[];
   if(!ko.length){el("knockout-section").innerHTML="";return;}
@@ -713,16 +750,7 @@ function renderKnockout(){
     <th>TT</th>${isAdmin()||isReferee()?'<th></th>':''}
   </tr></thead>`;
   
-  const legend=`
-    <div class="status-legend">
-      <div class="legend-item"><span class="legend-dot scheduled"></span>⏳ Chưa đấu</div>
-      <div class="legend-item"><span class="legend-dot live"></span>🔴 Đang đấu</div>
-      <div class="legend-item"><span class="legend-dot completed"></span>✅ Xong</div>
-    </div>`;
-  
   let html='<h3 style="color:var(--or);margin:20px 0 12px">🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
-  html+=legend;
-  html+='<div class="info-box" style="margin-bottom:12px">💡 Đội tự động điền vào KO khi <b>bảng hoàn thành 6 trận</b>. Đội thắng được <b style="color:var(--li)">in đậm + xanh lá</b>.</div>';
   if(tkMatches.length){
     html+=`<div class="ko-group">
       <div class="ko-group-header tk">🎯 TỨ KẾT <span class="sub">Nhất A vs Nhì B · Nhất B vs Nhì A · Nhất C vs Nhì D · Nhất D vs Nhì C</span></div>
@@ -901,7 +929,6 @@ async function setServe(v){
   ["h1","h2","a1","a2"].forEach(k=>{const b=el("sb-"+k);if(b)b.classList.toggle("active",nv===k);});
 }
 
-/* ===== V9.2: computeKOTeams - winnerOfSlot FIX ===== */
 function computeKOTeams(){
   const tops={};
   ["A","B","C","D"].forEach(c=>{
@@ -912,18 +939,13 @@ function computeKOTeams(){
     tops[c]={f:st[0]?st[0].id:null,s:st[1]?st[1].id:null};
   });
   
-  // V9.2 FIX: Dùng winner_team_id TRƯỚC, fallback về score, KHÔNG check status
   function winnerOfSlot(slot){
     const m=state.matches.find(x=>Number(x.bracket_slot)===slot);
     if(!m) return null;
-    
-    // Ưu tiên 1: winner_team_id đã set (từ DB hoặc optimistic)
     if(m.winner_team_id) return m.winner_team_id;
-    
-    // Ưu tiên 2: Tính từ score (không phụ thuộc status)
     const h=Number(m.home_score)||0, a=Number(m.away_score)||0;
-    if(h===0 && a===0) return null; // Chưa có điểm
-    if(h===a) return null; // Hòa (không nên xảy ra)
+    if(h===0 && a===0) return null;
+    if(h===a) return null;
     return h>a ? m.home_team_id : m.away_team_id;
   }
   
@@ -940,7 +962,6 @@ function computeKOTeams(){
   return result;
 }
 
-/* ===== V9.2: applyOptimisticKO - preserve winner ===== */
 function applyOptimisticKO(){
   const teamsMap=computeKOTeams();
   const slots=[25,26,27,28,29,30,31];
@@ -950,13 +971,9 @@ function applyOptimisticKO(){
     const m=state.matches.find(x=>Number(x.bracket_slot)===slot);
     if(!m) continue;
     
-    // Chỉ update home/away team, preserve winner/status/score
     if(m.home_team_id!==t.h || m.away_team_id!==t.a){
-      // Nếu match đã completed và teams mới khác teams cũ
-      // Kiểm tra winner có còn hợp lệ không
       if(m.status==="completed" && m.winner_team_id){
         if(m.winner_team_id!==t.h && m.winner_team_id!==t.a){
-          // Winner không còn trong match mới → reset
           m.home_team_id=t.h;
           m.away_team_id=t.a;
           m.winner_team_id=null;
@@ -1009,7 +1026,6 @@ async function syncKO(){
   return updated;
 }
 
-/* ===== V9.2: refFinish với OPTIMISTIC KO UPDATE ===== */
 async function refFinish(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
@@ -1018,22 +1034,18 @@ async function refFinish(){
   if(h===a){alert("❌ Không có hòa.");return;}
   const w=h>a?m.home_team_id:m.away_team_id;
   
-  // ===== OPTIMISTIC: Update local state NGAY =====
   m.home_score=h;
   m.away_score=a;
   m.status="completed";
   m.winner_team_id=w;
   m.serve=null;
   
-  // ===== OPTIMISTIC KO: Tính và apply KO teams mới =====
   const koUpdated=applyOptimisticKO();
   
-  // ===== RENDER NGAY LẬP TỨC =====
   closeRefModal();
   renderAll();
   showToast(`✅ Kết thúc + đồng bộ ${koUpdated} trận KO`);
   
-  // ===== BACKGROUND: Persist to DB (parallel) =====
   (async()=>{
     try{
       const matchPromise=sb.from("matches").update({
@@ -1126,7 +1138,6 @@ async function refRematch(){
   })();
 }
 
-/* ===== V9.2: Realtime với race condition fix ===== */
 sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"matches"},(p)=>{
   const row=p.new||p.old;
   if(!row||row.tournament_id!==TOURNAMENT_ID) return;
@@ -1139,7 +1150,6 @@ sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:
       const local=state.matches[i];
       const merged={...local,...row};
       
-      // V9.2 FIX: Tránh race condition - giữ lại optimistic completed
       if(local.status==="completed" 
          && row.status 
          && row.status!=="completed" 
@@ -1148,7 +1158,6 @@ sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:
         merged.winner_team_id=local.winner_team_id;
       }
       
-      // Giữ lại winner_team_id nếu DB trả về null nhưng local có
       if(!merged.winner_team_id && local.winner_team_id 
          && merged.status==="completed"){
         merged.winner_team_id=local.winner_team_id;
@@ -1177,6 +1186,7 @@ sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:
 
 (async()=>{
   if(!TOURNAMENT_ID) return;
+  renderSponsors();
   await loadTournament();
   const {data}=await sb.auth.getSession();
   if(data.session) await loadMyProfile(data.session);
