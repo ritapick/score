@@ -32,34 +32,35 @@ h1,h3,h4,.logo,.stat-value,.match-code,.time-chip,.ref-score{font-family:'Oswald
 .hero h1{margin:0 0 6px;font-size:28px;text-transform:uppercase;position:relative;z-index:1}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
 
-/* ===== V9.4: LOGO ÔM SÁT, KHÔNG BIẾN DẠNG ===== */
+/* ===== V9.5: LOGO KHÔNG KHUNG, KHÔNG VIỀN, KHÔNG BO GÓC ===== */
 .sponsor-wrap{padding:6px 12px 14px;text-align:center}
 .sponsor-title{color:var(--mu);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'Oswald',sans-serif}
 .sponsor-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:540px;margin:0 auto}
 .sponsor-item{
-  flex:0 0 168px;
+  flex:0 0 88px;
   width:88px;
   height:88px;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(255,255,255,.06);
-  border:1px solid var(--ln);
-  border-radius:12px;
-  padding:10;                    /* ← Ôm sát logo */
-  overflow:hidden;
-  transition:all .2s;
+  /* ← ĐÃ BỎ: background, border, border-radius, box-shadow */
+  padding:0;
+  transition:all .2s ease;
   text-decoration:none;
 }
-.sponsor-item:hover{transform:translateY(-2px);border-color:var(--li);background:rgba(255,255,255,.1);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.sponsor-item:hover{
+  /* ← ĐÃ BỎ: background, border-color, box-shadow */
+  transform:scale(1.05);      /* ← Zoom nhẹ khi hover */
+  filter:brightness(1.15);    /* ← Logo sáng lên nhẹ */
+}
 .sponsor-item img{
   max-width:100%;
   max-height:100%;
   width:auto;
   height:auto;
-  object-fit:contain;           /* ← Giữ tỉ lệ gốc, không biến dạng */
+  object-fit:contain;
   display:block;
-  border-radius:11px;
+  /* ← ĐÃ BỎ: border-radius */
 }
 
 main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
@@ -234,7 +235,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
   .ref-footer{flex-direction:column;align-items:stretch}
   .ref-footer-right{justify-content:stretch}
   .ref-footer-right .btn{flex:1}
-  .sponsor-item{flex:0 0 140px;width:74px;height:74px}
+  .sponsor-item{flex:0 0 74px;width:74px;height:74px}
 }
 
 @media(max-width:400px){
@@ -245,7 +246,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
   .score-cell{font-size:14px}
   .tab-btn{padding:10px 6px;font-size:10px;letter-spacing:0}
   .ref-score{font-size:40px}
-  .sponsor-item{flex:0 0 110px;width:58px;height:58px}
+  .sponsor-item{flex:0 0 58px;width:58px;height:58px}
   .sponsor-grid{gap:10px}
 }
 </style>
@@ -653,7 +654,6 @@ function renderStandings(){
     </div>`;
   }).join("");
   el("standings-section").innerHTML=`
-    
     <div class="bxh-grid">${cards}</div>
   `;
 }
