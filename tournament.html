@@ -63,6 +63,10 @@ main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
 .status-completed{background:rgba(163,230,53,.15);color:var(--li)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 
+/* V9: Syncing indicator */
+.syncing-indicator{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;background:rgba(34,211,238,.2);color:var(--cy);animation:syncPulse 1s infinite;margin-left:8px}
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
 .card{padding:14px;margin-bottom:16px;background:var(--sf);border:1px solid var(--ln);border-radius:12px}
 .card h3{margin:0 0 10px;color:var(--li);text-transform:uppercase;font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
@@ -76,6 +80,13 @@ tbody tr.live-row{background:rgba(248,113,113,.06);border-left:3px solid var(--r
 tbody tr.live-row:hover{background:rgba(248,113,113,.1)}
 tbody tr.scheduled-row{border-left:3px solid transparent}
 tbody tr.completed-row{border-left:3px solid var(--li)}
+
+/* V9: KO row highlight khi vừa cập nhật */
+tbody tr.ko-row.just-updated{animation:koHighlight 2s ease}
+@keyframes koHighlight{
+  0%{background:rgba(163,230,53,.3)}
+  100%{background:rgba(251,146,60,.05)}
+}
 
 .match-code{font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;color:var(--li)}
 .match-code.ko{color:var(--or)}
@@ -336,6 +347,10 @@ const MATCHES_PER_GROUP=6, MATCHES_PER_TEAM=3;
 
 let state={session:null,user:null,role:null,username:null,tournament:null,events:[],currentEventId:null,teams:[],matches:[],groups:[],groupTeams:[],stages:[],groupStage:null,knockoutStage:null,courts:[],refModalMatchId:null,myMatchIds:new Set()};
 
+// V9: Debounce realtime + tracking recently updated KO slots
+let _renderDebounceTimer=null;
+const _recentlyUpdatedSlots=new Set();
+
 function el(i){return document.getElementById(i);}
 function isLocked(){return state.tournament?.status==="completed";}
 function isAdmin(){return state.role==="admin"||state.role==="organizer";}
@@ -490,6 +505,14 @@ async function selectEvent(id){
   renderAll();
 }
 
+/* ===== V9: PARTIAL RELOAD - Chỉ reload matches ===== */
+async function reloadMatchesOnly(){
+  if(!state.currentEventId) return;
+  const {data:m}=await sb.from("matches").select("*").eq("event_id",state.currentEventId).order("match_seq");
+  state.matches=m||[];
+  renderAll();
+}
+
 function renderAll(){renderLockBadge();renderStandings();renderMatches();renderKnockout();}
 
 function renderLockBadge(){el("lock-badge").innerHTML=isLocked()?'<span class="badge b-red">🔒 Đã đóng</span>':(state.tournament?.status==="in_progress"?'<span class="badge b-green">Đang mở</span>':"");}
@@ -611,19 +634,26 @@ function matchRow(m){
   </tr>`;
 }
 
+/* ===== V9: koRow với highlight khi vừa update ===== */
 function koRow(m){
   const time=fmtTime(m.scheduled_at);
   const court=m.court_id?(state.courts.find(c=>c.id===m.court_id)?.name||"—"):"—";
   const can=canScore(m);
   const code=displayCode(m);
   const st=matchStatus(m);
+  const slot=Number(m.bracket_slot);
   const baseRowClass=Number(m.round)===4?"ck-row":"ko-row";
   const statusRowClass=st==="live"?"live-row":(st==="completed"?"completed-row":"");
   const rowClass=statusRowClass||baseRowClass;
   const codeClass=Number(m.round)===4?"ck":"ko";
   const t1=teamDisplay(m,"home");
   const t2=teamDisplay(m,"away");
-  return `<tr class="${rowClass}">
+  
+  // V9: Highlight row nếu vừa được update
+  const justUpdated=_recentlyUpdatedSlots.has(slot);
+  const highlightClass=justUpdated?" just-updated":"";
+  
+  return `<tr class="${rowClass}${highlightClass}" data-slot="${slot}">
     <td><span class="match-code ${codeClass}">${escapeHtml(code)}</span></td>
     <td>${time?`<span class="time-chip">${time}</span>`:'<span class="muted">—</span>'}</td>
     <td><span class="court-chip">${escapeHtml(court)}</span></td>
@@ -658,7 +688,6 @@ function renderMatches(){
     const ms=state.matches.filter(m=>m.group_id===g.id).sort((a,b)=>Number(a.bracket_slot)-Number(b.bracket_slot));
     const completed=completedCountInGroup(g.id);
     const live=ms.filter(m=>matchStatus(m)==="live").length;
-    const scheduled=ms.filter(m=>matchStatus(m)==="scheduled").length;
     const isComplete=isGroupComplete(g.id);
     const statusHtml=isComplete
       ?'<span class="bxh-status complete">✅ '+completed+'/6</span>'
@@ -880,44 +909,20 @@ async function setServe(v){
   ["h1","h2","a1","a2"].forEach(k=>{const b=el("sb-"+k);if(b)b.classList.toggle("active",nv===k);});
 }
 
-/* ===== V8: computeKOTeams VỚI DEBUG LOGS ===== */
 function computeKOTeams(){
-  console.log("🔍 [computeKOTeams] Bắt đầu tính toán...");
   const tops={};
   ["A","B","C","D"].forEach(c=>{
     const g=state.groups.find(x=>x.code===c&&state.groupStage&&x.stage_id===state.groupStage.id);
-    if(!g){
-      console.log(`🔍 [computeKOTeams] Bảng ${c}: KHÔNG TÌM THẤY group`);
-      tops[c]={f:null,s:null};
-      return;
-    }
-    const completed=completedCountInGroup(g.id);
-    const isComplete=isGroupComplete(g.id);
-    console.log(`🔍 [computeKOTeams] Bảng ${c}: ${completed}/6 trận completed, isComplete=${isComplete}`);
-    
-    if(!isComplete){
-      tops[c]={f:null,s:null};
-      return;
-    }
+    if(!g){tops[c]={f:null,s:null};return;}
+    if(!isGroupComplete(g.id)){tops[c]={f:null,s:null};return;}
     const st=calcStandings(g.id);
-    console.log(`🔍 [computeKOTeams] Bảng ${c} standings:`, st.map(s=>({id:s.id,w:s.w,pf:s.pf})));
     tops[c]={f:st[0]?st[0].id:null,s:st[1]?st[1].id:null};
   });
-  
   function winnerOfSlot(slot){
     const m=state.matches.find(x=>Number(x.bracket_slot)===slot);
-    if(!m){
-      console.log(`🔍 [computeKOTeams] winnerOfSlot(${slot}): KHÔNG TÌM THẤY match`);
-      return null;
-    }
-    if(matchStatus(m)!=="completed"){
-      console.log(`🔍 [computeKOTeams] winnerOfSlot(${slot}): match chưa completed (status=${matchStatus(m)})`);
-      return null;
-    }
+    if(!m||matchStatus(m)!=="completed") return null;
     const h=Number(m.home_score)||0,a=Number(m.away_score)||0;
-    const winner=h>a?m.home_team_id:m.away_team_id;
-    console.log(`🔍 [computeKOTeams] winnerOfSlot(${slot}): winner=${winner}`);
-    return winner;
+    return h>a?m.home_team_id:m.away_team_id;
   }
   const w1=winnerOfSlot(25),w2=winnerOfSlot(26),w3=winnerOfSlot(27),w4=winnerOfSlot(28);
   const bw1=winnerOfSlot(29),bw2=winnerOfSlot(30);
@@ -929,54 +934,58 @@ function computeKOTeams(){
   result[29]={h:w1,a:w2};
   result[30]={h:w3,a:w4};
   result[31]={h:bw1,a:bw2};
-  console.log("🔍 [computeKOTeams] Kết quả:", result);
   return result;
 }
 
-/* ===== V8: syncKO VỚI DEBUG LOGS ===== */
+/* ===== V9: syncKO với Promise.all (PARALLEL) ===== */
 async function syncKO(){
-  if(!state.knockoutStage||!state.currentEventId){
-    console.log("🔍 [syncKO] BỎ QUA (không có knockoutStage hoặc currentEventId)");
-    return 0;
-  }
-  console.log("🔍 [syncKO] BẮT ĐẦU");
+  if(!state.knockoutStage||!state.currentEventId) return 0;
   const teamsMap=computeKOTeams();
   const slots=[25,26,27,28,29,30,31];
-  let updatedCount=0;
+  const updates=[];
+  
   for(const slot of slots){
     const t=teamsMap[slot];
     const m=state.matches.find(x=>Number(x.bracket_slot)===slot);
-    if(!m){
-      console.log(`🔍 [syncKO] slot ${slot}: KHÔNG TÌM THẤY match`);
-      continue;
-    }
+    if(!m) continue;
     if(m.home_team_id!==t.h||m.away_team_id!==t.a){
-      console.log(`🔍 [syncKO] slot ${slot}: UPDATE home=${t.h}, away=${t.a} (cũ: home=${m.home_team_id}, away=${m.away_team_id})`);
-      try{
-        const {error}=await sb.from("matches").update({
+      // V9: Update local state TRƯỚC (optimistic)
+      m.home_team_id=t.h;
+      m.away_team_id=t.a;
+      // Track slot để highlight
+      _recentlyUpdatedSlots.add(slot);
+      // Thêm vào queue để update DB parallel
+      updates.push(
+        sb.from("matches").update({
           home_team_id:t.h,
           away_team_id:t.a
-        }).eq("id",m.id);
-        if(error){
-          console.error(`❌ [syncKO] slot ${slot} ERROR:`, error.message);
-        }else{
-          m.home_team_id=t.h;
-          m.away_team_id=t.a;
-          updatedCount++;
-          console.log(`✅ [syncKO] slot ${slot}: Update thành công`);
-        }
-      }catch(e){
-        console.error(`❌ [syncKO] slot ${slot} EXCEPTION:`, e);
-      }
-    }else{
-      console.log(`🔍 [syncKO] slot ${slot}: KHÔNG ĐỔI (giống nhau)`);
+        }).eq("id",m.id).then(r=>({slot,ok:!r.error,err:r.error}))
+      );
     }
   }
-  console.log(`🔍 [syncKO] HOÀN THÀNH, updated ${updatedCount} matches`);
-  return updatedCount;
+  
+  // Render UI ngay lập tức (không đợi DB)
+  if(updates.length>0) renderAll();
+  
+  // Chạy tất cả DB updates PARALLEL
+  const results=updates.length>0?await Promise.all(updates):[];
+  const updated=results.filter(r=>r.ok).length;
+  const failed=results.filter(r=>!r.ok);
+  
+  if(failed.length>0){
+    console.warn("⚠️ syncKO: Một số update thất bại:", failed);
+  }
+  
+  // Clear highlight sau 2 giây
+  setTimeout(()=>{
+    _recentlyUpdatedSlots.clear();
+    renderAll();
+  },2000);
+  
+  return updated;
 }
 
-/* ===== V8: refFinish VỚI FORCE RELOAD ===== */
+/* ===== V9: refFinish với OPTIMISTIC UI ===== */
 async function refFinish(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
@@ -985,71 +994,74 @@ async function refFinish(){
   if(h===a){alert("❌ Không có hòa.");return;}
   const w=h>a?m.home_team_id:m.away_team_id;
   
-  console.log("🔍 [refFinish] BẮT ĐẦU", {matchId:m.id, h, a, winner:w});
-  
-  const {error}=await sb.from("matches").update({
-    home_score:h, away_score:a,
-    status:"completed",
-    winner_team_id:w,
-    serve:null
-  }).eq("id",m.id);
-  
-  if(error){
-    console.error("❌ [refFinish] ERROR:", error.message);
-    alert(error.message);
-    return;
-  }
-  
-  console.log("✅ [refFinish] Update match thành công");
-  
-  // Cập nhật local state
+  // V9: Update local state TRƯỚC (optimistic)
   m.home_score=h;
   m.away_score=a;
   m.status="completed";
   m.winner_team_id=w;
   m.serve=null;
   
+  // Đóng modal và render ngay
   closeRefModal();
+  renderAll();
   
-  // V8 FIX: Gọi syncKO và CHỜ hoàn thành
-  console.log("🔍 [refFinish] Gọi syncKO...");
-  const updated=await syncKO();
-  console.log("🔍 [refFinish] syncKO hoàn thành, updated:", updated);
-  
-  // V8 FIX: Reload data từ DB để đảm bảo UI cập nhật
-  console.log("🔍 [refFinish] Reload data...");
-  await selectEvent(state.currentEventId);
-  
-  const msg="✅ Đã kết thúc trận" + (updated>0 ? ` + đồng bộ ${updated} trận KO` : "");
-  showToast(msg);
+  // Background: Update DB + sync KO
+  (async()=>{
+    try{
+      const {error}=await sb.from("matches").update({
+        home_score:h, away_score:a,
+        status:"completed",
+        winner_team_id:w,
+        serve:null
+      }).eq("id",m.id);
+      
+      if(error){
+        console.error("❌ refFinish DB error:", error.message);
+        showToast("⚠️ Lỗi lưu: "+error.message, "err");
+        return;
+      }
+      
+      const updated=await syncKO();
+      if(updated>0){
+        showToast(`✅ Kết thúc + đồng bộ ${updated} trận KO`);
+      }else{
+        showToast("✅ Đã kết thúc trận");
+      }
+    }catch(e){
+      console.error("❌ refFinish exception:", e);
+      showToast("⚠️ Lỗi: "+e.message, "err");
+    }
+  })();
 }
 
 async function refResume(){
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
-  const {error}=await sb.from("matches").update({
-    status:"live",
-    winner_team_id:null
-  }).eq("id",m.id);
-  if(error){alert(error.message);return;}
+  // V9: Optimistic
   m.status="live";
   m.winner_team_id=null;
   updateRefModalUI();
   renderAll();
-  showToast("▶️ Tiếp tục trận đấu từ điểm hiện tại");
+  
+  // Background DB update
+  (async()=>{
+    const {error}=await sb.from("matches").update({
+      status:"live",
+      winner_team_id:null
+    }).eq("id",m.id);
+    if(error){
+      showToast("⚠️ Lỗi: "+error.message,"err");
+    }else{
+      showToast("▶️ Tiếp tục trận đấu");
+    }
+  })();
 }
 
 async function refRematch(){
-  if(!confirm("🔄 Thi đấu lại từ đầu?\n\n• Điểm sẽ reset về 0-0\n• Lượt giao banh sẽ clear\n• Trạng thái chuyển sang Đang đấu\n\nPhù hợp khi trận đấu cần thi đấu lại.")) return;
+  if(!confirm("🔄 Thi đấu lại từ đầu?\n\n• Điểm sẽ reset về 0-0\n• Lượt giao banh sẽ clear\n• Trạng thái chuyển sang Đang đấu")) return;
   const m=state.matches.find(x=>x.id===state.refModalMatchId);
   if(!m) return;
-  const {error}=await sb.from("matches").update({
-    home_score:0, away_score:0,
-    status:"live",
-    winner_team_id:null,
-    serve:null
-  }).eq("id",m.id);
-  if(error){alert(error.message);return;}
+  // V9: Optimistic
   m.home_score=0;m.away_score=0;
   m.status="live";
   m.winner_team_id=null;
@@ -1059,29 +1071,51 @@ async function refRematch(){
   ["h1","h2","a1","a2"].forEach(k=>{const b=el("sb-"+k);if(b)b.classList.remove("active");});
   updateRefModalUI();
   renderAll();
-  showToast("🔄 Đã reset, bắt đầu đấu lại");
+  
+  // Background
+  (async()=>{
+    const {error}=await sb.from("matches").update({
+      home_score:0, away_score:0,
+      status:"live",
+      winner_team_id:null,
+      serve:null
+    }).eq("id",m.id);
+    if(error){
+      showToast("⚠️ Lỗi: "+error.message,"err");
+    }else{
+      showToast("🔄 Đã reset, bắt đầu đấu lại");
+    }
+  })();
 }
 
+/* ===== V9: Realtime với DEBOUNCE ===== */
 sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"matches"},(p)=>{
-  console.log("🔍 [Realtime] event:", p.eventType, p.new?.match_code || p.old?.match_code);
   const row=p.new||p.old;
   if(!row||row.tournament_id!==TOURNAMENT_ID) return;
-  if(p.eventType==="DELETE") state.matches=state.matches.filter(m=>m.id!==row.id);
-  else{
+  
+  // Update local state ngay
+  if(p.eventType==="DELETE"){
+    state.matches=state.matches.filter(m=>m.id!==row.id);
+  }else{
     const i=state.matches.findIndex(m=>m.id===row.id);
     if(i>=0) state.matches[i]={...state.matches[i],...row};
     else state.matches.push(row);
   }
-  renderAll();
-  if(state.refModalMatchId && state.refModalMatchId===row.id){
-    updateRefModalUI();
-    const m=state.matches.find(x=>x.id===row.id);
-    if(m){
-      el("ref-home-score").textContent=m.home_score??0;
-      el("ref-away-score").textContent=m.away_score??0;
-      ["h1","h2","a1","a2"].forEach(k=>{const b=el("sb-"+k);if(b)b.classList.toggle("active",m.serve===k);});
+  
+  // V9: Debounce render 100ms để tránh re-render nhiều lần
+  if(_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
+  _renderDebounceTimer=setTimeout(()=>{
+    renderAll();
+    if(state.refModalMatchId && state.refModalMatchId===row.id){
+      updateRefModalUI();
+      const m=state.matches.find(x=>x.id===row.id);
+      if(m){
+        el("ref-home-score").textContent=m.home_score??0;
+        el("ref-away-score").textContent=m.away_score??0;
+        ["h1","h2","a1","a2"].forEach(k=>{const b=el("sb-"+k);if(b)b.classList.toggle("active",m.serve===k);});
+      }
     }
-  }
+  },100);
 }).subscribe();
 
 (async()=>{
