@@ -27,19 +27,40 @@ h1,h3,h4,.logo,.stat-value,.match-code,.time-chip,.ref-score{font-family:'Oswald
 .btn-sm{padding:4px 9px;font-size:11px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* ===== V9.3: HERO GỌN - CHỈ TÊN + NGÀY ===== */
 .hero{padding:22px;margin:12px;border-radius:16px;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border:1px solid rgba(163,230,53,.35);position:relative;overflow:hidden;text-align:center}
 .hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
 .hero h1{margin:0 0 6px;font-size:28px;text-transform:uppercase;position:relative;z-index:1}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
 
-/* ===== V9.3: SPONSOR LOGOS ===== */
+/* ===== V9.4: LOGO ÔM SÁT, KHÔNG BIẾN DẠNG ===== */
 .sponsor-wrap{padding:6px 12px 14px;text-align:center}
 .sponsor-title{color:var(--mu);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'Oswald',sans-serif}
 .sponsor-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:540px;margin:0 auto}
-.sponsor-item{flex:0 0 168px;width:168px;height:88px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:12px;padding:8px;transition:all .2s;text-decoration:none}
+.sponsor-item{
+  flex:0 0 168px;
+  width:168px;
+  height:88px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--ln);
+  border-radius:12px;
+  padding:0;                    /* ← Ôm sát logo */
+  overflow:hidden;
+  transition:all .2s;
+  text-decoration:none;
+}
 .sponsor-item:hover{transform:translateY(-2px);border-color:var(--li);background:rgba(255,255,255,.1);box-shadow:0 4px 12px rgba(0,0,0,.35)}
-.sponsor-item img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+.sponsor-item img{
+  max-width:100%;
+  max-height:100%;
+  width:auto;
+  height:auto;
+  object-fit:contain;           /* ← Giữ tỉ lệ gốc, không biến dạng */
+  display:block;
+  border-radius:11px;
+}
 
 main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
 .ctx-bar{background:var(--sf2);border-bottom:1px solid var(--ln);padding:9px 12px;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;border-radius:10px 10px 0 0}
@@ -224,7 +245,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
   .score-cell{font-size:14px}
   .tab-btn{padding:10px 6px;font-size:10px;letter-spacing:0}
   .ref-score{font-size:40px}
-  .sponsor-item{flex:0 0 110px;width:110px;height:60px}
+  .sponsor-item{flex:0 0 110px;width:110px;height:58px}
   .sponsor-grid{gap:10px}
 }
 </style>
@@ -239,10 +260,7 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
 <button id="logout-btn" class="btn btn-light hidden" onclick="logout()">Đăng xuất</button>
 </div></nav>
 
-<!-- V9.3: Hero chỉ tên giải + ngày mở giải -->
 <div id="tournament-hero"></div>
-
-<!-- V9.3: Logo nhà tài trợ -->
 <div id="sponsor-section"></div>
 
 <div class="ctx-bar">
@@ -339,10 +357,6 @@ const params=new URLSearchParams(location.search);
 const TOURNAMENT_ID=params.get("id");
 if(!TOURNAMENT_ID){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Không tìm thấy giải đấu</h2><a href="index.html">← Quay về trang chủ</a></div>';}
 
-/* ===== V9.3: DANH SÁCH NHÀ TÀI TRỢ =====
-   Logo lưu tại thư mục gốc (main) của repo github:
-   https://ritapick.github.io/score/logo1.jpeg ...
-   Dùng đường dẫn tương đối để hoạt động cả local lẫn github pages */
 const SPONSORS=[
   {img:"logo1.jpeg", url:"https://www.logo1.com"},
   {img:"logo2.jpeg", url:"https://www.logo2.com"},
@@ -484,8 +498,6 @@ function switchTab(tab){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* ===== V9.3: RENDER SPONSORS =====
-   3 logo/dòng, dư xuống dòng căn giữa, click mở tab mới */
 function renderSponsors(){
   const box=el("sponsor-section");
   if(!box) return;
@@ -502,7 +514,6 @@ function renderSponsors(){
     </div>`;
 }
 
-/* ===== V9.3: HERO CHỈ TÊN + NGÀY MỞ GIẢI ===== */
 async function loadTournament(){
   const {data}=await sb.from("tournaments").select("*").eq("id",TOURNAMENT_ID).single();
   if(!data){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Giải đấu không tồn tại</h2><a href="index.html">← Quay về trang chủ</a></div>';return;}
@@ -700,7 +711,6 @@ function koRow(m){
   </tr>`;
 }
 
-/* ===== V9.3: BỎ LEGEND ĐẦU TRANG ===== */
 function renderMatches(){
   const groups=activeGroups();
   if(!groups.length){
@@ -737,7 +747,6 @@ function renderMatches(){
     <h3 style="color:var(--li);margin-bottom:12px">🎾 VÒNG BẢNG</h3>${sections}`;
 }
 
-/* ===== V9.3: BỎ LEGEND + INFO-BOX DƯỚI KO ===== */
 function renderKnockout(){
   const ko=state.knockoutStage?state.matches.filter(m=>m.stage_id===state.knockoutStage.id):[];
   if(!ko.length){el("knockout-section").innerHTML="";return;}
