@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Quản trị - Pickleball Pro v28</title>
+<title>Quản trị - Pickleball Pro v29</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 :root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
@@ -12,6 +12,10 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 button,input,select{font:inherit}
 .hidden{display:none!important}
 .topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.95);border-bottom:1px solid var(--ln);padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.brand-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* V29: Nút trang chủ */
+.home-btn{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:.15s}
+.home-btn:hover{background:rgba(148,163,184,.25);color:var(--tx);border-color:var(--cy)}
 .logo{color:var(--li);font-weight:800;font-size:16px;text-transform:uppercase}
 .chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--li);padding:4px 10px;border-radius:99px}
 .btn{border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:700}
@@ -34,6 +38,12 @@ main{max-width:1200px;margin:0 auto;padding:10px}
 .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px}
 input,select{background:#0d1626;border:1px solid var(--ln);border-radius:8px;padding:8px;color:var(--tx);width:100%;font-size:13px}
 input[type="time"],input[type="number"]{color-scheme:dark}
+.hint{font-size:10px;color:var(--mu);margin-top:-4px;margin-bottom:6px;font-style:italic}
+.t-loc{color:var(--mu);font-size:10px;font-style:italic;margin-left:6px}
+/* V29: Event info box */
+.ev-info{padding:10px 12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--cy)}
+.ev-info b{color:var(--li)}
+.ev-info .ev-rule{display:inline-block;background:rgba(163,230,53,.15);color:var(--li);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;margin-left:6px}
 .tw{overflow-x:auto;margin:8px 0}
 table{width:100%;border-collapse:collapse;min-width:380px}
 th,td{padding:7px 6px;border-bottom:1px solid var(--ln);text-align:left;font-size:12px}
@@ -56,12 +66,6 @@ th{color:var(--mu);font-size:10px;text-transform:uppercase}
 .modal-bg{position:fixed;inset:0;background:rgba(4,8,16,.7);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-bg.show{display:flex}
 .modal{width:min(400px,100%);background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:18px}
-
-/* V28: Hint text */
-.hint{font-size:10px;color:var(--mu);margin-top:-4px;margin-bottom:6px;font-style:italic}
-
-/* V28: Location chip in tournament dropdown */
-.t-loc{color:var(--mu);font-size:10px;font-style:italic;margin-left:6px}
 
 table.match-table{width:100%;border-collapse:collapse;min-width:950px;background:var(--sf2);border-radius:10px;overflow:hidden}
 table.match-table thead{background:#1a2540}
@@ -124,9 +128,6 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 .bxh-status.complete{background:rgba(163,230,53,.2);color:var(--li)}
 .bxh-status.partial{background:rgba(251,146,60,.2);color:var(--or)}
 
-.debug-box{background:#0a1020;border:1px dashed var(--cy);border-radius:6px;padding:8px;margin-bottom:10px;font-size:10px;font-family:monospace;color:var(--cy);word-break:break-all}
-.debug-box b{color:var(--li)}
-
 @media(max-width:950px){table.match-table{min-width:820px}}
 @media(max-width:640px){
   .mrow{grid-template-columns:1fr;gap:4px}
@@ -139,7 +140,11 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 </head>
 <body>
 <nav class="topnav">
-<span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v28</span></span>
+<div class="brand-row">
+  <!-- V29: Nút về trang chủ -->
+  <a href="index.html" class="home-btn" title="Về trang chủ">🏠 Trang chủ</a>
+  <span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v29</span></span>
+</div>
 <div>
 <span id="user-chip" class="chip hidden"></span>
 <button id="login-btn" class="btn btn-p" onclick="openLogin()">Đăng nhập</button>
@@ -151,7 +156,6 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 <div id="login-modal" class="modal-bg">
 <div class="modal">
 <h3 style="margin:0 0 10px;color:var(--li)">🔐 Đăng nhập</h3>
-<!-- V28: Placeholder đổi thành "Tên user" -->
 <input id="lu" placeholder="Tên user (VD: admin)" style="margin-bottom:4px"/>
 <div class="hint">Mặc định thêm @gmail.com. Mật khẩu: 123@321</div>
 <input id="lp" type="password" placeholder="Mật khẩu (123@321)" style="margin-bottom:10px"/>
@@ -168,7 +172,7 @@ var CFG={
   URL:"https://mvefkcaqvjflrgmaybev.supabase.co",
   KEY:"sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",
   PASS:"123@321",
-  DOMAIN:"@gmail.com",           /* V28: Đổi sang @gmail.com */
+  DOMAIN:"@gmail.com",
   FALLBACK_DOMAIN:"@pb-local.app",
   GROUPS:["A","B","C","D"],
   MATCHES_PER_GROUP:6,
@@ -248,12 +252,10 @@ function statusTag(m){var st=autoStatus(m);return '<span class="status-tag '+st+
 function openLogin(){el("login-modal").classList.add("show");el("lmsg").textContent="";}
 function closeLogin(){el("login-modal").classList.remove("show");}
 
-/* ===== V28: LOGIN với nhiều domain fallback ===== */
 async function doLogin(){
   var u=el("lu").value.trim(),p=el("lp").value;
   if(!u||!p){el("lmsg").textContent="Nhập đủ thông tin";return;}
   el("lmsg").textContent="Đang đăng nhập...";
-  // V28: Thử nhiều domain nếu user không nhập @
   var cands;
   if(u.indexOf("@")>=0){
     cands=[u];
@@ -290,7 +292,6 @@ async function loadUsers(){var a=await sb.from("app_users").select("*");var u=aw
 async function loadRefs(){var u=await sb.from("user_roles").select("user_id").eq("role","referee");var ids=(u.data||[]).map(function(x){return x.user_id;});if(ids.length){var a=await sb.from("app_users").select("user_id,username").in("user_id",ids);S.refs=a.data||[];}else S.refs=[];}
 async function loadRefAssign(){S.refAssign={};if(!S.matches.length)return;var ids=S.matches.map(function(m){return m.id;});try{var r=await sb.from("referee_matches").select("*").in("match_id",ids);(r.data||[]).forEach(function(x){S.refAssign[x.match_id]=x.user_id;});}catch(e){}}
 
-/* ===== V28: TẠO GIẢI VỚI ĐỊA ĐIỂM ===== */
 async function createT(){
   var n=el("t-name").value.trim();
   var loc=el("t-location").value.trim();
@@ -303,13 +304,8 @@ async function createT(){
   var ts=new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14);
   var slug=code+"-"+base+"-"+ts;
   var payload={
-    code:code,
-    name:n,
-    slug:slug,
-    start_date:d,
-    end_date:el("t-end").value||d,
-    location_name:loc||null,    /* V28: Lưu địa điểm */
-    status:"in_progress"
+    code:code,name:n,slug:slug,start_date:d,end_date:el("t-end").value||d,
+    location_name:loc||null,status:"in_progress"
   };
   var r=await sb.from("tournaments").insert(payload).select().single();
   if(r.error){alert(r.error.message);return;}
@@ -318,7 +314,6 @@ async function createT(){
   await loadAll();
 }
 
-/* ===== V28: CẬP NHẬT ĐỊA ĐIỂM GIẢI ===== */
 async function updateTLocation(){
   if(!S.tournament){return;}
   var loc=el("t-location-edit").value.trim();
@@ -339,11 +334,40 @@ async function delT(id){if(!confirm("Xóa giải + toàn bộ dữ liệu?"))ret
 
 async function saveE(){if(!S.tournament){alert("Chọn giải trước");return;}var n=el("e-name").value.trim();if(!n){alert("Nhập tên");return;}var lim=parseFloat(el("e-limit").value);var used={};S.events.forEach(function(e){used[e.code]=1;});var nn=1;while(used[pad(nn,2)])nn++;var r=await sb.from("events").insert({tournament_id:S.tournament.id,code:pad(nn,2),name:n,rating_limit:isNaN(lim)?null:lim,rating_rule:el("e-rule").value,status:"open"});if(r.error){alert(r.error.message);return;}toast("✅ Tạo nội dung");await selT(S.tournament.id);}
 async function delE(id){if(!confirm("Xóa nội dung?"))return;await sb.from("events").delete().eq("id",id);await selT(S.tournament.id);}
+
+/* ===== V29: TẠO NỘI DUNG NHANH (trong bước 5) ===== */
+async function quickCreateEvent(){
+  if(!S.tournament){alert("Chọn giải trước");return;}
+  var n=prompt("Nhập tên nội dung (VD: Đôi Nam, Đơn Nữ...):");
+  if(!n||!n.trim())return;
+  n=n.trim();
+  var lim=prompt("Tổng trình tối đa (bỏ trống = Mở, không giới hạn):");
+  var rule="open", limit=null;
+  if(lim&&lim.trim()){
+    limit=parseFloat(lim);
+    if(isNaN(limit)||limit<=0){alert("Số không hợp lệ");return;}
+    rule="max_total";
+  }
+  var used={};S.events.forEach(function(e){used[e.code]=1;});
+  var nn=1;while(used[pad(nn,2)])nn++;
+  var r=await sb.from("events").insert({
+    tournament_id:S.tournament.id,
+    code:pad(nn,2),
+    name:n,
+    rating_limit:limit,
+    rating_rule:rule,
+    status:"open"
+  });
+  if(r.error){alert(r.error.message);return;}
+  toast("✅ Tạo nội dung: "+n);
+  await selT(S.tournament.id);
+}
+
 async function saveP(){var n=el("p-name").value.trim().toUpperCase();if(!n){alert("Nhập họ tên");return;}var r=parseFloat(el("p-rating").value);var res=await sb.from("players").insert({full_name:n,gender:el("p-gender").value,skill_rating:isNaN(r)?null:r,club_name:(el("p-club").value||"").toUpperCase()});if(res.error){alert(res.error.message);return;}toast("✅ Thêm VĐV");var p=await sb.from("players").select("*");S.players=p.data||[];render();}
 async function delP(id){if(!confirm("Xóa VĐV?"))return;await sb.from("players").delete().eq("id",id);var p=await sb.from("players").select("*");S.players=p.data||[];render();}
 
 async function saveTeam(){
-  if(!S.eid){alert("Chọn nội dung");return;}
+  if(!S.eid){alert("Chọn nội dung trước");return;}
   var p1=el("tp1").value,p2=el("tp2").value;
   if(!p1||!p2){alert("Chọn đủ 2 VĐV");return;}
   if(p1===p2){alert("❌ 2 VĐV phải khác nhau");return;}
@@ -362,7 +386,6 @@ async function saveTeam(){
 }
 async function delTeam(id){if(!confirm("Xóa đội?"))return;await sb.from("team_members").delete().eq("team_id",id);await sb.from("teams").delete().eq("id",id);await selE(S.eid);}
 
-/* ===== V28: XUẤT DANH SÁCH ĐỘI RA CSV ===== */
 function exportTeamsCSV(){
   if(!S.teams.length){toast("Chưa có đội để xuất",true);return;}
   var BOM="\uFEFF";
@@ -376,7 +399,6 @@ function exportTeamsCSV(){
     var n1=p1&&p1.full_name?p1.full_name:"";
     var n2=p2&&p2.full_name?p2.full_name:"";
     var rating=t.total_rating.toFixed(2);
-    // Escape quotes trong tên
     n1='"'+String(n1).replace(/"/g,'""')+'"';
     n2='"'+String(n2).replace(/"/g,'""')+'"';
     lines.push((i+1)+","+n1+","+n2+","+rating);
@@ -397,13 +419,11 @@ function exportTeamsCSV(){
   toast("✅ Đã xuất "+S.teams.length+" đội");
 }
 
-/* ===== V28: SYNC PLAYER OPTIONS - Loại trừ VĐV đã chọn ===== */
 function syncPlayerOptions(changedId,otherId){
   var changed=el(changedId);
   var other=el(otherId);
   if(!changed||!other)return;
   var selectedVal=changed.value;
-  // Reset và disable option trùng
   Array.from(other.options).forEach(function(opt){
     if(opt.value==="" || opt.value!==selectedVal){
       opt.disabled=false;
@@ -411,7 +431,6 @@ function syncPlayerOptions(changedId,otherId){
     }else{
       opt.disabled=true;
       opt.style.color="var(--mu)";
-      // Nếu other đang chọn option bị disable → reset
       if(other.value===opt.value){
         other.value="";
       }
@@ -544,7 +563,7 @@ async function upMatchScore(id,field,val){
 }
 
 async function resetKOScore(id){
-  if(!confirm("Xóa kết quả trận này?\n• Điểm về 0-0\n• Trạng thái về Chưa đấu\n• Giữ nguyên: Giờ, Sân, Trọng tài, Đội"))return;
+  if(!confirm("Xóa kết quả trận này?\n• Điểm về 0-0\n• Trạng thái về Chưa đấu"))return;
   try{
     await sb.from("matches").update({home_score:0,away_score:0,status:"scheduled"}).eq("id",id);
     var m=S.matches.find(function(x){return x.id===id;});
@@ -553,8 +572,7 @@ async function resetKOScore(id){
     await loadRefAssign();
     toast("✅ Đã reset kết quả");
     render();
-  }catch(e){alert("❌ "+e.message);
-}
+  }catch(e){alert("❌ "+e.message);}
 }
 
 async function batchFillKO(){
@@ -599,13 +617,11 @@ async function batchFillGroup(gid){
 function refOptsHtml(mid){var cur=S.refAssign[mid]||null;var html='<select onchange="assignRef(\''+mid+"',this.value)\">";html+='<option value="">-- TT --</option>';S.refs.forEach(function(r){var sel=cur===r.user_id?" selected":"";html+='<option value="'+r.user_id+'"'+sel+'>'+esc(r.username)+'</option>';});html+='</select>';return html;}
 async function assignRef(mid,uid){try{await sb.from("referee_matches").delete().eq("match_id",mid);if(uid)await sb.from("referee_matches").insert({user_id:uid,match_id:mid});toast(uid?"✅ Phân TT":"✅ Bỏ TT");await loadRefAssign();render();}catch(e){alert("❌ "+e.message);}}
 
-/* ===== V28: CREATE USER - tự động thêm @gmail.com ===== */
 async function createUser(){
   var em=el("nu-email").value.trim();
   var ps=el("nu-pass").value||CFG.PASS;
   var ro=el("nu-role").value;
   if(!em){alert("Nhập tên user");return;}
-  // V28: Tự động thêm @gmail.com nếu chưa có @
   if(em.indexOf("@")<0){
     em=em+CFG.DOMAIN;
   }
@@ -645,7 +661,7 @@ function renderMatchRow(m,isKO){
     else rowClass="ko-row";
   }
   var html='<tr class="'+rowClass+'">';
-  html+='<td class="m-code" title="DB match_code: '+esc(m.match_code||'')+' | slot='+esc(m.bracket_slot)+' | round='+esc(m.round)+'">'+esc(code)+'</td>';
+  html+='<td class="m-code" title="slot='+esc(m.bracket_slot)+' | round='+esc(m.round)+'">'+esc(code)+'</td>';
   html+='<td class="m-time"><input type="time" step="300" value="'+esc(timeVal)+'" onchange="upMatchTime(\''+mid+"',this.value)\"/></td>";
   html+='<td class="m-court"><select onchange="upMatchCourt(\''+mid+"',this.value)\">"+courtOptsHtml(m.court_id)+"</select></td>";
   html+='<td class="m-team '+homeClass+'">'+esc(homeText)+'</td>';
@@ -654,7 +670,7 @@ function renderMatchRow(m,isKO){
   html+='<td class="m-ref">'+refOptsHtml(mid)+'</td>';
   html+='<td class="m-status">'+statusTag(m)+'</td>';
   if(isKO){
-    html+='<td class="m-actions"><button class="btn btn-d btn-xs" onclick="resetKOScore(\''+mid+'\')" title="Reset kết quả">🗑</button></td>';
+    html+='<td class="m-actions"><button class="btn btn-d btn-xs" onclick="resetKOScore(\''+mid+'\')" title="Reset">🗑</button></td>';
   }
   html+='</tr>';
   return html;
@@ -725,7 +741,7 @@ function renderKOSection(km){
     H+='</div>';
     return H;
   }
-  H+='<div class="info" style="margin-bottom:10px">💡 <b>Logic điền đội:</b> Chỉ điền tên đội thực vào KO khi <b>bảng đã hoàn thành 6 trận</b>. Nếu chưa → giữ placeholder.</div>';
+  H+='<div class="info" style="margin-bottom:10px">💡 <b>Logic điền đội:</b> Chỉ điền tên đội thực vào KO khi <b>bảng đã hoàn thành 6 trận</b>.</div>';
   H+='<div class="ko-stats">';
   H+='<div class="k">👥 Đội <b>'+countTeams+'/14</b></div>';
   H+='<div class="k">⏰ Giờ <b>'+countTime+'/7</b></div>';
@@ -757,19 +773,14 @@ function renderKOSection(km){
     H+=renderMatchTable(ckMatches,true);
     H+='</div>';
   }
-  var ungrouped=km.filter(function(m){var r=Number(m.round);return r!==2&&r!==3&&r!==4;});
-  if(ungrouped.length){
-    H+='<div class="alert">⚠ Có '+ungrouped.length+' trận KO chưa có round đúng (2/3/4).</div>';
-    H+=renderMatchTable(ungrouped,true);
-  }
   H+='</div>';
   return H;
 }
 
 function renderStep6(){
-  if(!S.eid||!S.tournament)return '<div class="alert">Chọn giải + nội dung.</div>';
+  if(!S.eid||!S.tournament)return '<div class="alert">Chọn giải + nội dung (bước 5).</div>';
   if(!S.gStage)return '<div class="info">Chưa tạo bảng.</div><button class="btn btn-p" onclick="initGroups()">🏆 Tạo 4 bảng A/B/C/D</button>';
-  var H='<div class="info">💡 Phân 16 đội → Lưu 6 trận/bảng → <b>KO tự sinh</b>. BXH: <b>W → PF-PA → PF</b>.</div>';
+  var H='<div class="info">💡 Phân 16 đội → Lưu 6 trận/bảng → <b>KO tự sinh</b>.</div>';
   H+='<div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-b" onclick="autoAssign()">⚡ Xếp tự động</button></div>';
   var un=unassigned();if(un.length)H+='<div class="alert">⚠ Chưa xếp: '+un.length+' đội</div>';
   H+='<div class="tw"><table><tr><th>Bảng</th><th>Đội</th><th>Chuyển</th></tr>';
@@ -816,7 +827,7 @@ function render(){
   try{
     var t=S.tournament;var gm=S.matches.filter(function(m){return m.group_id;});var km=S.matches.filter(function(m){return!m.group_id;});var H="";
     
-    /* ===== V28: BƯỚC 1 - TẠO GIẢI VỚI ĐỊA ĐIỂM ===== */
+    /* BƯỚC 1 - TẠO GIẢI */
     H+='<div class="acc">'+accH("1","Tạo giải","s1",S.tournaments.length?"done":"empty",S.tournaments.length+" giải");
     H+='<div class="acc-b'+(S.acc.s1?" open":"")+'">';
     H+='<div class="fg">';
@@ -828,20 +839,19 @@ function render(){
     H+='</div>';
     H+='</div></div>';
     
-    /* ===== V28: BƯỚC 2 - CHỌN GIẢI (hiển thị địa điểm) ===== */
+    /* BƯỚC 2 - CHỌN GIẢI */
     H+='<div class="acc">'+accH("2","Chọn giải","s2",t?"done":"empty",t?t.code:"—");
     H+='<div class="acc-b'+(S.acc.s2?" open":"")+'">';
     H+='<div class="fg">';
     H+='<select onchange="selT(this.value)">';
     sortedT().forEach(function(x){
       var s=(t&&t.id===x.id)?" selected":"";
-      var loc=x.location_name?' <span class="t-loc">📍 '+esc(x.location_name)+'</span>':'';
+      var loc=x.location_name?' · 📍 '+esc(x.location_name):'';
       H+='<option value="'+x.id+'"'+s+'>'+esc(x.name)+loc+'</option>';
     });
     H+='</select>';
     if(t) H+='<button class="btn btn-d" onclick="delT(\''+t.id+'\')">🗑 Xóa</button>';
     H+='</div>';
-    /* V28: Chỉnh sửa địa điểm của giải đã chọn */
     if(t){
       H+='<div class="fg" style="margin-top:8px">';
       H+='<input id="t-location-edit" placeholder="📍 Chỉnh sửa địa điểm" value="'+esc(t.location_name||'')+'"/>';
@@ -851,66 +861,111 @@ function render(){
     }
     H+='</div></div>';
     
+    /* BƯỚC 3 - NỘI DUNG */
     H+='<div class="acc">'+accH("3","Nội dung","s3",S.events.length?"done":"empty",S.events.length+" ND");H+='<div class="acc-b'+(S.acc.s3?" open":"")+'"><div class="fg"><input id="e-name" placeholder="Tên nội dung"/><input id="e-limit" type="number" step="0.05" placeholder="Trình"/><select id="e-rule"><option value="max_total">Tổng &lt;=</option><option value="open">Mở</option></select><button class="btn btn-p" onclick="saveE()">➕ Tạo</button></div>';if(S.events.length){H+='<div class="tw"><table>';S.events.forEach(function(e){H+='<tr><td>'+esc(e.code)+'</td><td>'+esc(e.name)+'</td><td>'+(e.rating_limit||"-")+'</td><td><button class="btn btn-d btn-s" onclick="delE(\''+e.id+'\')">🗑</button></td></tr>';});H+='</table></div>';}H+='</div></div>';
+    
+    /* BƯỚC 4 - VĐV */
     H+='<div class="acc">'+accH("4","VĐV","s4",S.players.length?"done":"empty",S.players.length+" VĐV");H+='<div class="acc-b'+(S.acc.s4?" open":"")+'"><div class="fg"><input id="p-name" placeholder="Họ tên"/><select id="p-gender"><option value="male">Nam</option><option value="female">Nữ</option></select><input id="p-rating" type="number" step="0.05" placeholder="Rating"/><input id="p-club" placeholder="Club"/><button class="btn btn-p" onclick="saveP()">➕ Thêm</button></div>';if(S.players.length){H+='<div class="tw"><table>';S.players.forEach(function(p){H+='<tr><td>'+esc(p.full_name)+'</td><td>'+(p.gender==="male"?"Nam":"Nữ")+'</td><td>'+(p.skill_rating||"-")+'</td><td><button class="btn btn-d btn-s" onclick="delP(\''+p.id+'\')">🗑</button></td></tr>';});H+='</table></div>';}H+='</div></div>';
     
-    /* ===== V28: BƯỚC 5 - TẠO ĐỘI VỚI SYNC OPTIONS + EXPORT CSV ===== */
-    var t5st=S.teams.length>=16?"done":S.teams.length>0?"part":"empty";
-    H+='<div class="acc">'+accH("5","Tạo đội","s5",t5st,S.teams.length+"/16");
+    /* ===== V29: BƯỚC 5 - TẠO ĐỘI (BẮT BUỘC CHỌN NỘI DUNG TRƯỚC) ===== */
+    // Tính status cho bước 5
+    var t5st="empty";
+    if(S.teams.length>=16) t5st="done";
+    else if(S.teams.length>0) t5st="part";
+    else if(S.eid) t5st="part";  // Đã chọn nội dung nhưng chưa có đội
+    
+    H+='<div class="acc">'+accH("5","Tạo đội","s5",t5st,S.teams.length+(S.eid?"/16":""));
     H+='<div class="acc-b'+(S.acc.s5?" open":"")+'">';
-    if(S.eid){
+    
+    // V29: Kiểm tra từng trường hợp
+    if(!S.tournament){
+      // Trường hợp 1: Chưa chọn giải
+      H+='<div class="alert">⚠ <b>Bước 2:</b> Chọn giải trước để tiếp tục</div>';
+    } else {
+      // Đã chọn giải → Hiện dropdown chọn nội dung
       H+='<div class="fg">';
-      /* V28: Select VĐV1 với onchange sync */
-      H+='<select id="tp1" onchange="syncPlayerOptions(\'tp1\',\'tp2\')">';
-      H+='<option value="">-- VĐV1 --</option>';
-      S.players.forEach(function(p){
-        H+='<option value="'+p.id+'">'+esc(p.full_name)+' ('+(p.skill_rating||"-")+')</option>';
+      H+='<select onchange="selE(this.value)" id="event-selector">';
+      H+='<option value="">-- Chọn nội dung --</option>';
+      S.events.forEach(function(e){
+        var sel=(S.eid===e.id)?" selected":"";
+        var rule=e.rating_rule==="max_total"?" (Tổng ≤"+e.rating_limit+")":"";
+        H+='<option value="'+e.id+'"'+sel+'>'+esc(e.code)+'. '+esc(e.name)+rule+'</option>';
       });
       H+='</select>';
-      /* V28: Select VĐV2 với onchange sync */
-      H+='<select id="tp2" onchange="syncPlayerOptions(\'tp2\',\'tp1\')">';
-      H+='<option value="">-- VĐV2 --</option>';
-      S.players.forEach(function(p){
-        H+='<option value="'+p.id+'">'+esc(p.full_name)+' ('+(p.skill_rating||"-")+')</option>';
-      });
-      H+='</select>';
-      H+='<button class="btn btn-p" onclick="saveTeam()">➕ Tạo đội</button>';
+      H+='<button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button>';
       H+='</div>';
-      H+='<div class="hint">💡 Chọn VĐV1 → VĐV đó sẽ tự ẩn khỏi danh sách VĐV2 (và ngược lại)</div>';
       
-      /* V28: Nút xuất CSV */
-      if(S.teams.length){
-        H+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">';
-        H+='<button class="btn btn-b btn-s" onclick="exportTeamsCSV()">📥 Xuất CSV ('+S.teams.length+' đội)</button>';
-        H+='</div>';
-        H+='<div class="tw"><table>';
-        H+='<thead><tr><th>STT</th><th>Tên đội</th><th>VĐV 1</th><th>VĐV 2</th><th>Tổng trình</th><th></th></tr></thead><tbody>';
-        S.teams.forEach(function(tm,i){
-          var p1=null,p2=null;
-          (tm.members||[]).forEach(function(m){
-            if(m.position===1) p1=m.players;
-            else if(m.position===2) p2=m.players;
-          });
-          var n1=p1&&p1.full_name?esc(p1.full_name):"—";
-          var n2=p2&&p2.full_name?esc(p2.full_name):"—";
-          H+='<tr>';
-          H+='<td>'+(i+1)+'</td>';
-          H+='<td><b>'+esc(sn(tm.name))+'</b></td>';
-          H+='<td>'+n1+'</td>';
-          H+='<td>'+n2+'</td>';
-          H+='<td><b style="color:var(--li)">'+tm.total_rating.toFixed(2)+'</b></td>';
-          H+='<td><button class="btn btn-d btn-s" onclick="delTeam(\''+tm.id+'\')">🗑</button></td>';
-          H+='</tr>';
+      if(!S.eid){
+        // Trường hợp 2: Chưa chọn nội dung
+        if(S.events.length===0){
+          H+='<div class="alert">⚠ Chưa có nội dung nào. Hãy bấm <b>➕ Tạo nội dung</b> để tạo (hoặc dùng Bước 3).</div>';
+        }else{
+          H+='<div class="alert">⚠ Chọn nội dung ở dropdown trên để xem và tạo đội</div>';
+        }
+      } else {
+        // Trường hợp 3: Đã chọn nội dung → hiện form tạo đội
+        var ev=S.events.find(function(e){return e.id===S.eid;});
+        if(ev){
+          var ruleText=ev.rating_rule==="max_total"
+            ?'Tổng trình ≤ '+ev.rating_limit
+            :'Mở (không giới hạn trình)';
+          H+='<div class="ev-info">📋 Đang chọn: <b>'+esc(ev.code)+'. '+esc(ev.name)+'</b>';
+          H+='<span class="ev-rule">'+esc(ruleText)+'</span></div>';
+        }
+        
+        H+='<div class="fg">';
+        H+='<select id="tp1" onchange="syncPlayerOptions(\'tp1\',\'tp2\')">';
+        H+='<option value="">-- VĐV1 --</option>';
+        S.players.forEach(function(p){
+          H+='<option value="'+p.id+'">'+esc(p.full_name)+' ('+(p.skill_rating||"-")+')</option>';
         });
-        H+='</tbody></table></div>';
+        H+='</select>';
+        H+='<select id="tp2" onchange="syncPlayerOptions(\'tp2\',\'tp1\')">';
+        H+='<option value="">-- VĐV2 --</option>';
+        S.players.forEach(function(p){
+          H+='<option value="'+p.id+'">'+esc(p.full_name)+' ('+(p.skill_rating||"-")+')</option>';
+        });
+        H+='</select>';
+        H+='<button class="btn btn-p" onclick="saveTeam()">➕ Tạo đội</button>';
+        H+='</div>';
+        H+='<div class="hint">💡 Chọn VĐV1 → VĐV đó tự ẩn khỏi danh sách VĐV2 (và ngược lại)</div>';
+        
+        if(S.teams.length){
+          H+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">';
+          H+='<button class="btn btn-b btn-s" onclick="exportTeamsCSV()">📥 Xuất CSV ('+S.teams.length+' đội)</button>';
+          H+='</div>';
+          H+='<div class="tw"><table>';
+          H+='<thead><tr><th>STT</th><th>Tên đội</th><th>VĐV 1</th><th>VĐV 2</th><th>Tổng trình</th><th></th></tr></thead><tbody>';
+          S.teams.forEach(function(tm,i){
+            var p1=null,p2=null;
+            (tm.members||[]).forEach(function(m){
+              if(m.position===1) p1=m.players;
+              else if(m.position===2) p2=m.players;
+            });
+            var n1=p1&&p1.full_name?esc(p1.full_name):"—";
+            var n2=p2&&p2.full_name?esc(p2.full_name):"—";
+            H+='<tr>';
+            H+='<td>'+(i+1)+'</td>';
+            H+='<td><b>'+esc(sn(tm.name))+'</b></td>';
+            H+='<td>'+n1+'</td>';
+            H+='<td>'+n2+'</td>';
+            H+='<td><b style="color:var(--li)">'+tm.total_rating.toFixed(2)+'</b></td>';
+            H+='<td><button class="btn btn-d btn-s" onclick="delTeam(\''+tm.id+'\')">🗑</button></td>';
+            H+='</tr>';
+          });
+          H+='</tbody></table></div>';
+        }else{
+          H+='<div class="info">Chưa có đội nào. Chọn 2 VĐV và bấm <b>➕ Tạo đội</b>.</div>';
+        }
       }
-    }else H+='<div class="alert">Chọn giải + nội dung.</div>';
+    }
     H+='</div></div>';
     
+    /* BƯỚC 6 - LỊCH + TRỌNG TÀI */
     var s6st=(gm.length===24&&km.length===7)?"done":(gm.length||km.length?"part":"empty");
     H+='<div class="acc">'+accH("6","Lịch + Trọng tài","s6",s6st,gm.length+"/24 · KO "+km.length+"/7");H+='<div class="acc-b'+(S.acc.s6?" open":"")+'">'+renderStep6()+'</div></div>';
     
-    /* ===== V28: BƯỚC 7 - NGƯỜI DÙNG (placeholder đơn giản) ===== */
+    /* BƯỚC 7 - NGƯỜI DÙNG */
     H+='<div class="acc">'+accH("7","Người dùng","s7",S.users.length?"done":"empty",S.users.length+" user");
     H+='<div class="acc-b'+(S.acc.s7?" open":"")+'">';
     H+='<div class="fg">';
@@ -929,7 +984,6 @@ function render(){
     
     el("admin").innerHTML=H;
     
-    /* V28: Restore draft values */
     setTimeout(function(){
       S.draft.forEach(function(m,i){
         var rows=document.querySelectorAll(".mrow");
