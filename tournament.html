@@ -32,7 +32,6 @@ h1,h3,h4,.logo,.stat-value,.match-code,.time-chip,.ref-score{font-family:'Oswald
 .hero h1{margin:0 0 6px;font-size:28px;text-transform:uppercase;position:relative;z-index:1}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
 
-/* ===== V9.5: LOGO KHÔNG KHUNG, KHÔNG VIỀN, KHÔNG BO GÓC ===== */
 .sponsor-wrap{padding:6px 12px 14px;text-align:center}
 .sponsor-title{color:var(--mu);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'Oswald',sans-serif}
 .sponsor-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:540px;margin:0 auto}
@@ -43,15 +42,13 @@ h1,h3,h4,.logo,.stat-value,.match-code,.time-chip,.ref-score{font-family:'Oswald
   display:flex;
   align-items:center;
   justify-content:center;
-  /* ← ĐÃ BỎ: background, border, border-radius, box-shadow */
   padding:0;
   transition:all .2s ease;
   text-decoration:none;
 }
 .sponsor-item:hover{
-  /* ← ĐÃ BỎ: background, border-color, box-shadow */
-  transform:scale(1.05);      /* ← Zoom nhẹ khi hover */
-  filter:brightness(1.15);    /* ← Logo sáng lên nhẹ */
+  transform:scale(1.05);
+  filter:brightness(1.15);
 }
 .sponsor-item img{
   max-width:100%;
@@ -60,7 +57,6 @@ h1,h3,h4,.logo,.stat-value,.match-code,.time-chip,.ref-score{font-family:'Oswald
   height:auto;
   object-fit:contain;
   display:block;
-  /* ← ĐÃ BỎ: border-radius */
 }
 
 main{max-width:1200px;margin:0 auto;padding:0 12px 20px}
@@ -287,9 +283,10 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
 <div id="toast" class="toast"></div>
 
 <div id="login-modal" class="modal-backdrop"><div class="modal">
-<h3>🔐 Đăng nhập</h3><div class="sub" style="color:var(--mu);font-size:12px;margin-bottom:10px">Mặc định 123@321</div>
-<div class="field"><label>Email</label><input id="login-username" placeholder="admin@gmail.com"/></div>
-<div class="field"><label>Mật khẩu</label><input id="login-password" type="password"/></div>
+<h3>🔐 Đăng nhập</h3>
+<div class="sub" style="color:var(--mu);font-size:12px;margin-bottom:10px">Nhập tên user — tự động thêm @gmail.com</div>
+<div class="field"><label>Tên user (VD: admin)</label><input id="login-username" placeholder="admin"/></div>
+<div class="field"><label>Mật khẩu</label><input id="login-password" type="password" placeholder="123@321"/></div>
 <div class="actions"><button class="btn btn-light" onclick="closeLogin()">Đóng</button><button class="btn btn-primary" onclick="doLogin()">Đăng nhập</button></div>
 <div id="login-message" class="msg"></div>
 </div></div>
@@ -352,19 +349,20 @@ tbody tr.ck-row:hover{background:rgba(163,230,53,.15)}
 </div></div>
 
 <script>
-const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co",SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc",EMAIL_DOMAIN="@pb-local.app",VN_OFFSET=7;
+/* ============================================
+ * V9.6 - CẤU HÌNH
+ * ============================================ */
+const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc";
+/* V9.6: 2 domain để thử khi đăng nhập bằng tên */
+const PRIMARY_DOMAIN="@gmail.com";
+const FALLBACK_DOMAIN="@pb-local.app";
+const VN_OFFSET=7;
+
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const params=new URLSearchParams(location.search);
 const TOURNAMENT_ID=params.get("id");
 if(!TOURNAMENT_ID){document.body.innerHTML='<div style="padding:40px;text-align:center"><h2 style="color:var(--rd)">Không tìm thấy giải đấu</h2><a href="index.html">← Quay về trang chủ</a></div>';}
-
-const SPONSORS=[
-  {img:"logo1.jpeg", url:"https://www.logo1.com"},
-  {img:"logo2.jpeg", url:"https://www.logo2.com"},
-  {img:"logo3.jpeg", url:"https://www.logo3.com"},
-  {img:"logo4.jpeg", url:"https://www.logo4.com"},
-  {img:"logo5.jpeg", url:"https://www.logo5.com"}
-];
 
 const KO_DEFS=[
   {slot:25,code:"TK1",round:2,group:"tk",ph:{h:"Nhất A",a:"Nhì B"}},
@@ -377,11 +375,20 @@ const KO_DEFS=[
 ];
 const MATCHES_PER_GROUP=6, MATCHES_PER_TEAM=3;
 
-let state={session:null,user:null,role:null,username:null,tournament:null,events:[],currentEventId:null,teams:[],matches:[],groups:[],groupTeams:[],stages:[],groupStage:null,knockoutStage:null,courts:[],refModalMatchId:null,myMatchIds:new Set()};
+/* V9.6: Thêm sponsors vào state */
+let state={
+  session:null,user:null,role:null,username:null,
+  tournament:null,events:[],currentEventId:null,
+  teams:[],matches:[],groups:[],groupTeams:[],
+  stages:[],groupStage:null,knockoutStage:null,
+  courts:[],refModalMatchId:null,myMatchIds:new Set(),
+  sponsors:[]  /* V9.6 */
+};
 
 let _renderDebounceTimer=null;
 const _recentlyUpdatedSlots=new Set();
 
+/* === HELPERS === */
 function el(i){return document.getElementById(i);}
 function isLocked(){return state.tournament?.status==="completed";}
 function isAdmin(){return state.role==="admin"||state.role==="organizer";}
@@ -389,6 +396,7 @@ function isReferee(){return state.role==="referee";}
 function shortName(n){return String(n||"").replace(/\s*\([\d.]+\)/g,"").trim();}
 function findTeam(id){return state.teams.find(x=>x.id===id)||null;}
 function teamName(id){if(!id)return null;var t=findTeam(id);return t?shortName(t.name):null;}
+function escapeHtml(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
 function matchStatus(m){
   if(m.status === "completed") return "completed";
@@ -412,7 +420,20 @@ function statusBadge(m){
   return '<span class="badge status-scheduled">⏳ Chưa đấu</span>';
 }
 
-function fmtTime(s){if(!s)return "";var d=new Date(s);if(isNaN(d.getTime()))return "";return ("0"+((d.getUTCHours()+VN_OFFSET)%24)).slice(-2)+":"+("0"+d.getUTCMinutes()).slice(-2);}
+function fmtTime(s){
+  if(!s) return "";
+  try{
+    const d=new Date(s);
+    if(isNaN(d.getTime())) return "";
+    /* V9.6: Hiển thị giờ VN bằng toLocaleTimeString */
+    return d.toLocaleTimeString("vi-VN",{
+      timeZone:"Asia/Ho_Chi_Minh",
+      hour:"2-digit",
+      minute:"2-digit",
+      hour12:false
+    });
+  }catch(e){return "";}
+}
 
 function displayCode(m){
   const slot=Number(m.bracket_slot)||0;
@@ -457,10 +478,6 @@ function teamDisplay(m,side){
   return {html:name, isWinner:isWinner};
 }
 
-function escapeHtml(s){
-  return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
 function serveDots(m,side){
   if(!m.serve) return "";
   const st=matchStatus(m);
@@ -499,20 +516,50 @@ function switchTab(tab){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+/* ============================================
+ * V9.6: RENDER SPONSORS TỪ DATABASE
+ * ============================================ */
 function renderSponsors(){
   const box=el("sponsor-section");
   if(!box) return;
-  const items=SPONSORS.map(s=>{
-    const href=s.url.startsWith("http")?s.url:("https://"+s.url);
-    return `<a class="sponsor-item" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(href)}">
-      <img src="${escapeHtml(s.img)}" alt="Nhà tài trợ" loading="lazy" onerror="this.parentElement.style.display='none'">
+  const list=state.sponsors||[];
+  if(!list.length){
+    box.innerHTML='';
+    return;
+  }
+  const items=list.map(s=>{
+    if(!s.logo_url) return '';
+    let href=s.website_url||'';
+    if(href && href.indexOf('http')!==0) href='https://'+href;
+    return `<a class="sponsor-item" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.name||href)}">
+      <img src="${escapeHtml(s.logo_url)}" alt="${escapeHtml(s.name||'Nhà tài trợ')}" loading="lazy" onerror="this.parentElement.style.display='none'">
     </a>`;
-  }).join("");
+  }).filter(Boolean).join("");
+  if(!items){
+    box.innerHTML='';
+    return;
+  }
   box.innerHTML=`
     <div class="sponsor-wrap">
       <div class="sponsor-title">🤝 Nhà tài trợ</div>
       <div class="sponsor-grid">${items}</div>
     </div>`;
+}
+
+/* V9.6: Load sponsors từ DB */
+async function loadSponsors(){
+  if(!TOURNAMENT_ID) return;
+  try{
+    const {data}=await sb.from("sponsors").select("*")
+      .eq("tournament_id",TOURNAMENT_ID)
+      .order("display_order",{ascending:true})
+      .order("created_at",{ascending:true});
+    state.sponsors=data||[];
+  }catch(e){
+    console.warn("loadSponsors:",e);
+    state.sponsors=[];
+  }
+  renderSponsors();
 }
 
 async function loadTournament(){
@@ -524,6 +571,8 @@ async function loadTournament(){
     <p>📅 ${data.start_date||""}</p>
   </div>`;
   document.title=data.name+" - Pickleball CUP";
+  /* V9.6: Load sponsors sau khi có tournament */
+  await loadSponsors();
 }
 
 async function loadEvents(){
@@ -778,6 +827,9 @@ function renderKnockout(){
   el("knockout-section").innerHTML=html;
 }
 
+/* ============================================
+ * AUTH - V9.6: ĐĂNG NHẬP BẰNG TÊN USER
+ * ============================================ */
 function openLogin(){el("login-modal").classList.add("show");el("login-message").className="msg";}
 function closeLogin(){el("login-modal").classList.remove("show");}
 function loginMsg(t,m){const b=el("login-message");b.className="msg show msg-"+t;b.textContent=m;}
@@ -785,18 +837,50 @@ function showToast(msg,type){var t=el("toast");t.textContent=msg;t.className="to
 
 async function doLogin(){
   const raw=el("login-username").value.trim(),p=el("login-password").value;
-  if(!raw||!p){loginMsg("error","Nhập đủ email và mật khẩu.");return;}
+  if(!raw||!p){loginMsg("error","Nhập đủ tên user và mật khẩu.");return;}
   loginMsg("info","Đang đăng nhập...");
-  const cands=raw.includes("@")?[raw]:[raw,raw+EMAIL_DOMAIN];
+  
+  /* V9.6: Thử nhiều domain nếu không có @ */
+  let cands;
+  if(raw.indexOf("@")>=0){
+    cands=[raw];
+  }else{
+    cands=[
+      raw+PRIMARY_DOMAIN,     /* admin@gmail.com (chính) */
+      raw+FALLBACK_DOMAIN,    /* admin@pb-local.app (fallback) */
+      raw                      /* admin (trần) */
+    ];
+  }
+  
   let last=null;
   for(const em of cands){
-    const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
-    if(!error&&data.session){closeLogin();await loadMyProfile(data.session);applyAuthUI();await loadRefereeData();renderAll();showToast("✅ Xin chào "+state.username);return;}
-    if(error)last=error;
+    try{
+      const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
+      if(!error&&data.session){
+        closeLogin();
+        await loadMyProfile(data.session);
+        /* V9.6: Chặn trọng tài nếu giải đã đóng */
+        if(isLocked() && state.role==="referee"){
+          await sb.auth.signOut();
+          state.session=null;state.user=null;state.role=null;
+          applyAuthUI();
+          loginMsg("error","❌ Giải đấu đã ĐÓNG. Trọng tài không thể đăng nhập.");
+          return;
+        }
+        applyAuthUI();
+        await loadRefereeData();
+        renderAll();
+        showToast("✅ Xin chào "+state.username);
+        return;
+      }
+      if(error)last=error;
+    }catch(e){
+      last=e;
+    }
   }
   let msg="❌ "+(last?.message||"Lỗi");
   if(last&&/confirmed/i.test(last.message))msg+="\n⚠️ Chưa xác thực email.";
-  else if(last&&/invalid login/i.test(last.message))msg+="\nKiểm tra email & mật khẩu.";
+  else if(last&&/invalid login/i.test(last.message))msg+="\nKiểm tra tên user & mật khẩu.";
   loginMsg("error",msg);
 }
 
@@ -807,8 +891,8 @@ async function loadMyProfile(s){
   const {data:r}=await sb.from("user_roles").select("role").eq("user_id",s.user.id);
   const roles=(r||[]).map(x=>x.role);
   state.role=roles.includes("admin")?"admin":roles.includes("organizer")?"organizer":roles.includes("referee")?"referee":null;
-  const {data:au}=await sb.from("app_users").select("username").eq("user_id",s.user.id).maybeSingle();
-  state.username=au?.username||s.user.email;
+  const {data:au}=await sb.from("app_users").select("username,display_name").eq("user_id",s.user.id).maybeSingle();
+  state.username=au?.display_name||au?.username||s.user.email;
 }
 
 function applyAuthUI(){
@@ -1190,10 +1274,12 @@ sb.channel("pb-matches-"+TOURNAMENT_ID).on("postgres_changes",{event:"*",schema:
   },100);
 }).subscribe();
 
+/* ============================================
+ * V9.6: INIT - Load sponsors + Auth
+ * ============================================ */
 (async()=>{
   if(!TOURNAMENT_ID) return;
-  renderSponsors();
-  await loadTournament();
+  await loadTournament();  /* V9.6: đã gọi loadSponsors() bên trong */
   const {data}=await sb.auth.getSession();
   if(data.session) await loadMyProfile(data.session);
   applyAuthUI();
