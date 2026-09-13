@@ -33,24 +33,12 @@ h1,h2,h3,h4,.logo,.event-chip{font-family:'Oswald',sans-serif}
 .hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
 .hero .subtitle{font-size:13px;opacity:.75;margin-top:4px}
 
-/* ===== SPONSORS ===== */
-.sponsor-wrap{padding:6px 12px 14px;text-align:center}
-.sponsor-title{color:var(--mu);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'Oswald',sans-serif}
-.sponsor-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:540px;margin:0 auto}
-.sponsor-item{
-  flex:0 0 88px;width:88px;height:88px;
-  display:flex;align-items:center;justify-content:center;
-  padding:0;transition:all .2s ease;text-decoration:none;
-}
-.sponsor-item:hover{transform:scale(1.05);filter:brightness(1.15)}
-.sponsor-item img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
-
 /* ===== MAIN CONTENT ===== */
 main{max-width:1200px;margin:0 auto;padding:20px 12px 40px}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin:0 0 16px;flex-wrap:wrap;gap:8px}
 .section-header h2{margin:0;color:var(--li);text-transform:uppercase;font-size:18px;letter-spacing:.5px}
 
-/* ===== V11: TOURNAMENT CARDS (THIẾT KẾ MỚI) ===== */
+/* ===== TOURNAMENT CARDS ===== */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
 .tournament-card{
   background:var(--sf);
@@ -111,7 +99,63 @@ main{max-width:1200px;margin:0 auto;padding:20px 12px 40px}
   word-break:break-word;
 }
 
-/* ===== V11: EVENTS LIST ===== */
+/* ===== V13: SPONSORS TRONG CARD ===== */
+.card-sponsors{
+  padding-top:12px;
+  border-top:1px dashed var(--ln);
+}
+.card-sponsors-label{
+  font-size:10px;
+  color:var(--mu);
+  text-transform:uppercase;
+  font-weight:700;
+  letter-spacing:.8px;
+  margin-bottom:8px;
+  font-family:'Oswald',sans-serif;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.card-sponsors-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  min-height:48px;
+}
+.card-sponsor-item{
+  flex:0 0 58px;
+  width:58px;
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  transition:all .2s ease;
+  text-decoration:none;
+  pointer-events:auto;
+}
+.card-sponsor-item:hover{transform:scale(1.08);filter:brightness(1.15)}
+.card-sponsor-item img{
+  max-width:100%;
+  max-height:100%;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  display:block;
+}
+.card-sponsors-grid .loading{
+  color:var(--mu);
+  font-size:11px;
+  font-style:italic;
+}
+.card-sponsors-grid .empty{
+  color:var(--mu);
+  font-size:11px;
+  font-style:italic;
+}
+
+/* ===== EVENTS LIST ===== */
 .events-section{
   padding-top:14px;
   border-top:1px solid var(--ln);
@@ -147,12 +191,7 @@ main{max-width:1200px;margin:0 auto;padding:20px 12px 40px}
   background:rgba(34,211,238,.18);
   border-color:rgba(34,211,238,.4);
 }
-.events-list .loading{
-  color:var(--mu);
-  font-size:12px;
-  font-style:italic;
-  padding:5px 0;
-}
+.events-list .loading,
 .events-list .empty{
   color:var(--mu);
   font-size:12px;
@@ -215,7 +254,7 @@ footer .heart{color:var(--rd)}
   .grid{grid-template-columns:1fr}
   .tournament-card{padding:18px}
   .tournament-card h3{font-size:20px}
-  .sponsor-item{flex:0 0 74px;width:74px;height:74px}
+  .card-sponsor-item{flex:0 0 52px;width:52px;height:52px}
 }
 
 @media(max-width:400px){
@@ -223,8 +262,7 @@ footer .heart{color:var(--rd)}
   .hero p{font-size:12px}
   .tournament-card h3{font-size:18px}
   .event-chip{font-size:10px;padding:4px 9px}
-  .sponsor-item{flex:0 0 58px;width:58px;height:58px}
-  .sponsor-grid{gap:10px}
+  .card-sponsor-item{flex:0 0 46px;width:46px;height:46px}
   .section-header h2{font-size:16px}
 }
 </style>
@@ -250,9 +288,6 @@ footer .heart{color:var(--rd)}
   <p>Hệ thống quản lý giải đấu chuyên nghiệp</p>
   <p class="subtitle">Theo dõi lịch thi đấu · Bảng xếp hạng realtime · Kết quả tức thì</p>
 </div>
-
-<!-- ===== SPONSORS ===== -->
-<div id="sponsor-section"></div>
 
 <!-- ===== MAIN CONTENT ===== -->
 <main>
@@ -284,14 +319,14 @@ footer .heart{color:var(--rd)}
 <div id="login-modal" class="modal-backdrop">
   <div class="modal">
     <h3>🔐 Đăng nhập</h3>
-    <div class="sub">Mặc định <b>123@321</b> (có thể nhập <b>admin</b> hoặc email đầy đủ)</div>
+    <div class="sub">Nhập tên user — hệ thống tự thêm <b>@gmail.com</b>. Mật khẩu mặc định: <b>123@321</b></div>
     <div class="field">
-      <label>Email</label>
-      <input id="login-username" placeholder="admin@gmail.com" autocomplete="username"/>
+      <label>Tên user (VD: admin)</label>
+      <input id="login-username" placeholder="admin" autocomplete="username"/>
     </div>
     <div class="field">
       <label>Mật khẩu</label>
-      <input id="login-password" type="password" autocomplete="current-password"/>
+      <input id="login-password" type="password" placeholder="123@321" autocomplete="current-password"/>
     </div>
     <div class="actions">
       <button class="btn btn-light" onclick="closeLogin()">Đóng</button>
@@ -302,18 +337,15 @@ footer .heart{color:var(--rd)}
 </div>
 
 <script>
+/* ============================================
+ * V13 - CẤU HÌNH
+ * ============================================ */
 const SUPABASE_URL="https://mvefkcaqvjflrgmaybev.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_NDuJHKrY80lbh1fjHEezVw_H3s4t3Pc";
-const EMAIL_DOMAIN="@pb-local.app";
+/* V13: 2 domain để thử khi đăng nhập bằng tên */
+const PRIMARY_DOMAIN="@gmail.com";
+const FALLBACK_DOMAIN="@pb-local.app";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-
-const SPONSORS=[
-  {img:"logo1.jpeg", url:"https://www.logo1.com"},
-  {img:"logo2.jpeg", url:"https://www.logo2.com"},
-  {img:"logo3.jpeg", url:"https://www.logo3.com"},
-  {img:"logo4.jpeg", url:"https://www.logo4.com"},
-  {img:"logo5.jpeg", url:"https://www.logo5.com"}
-];
 
 let state={session:null,user:null,role:null,username:null,tournaments:[]};
 
@@ -334,26 +366,49 @@ function showToast(msg,type){
   window._tTO=setTimeout(()=>t.classList.remove("show"),2500);
 }
 
-function renderSponsors(){
-  const box=el("sponsor-section");
+/* ============================================
+ * V13: LOAD SPONSORS CHO TỪNG CARD
+ * ============================================ */
+async function loadSponsorsForCard(tid){
+  const box=el("sponsors-"+tid);
   if(!box) return;
-  const items=SPONSORS.map(s=>{
-    const href=s.url.startsWith("http")?s.url:("https://"+s.url);
-    return `<a class="sponsor-item" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(href)}">
-      <img src="${escapeHtml(s.img)}" alt="Nhà tài trợ" loading="lazy" onerror="this.parentElement.style.display='none'">
-    </a>`;
-  }).join("");
-  box.innerHTML=`
-    <div class="sponsor-wrap">
-      <div class="sponsor-title">🤝 Nhà tài trợ</div>
-      <div class="sponsor-grid">${items}</div>
-    </div>`;
+  try{
+    const {data,error}=await sb.from("sponsors").select("*")
+      .eq("tournament_id",tid)
+      .order("display_order",{ascending:true})
+      .order("created_at",{ascending:true});
+    
+    if(error) throw error;
+    const list=data||[];
+    
+    if(list.length===0){
+      box.innerHTML='<span class="empty">Chưa có nhà tài trợ</span>';
+      return;
+    }
+    
+    box.innerHTML=list.map(s=>{
+      if(!s.logo_url) return '';
+      let href=s.website_url||'';
+      if(href && href.indexOf('http')!==0) href='https://'+href;
+      return `<a class="card-sponsor-item" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.name||href)}" onclick="event.stopPropagation()">
+        <img src="${escapeHtml(s.logo_url)}" alt="${escapeHtml(s.name||'Nhà tài trợ')}" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </a>`;
+    }).filter(Boolean).join("");
+    
+    /* Nếu tất cả logo đều lỗi → hiển thị empty */
+    if(!box.innerHTML.trim()){
+      box.innerHTML='<span class="empty">Chưa có nhà tài trợ</span>';
+    }
+  }catch(e){
+    console.error("loadSponsorsForCard:",e);
+    box.innerHTML='<span class="empty">Không tải được NT</span>';
+  }
 }
 
-/* ===== V11: LOAD TOURNAMENTS (không cần stats nữa) ===== */
+/* ===== LOAD TOURNAMENTS ===== */
 async function loadTournaments(){
   const {data,error}=await sb.from("tournaments")
-    .select("id,name,start_date,location_name")
+    .select("id,name,start_date,location_name,status")
     .order("start_date",{ascending:false});
   
   if(error){
@@ -369,7 +424,7 @@ async function loadTournaments(){
   await renderTournaments();
 }
 
-/* ===== V11: LOAD EVENTS (chỉ tên) ===== */
+/* ===== LOAD EVENTS ===== */
 async function loadEventsForTournament(tid){
   try{
     const {data,error}=await sb.from("events")
@@ -385,7 +440,7 @@ async function loadEventsForTournament(tid){
   }
 }
 
-/* ===== V11: RENDER TOURNAMENTS (THIẾT KẾ MỚI) ===== */
+/* ===== V13: RENDER TOURNAMENTS VỚI SPONSORS RIÊNG ===== */
 async function renderTournaments(){
   const grid=el("tournaments-grid");
   const emptyState=el("empty-state");
@@ -400,7 +455,7 @@ async function renderTournaments(){
   
   emptyState.classList.add("hidden");
   
-  // Render cards với loading state cho events
+  /* Render cards với placeholder cho events + sponsors */
   grid.innerHTML=state.tournaments.map(t=>{
     const dateText=t.start_date||"Chưa có ngày";
     const locationText=t.location_name||"Chưa có địa điểm";
@@ -424,11 +479,19 @@ async function renderTournaments(){
           <span class="loading">Đang tải...</span>
         </div>
       </div>
+      
+      <div class="card-sponsors">
+        <div class="card-sponsors-label">🤝 Nhà tài trợ</div>
+        <div class="card-sponsors-grid" id="sponsors-${t.id}">
+          <span class="loading">Đang tải...</span>
+        </div>
+      </div>
     </a>`;
   }).join("");
   
-  // Load events cho từng tournament (async, không block UI)
+  /* Load events + sponsors song song, không block UI */
   for(const t of state.tournaments){
+    /* Events */
     loadEventsForTournament(t.id).then(eventNames=>{
       const box=el("events-"+t.id);
       if(!box) return;
@@ -442,10 +505,15 @@ async function renderTournaments(){
         `<span class="event-chip">${escapeHtml(name)}</span>`
       ).join("");
     });
+    
+    /* V13: Sponsors */
+    loadSponsorsForCard(t.id);
   }
 }
 
-// ===== AUTH =====
+/* ============================================
+ * AUTH - V13: ĐĂNG NHẬP BẰNG TÊN USER
+ * ============================================ */
 function openLogin(){
   el("login-modal").classList.add("show");
   el("login-message").className="msg";
@@ -467,31 +535,47 @@ async function doLogin(){
   const p=el("login-password").value;
   
   if(!raw||!p){
-    loginMsg("error","Nhập đủ email và mật khẩu.");
+    loginMsg("error","Nhập đủ tên user và mật khẩu.");
     return;
   }
   
   loginMsg("info","Đang đăng nhập...");
-  const candidates=raw.includes("@")?[raw]:[raw,raw+EMAIL_DOMAIN];
+  
+  /* V13: Thử nhiều domain nếu không có @ */
+  let candidates;
+  if(raw.indexOf("@")>=0){
+    candidates=[raw];
+  }else{
+    candidates=[
+      raw+PRIMARY_DOMAIN,     /* admin@gmail.com (chính) */
+      raw+FALLBACK_DOMAIN,    /* admin@pb-local.app (fallback) */
+      raw                      /* admin (trần) */
+    ];
+  }
+  
   let lastErr=null;
   
   for(const em of candidates){
-    const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
-    if(!error&&data.session){
-      closeLogin();
-      await loadMyProfile(data.session);
-      applyAuthUI();
-      showToast("✅ Xin chào "+state.username);
-      return;
+    try{
+      const {data,error}=await sb.auth.signInWithPassword({email:em,password:p});
+      if(!error&&data.session){
+        closeLogin();
+        await loadMyProfile(data.session);
+        applyAuthUI();
+        showToast("✅ Xin chào "+state.username);
+        return;
+      }
+      if(error) lastErr=error;
+    }catch(e){
+      lastErr=e;
     }
-    if(error) lastErr=error;
   }
   
   let msg="❌ "+(lastErr?.message||"Lỗi đăng nhập");
   if(lastErr&&/confirmed/i.test(lastErr.message)){
     msg+="\n⚠️ Chưa xác thực email.";
   }else if(lastErr&&/invalid login/i.test(lastErr.message)){
-    msg+="\nKiểm tra email & mật khẩu (mặc định 123@321).";
+    msg+="\nKiểm tra tên user & mật khẩu (mặc định 123@321).";
   }
   loginMsg("error",msg);
 }
@@ -524,10 +608,10 @@ async function loadMyProfile(session){
   }
   
   const {data:au}=await sb.from("app_users")
-    .select("username")
+    .select("username,display_name")
     .eq("user_id",session.user.id)
     .maybeSingle();
-  state.username=au?.username||session.user.email;
+  state.username=au?.display_name||au?.username||session.user.email;
 }
 
 function applyAuthUI(){
@@ -547,6 +631,7 @@ function applyAuthUI(){
   }
 }
 
+/* ===== EVENT LISTENERS ===== */
 document.addEventListener("DOMContentLoaded",()=>{
   const pwd=el("login-password");
   if(pwd) pwd.addEventListener("keydown",e=>{
@@ -568,8 +653,8 @@ document.addEventListener("keydown",e=>{
   }
 });
 
+/* ===== INIT ===== */
 (async()=>{
-  renderSponsors();
   const {data}=await sb.auth.getSession();
   if(data.session) await loadMyProfile(data.session);
   applyAuthUI();
