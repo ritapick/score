@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Quản trị - Pickleball Pro v35</title>
+<title>Quản trị - Pickleball Pro v36</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 :root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
@@ -38,6 +38,7 @@ main{max-width:1200px;margin:0 auto;padding:10px}
 .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px}
 input,select{background:#0d1626;border:1px solid var(--ln);border-radius:8px;padding:8px;color:var(--tx);width:100%;font-size:13px}
 input[type="time"],input[type="number"]{color-scheme:dark}
+input[type="file"]{background:#0d1626;border:1px solid var(--ln);border-radius:8px;padding:6px;color:var(--tx);font-size:12px}
 .hint{font-size:10px;color:var(--mu);margin-top:-4px;margin-bottom:6px;font-style:italic}
 .ev-info{padding:10px 12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--cy)}
 .ev-info b{color:var(--li)}
@@ -144,6 +145,10 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 .role-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:800;margin-left:4px}
 .role-tag.org{background:rgba(251,146,60,.2);color:var(--or)}
 .role-tag.ref{background:rgba(34,211,238,.15);color:var(--cy)}
+/* V36: Logo preview trong bảng sponsors */
+table.sponsor-table td.sp-logo{width:70px;padding:4px}
+table.sponsor-table td.sp-logo img{height:36px;max-width:64px;object-fit:contain;background:#fff;border-radius:4px;padding:2px;display:block}
+table.sponsor-table td.sp-url a{color:var(--cy);word-break:break-all;font-size:11px}
 @media(max-width:950px){table.match-table{min-width:820px}}
 @media(max-width:640px){
   .mrow{grid-template-columns:1fr;gap:4px}
@@ -158,7 +163,7 @@ table.bxh-table td.pf{font-family:monospace;color:var(--cy)}
 <nav class="topnav">
 <div class="brand-row">
   <a href="index.html" class="home-btn" title="Về trang chủ">🏠 Trang chủ</a>
-  <span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v35</span></span>
+  <span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v36</span></span>
 </div>
 <div>
 <span id="user-chip" class="chip hidden"></span>
@@ -193,7 +198,10 @@ var CFG={
   MATCHES_PER_GROUP:6,
   MATCHES_PER_TEAM:3,
   SCHED_START_H:8,
-  SCHED_STEP_MIN:20
+  SCHED_STEP_MIN:20,
+  /* V36: Giới hạn upload logo */
+  SPONSOR_MAX_SIZE:2*1024*1024,
+  SPONSOR_TYPES:["image/png","image/jpeg","image/jpg","image/svg+xml","image/webp","image/gif"]
 };
 var KO_DEFS=[
   {slot:25,code:"TK1",round:2,group:"tk",ph:{h:"Nhất A",a:"Nhì B"}},
@@ -206,7 +214,8 @@ var KO_DEFS=[
 ];
 var sb;
 try{sb=window.supabase.createClient(CFG.URL,CFG.KEY);}catch(e){console.error("Supabase init error:",e);}
-var S={user:null,userId:null,role:null,username:null,tournaments:[],tournament:null,events:[],eid:null,courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],matches:[],gStage:null,kStage:null,users:[],refs:[],refAssign:{},draft:[],acc:{s1:false,s2:false,s3:true,s4:false,s5:false}};
+/* V36: Thêm sponsors vào state */
+var S={user:null,userId:null,role:null,username:null,tournaments:[],tournament:null,events:[],eid:null,courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],matches:[],gStage:null,kStage:null,users:[],refs:[],refAssign:{},sponsors:[],draft:[],acc:{s1:false,s2:false,s3:true,s4:false,s5:false}};
 
 /* === HELPERS === */
 function el(id){return document.getElementById(id);}
@@ -218,23 +227,18 @@ function findTeam(id){if(!id)return null;for(var i=0;i<S.teams.length;i++)if(S.t
 function tName(id){var t=findTeam(id);return t?sn(t.name):null;}
 function toast(msg,isErr){var t=el("toast");t.textContent=msg;t.className="toast show";t.style.background=isErr?"var(--rd)":"var(--li)";t.style.color=isErr?"#fff":"#0b1220";if(window._toastT)clearTimeout(window._toastT);window._toastT=setTimeout(function(){t.className="toast";},isErr?4000:2000);}
 
-/* ===== V35: PHÂN QUYỀN ===== */
+/* === V35: PHÂN QUYỀN === */
 function isAdmin(){return S.role==="admin";}
 function isOrganizer(){return S.role==="organizer";}
-/* Organizer hoặc admin đều vào được trang admin */
 function canAccessAdmin(){return isAdmin()||isOrganizer();}
-
-/* Kiểm tra user hiện tại có phải CHỦ của giải tid không */
 function isOwnerOfTournament(tid){
-  if(isAdmin())return true; /* admin toàn quyền */
+  if(isAdmin())return true;
   if(!tid)return false;
   var t=null;
   for(var i=0;i<S.tournaments.length;i++){if(S.tournaments[i].id===tid){t=S.tournaments[i];break;}}
   return t && t.created_by===S.userId;
 }
-/* Chủ của giải đang chọn */
 function isOwnerOfCurrent(){return isOwnerOfTournament(S.tournament?S.tournament.id:null);}
-/* Kiểm tra có phải chủ của user uid không (cho quản lý trọng tài) */
 function isOwnerOfUser(uid){
   if(isAdmin())return true;
   var u=null;
@@ -243,7 +247,6 @@ function isOwnerOfUser(uid){
 }
 
 function sortedT(){
-  /* V35: Lọc giải theo quyền: admin thấy hết, organizer chỉ thấy giải của mình */
   var list=S.tournaments.filter(function(t){return isOwnerOfTournament(t.id);});
   return list.sort(function(a,b){
     var aClosed=a.status==="completed"?1:0;var bClosed=b.status==="completed"?1:0;
@@ -297,10 +300,10 @@ async function doLogin(){
   }
   el("lmsg").textContent="❌ "+(lastErr&&lastErr.message?lastErr.message:"Sai user/mật khẩu");
 }
-async function logout(){try{await sb.auth.signOut();}catch(e){}S.user=null;S.userId=null;S.role=null;S.username=null;applyUI();render();}
+async function logout(){try{await sb.auth.signOut();}catch(e){}S.user=null;S.userId=null;S.role=null;S.username=null;S.sponsors=[];applyUI();render();}
 async function loadProfile(session){
   S.user=session.user;
-  S.userId=session.user.id; /* V35: lưu user_id để phân quyền */
+  S.userId=session.user.id;
   var r=await sb.from("user_roles").select("role").eq("user_id",session.user.id);
   var roles=(r.data||[]).map(function(x){return x.role;});
   S.role=roles.indexOf("admin")>=0?"admin":roles.indexOf("organizer")>=0?"organizer":roles.indexOf("referee")>=0?"referee":null;
@@ -350,6 +353,109 @@ async function deleteUser(uid){
   }catch(e){alert("❌ "+e.message);}
 }
 
+/* ===== V36: QUẢN LÝ NHÀ TÀI TRỢ ===== */
+async function loadSponsors(){
+  S.sponsors=[];
+  if(!S.tournament)return;
+  try{
+    var r=await sb.from('sponsors').select('*')
+      .eq('tournament_id',S.tournament.id)
+      .order('display_order',{ascending:true})
+      .order('created_at',{ascending:true});
+    S.sponsors=r.data||[];
+  }catch(e){console.error("loadSponsors:",e);S.sponsors=[];}
+}
+
+async function addSponsor(){
+  if(!S.tournament){alert("Chọn giải trước");return;}
+  if(!isOwnerOfCurrent()){alert("❌ Không có quyền");return;}
+  var name=el('sp-name').value.trim();
+  var url=el('sp-url').value.trim();
+  var fi=el('sp-file');
+  var file=fi&&fi.files&&fi.files[0];
+  if(!name){alert("Nhập tên nhà tài trợ");return;}
+  if(!url){alert("Nhập link website");return;}
+  if(!file){alert("Chọn file logo");return;}
+  if(CFG.SPONSOR_TYPES.indexOf(file.type)<0){
+    alert("❌ File phải là ảnh (PNG, JPG, SVG, WEBP, GIF)");return;
+  }
+  if(file.size>CFG.SPONSOR_MAX_SIZE){
+    alert("❌ Logo tối đa 2MB");return;
+  }
+  try{
+    /* Sanitize filename */
+    var safeName=file.name.replace(/[^\w.\-]/g,'_');
+    var path='t-'+S.tournament.id+'/'+Date.now()+'-'+safeName;
+    var up=await sb.storage.from('sponsor-logos').upload(path,file,{
+      cacheControl:'3600',
+      upsert:false
+    });
+    if(up.error)throw up.error;
+    var publicUrl=sb.storage.from('sponsor-logos').getPublicUrl(path).data.publicUrl;
+    /* Tính display_order */
+    var maxOrder=0;
+    S.sponsors.forEach(function(s){
+      var o=s.display_order||0;
+      if(o>maxOrder)maxOrder=o;
+    });
+    var r=await sb.from('sponsors').insert({
+      tournament_id:S.tournament.id,
+      name:name,
+      logo_url:publicUrl,
+      website_url:url,
+      display_order:maxOrder+1
+    });
+    if(r.error)throw r.error;
+    toast("✅ Thêm nhà tài trợ: "+name);
+    el('sp-name').value='';el('sp-url').value='';fi.value='';
+    await loadSponsors();render();
+  }catch(e){alert("❌ "+(e.message||"Lỗi upload"));}
+}
+
+async function delSponsor(id){
+  if(!isOwnerOfCurrent()){alert("❌ Không có quyền");return;}
+  if(!confirm("Xóa nhà tài trợ này?"))return;
+  var sp=null;
+  for(var i=0;i<S.sponsors.length;i++){
+    if(S.sponsors[i].id===id){sp=S.sponsors[i];break;}
+  }
+  try{
+    await sb.from('sponsors').delete().eq('id',id);
+    /* Xóa file logo khỏi storage nếu có */
+    if(sp&&sp.logo_url&&sp.logo_url.indexOf('/sponsor-logos/')>=0){
+      try{
+        var path=sp.logo_url.split('/sponsor-logos/')[1];
+        if(path){
+          /* Decode URL nếu cần */
+          path=decodeURIComponent(path);
+          await sb.storage.from('sponsor-logos').remove([path]);
+        }
+      }catch(se){console.warn("Xóa file storage:",se);}
+    }
+    toast("✅ Đã xóa nhà tài trợ");
+    await loadSponsors();render();
+  }catch(e){alert("❌ "+e.message);}
+}
+
+async function moveSponsor(id,dir){
+  if(!isOwnerOfCurrent()){alert("❌ Không có quyền");return;}
+  var idx=-1;
+  for(var i=0;i<S.sponsors.length;i++){
+    if(S.sponsors[i].id===id){idx=i;break;}
+  }
+  if(idx<0)return;
+  var newIdx=idx+dir;
+  if(newIdx<0||newIdx>=S.sponsors.length)return;
+  /* Swap display_order */
+  var a=S.sponsors[idx],b=S.sponsors[newIdx];
+  var oa=a.display_order||idx,ob=b.display_order||newIdx;
+  try{
+    await sb.from('sponsors').update({display_order:ob}).eq('id',a.id);
+    await sb.from('sponsors').update({display_order:oa}).eq('id',b.id);
+    await loadSponsors();render();
+  }catch(e){alert("❌ "+e.message);}
+}
+
 /* === DATA LOADING === */
 async function loadAll(){
   try{
@@ -365,7 +471,6 @@ async function selT(id){
   S.tournament=null;
   for(var i=0;i<S.tournaments.length;i++)if(S.tournaments[i].id===id){S.tournament=S.tournaments[i];break;}
   if(!S.tournament){render();return;}
-  /* V35: Bảo vệ - organizer không chọn được giải của người khác */
   if(!isOwnerOfTournament(id)){alert("❌ Bạn không có quyền quản lý giải này");S.tournament=null;render();return;}
   try{
     var e=await sb.from("events").select("*").eq("tournament_id",id);
@@ -374,20 +479,20 @@ async function selT(id){
     S.courts=c.data||[];
     var p=await sb.from("players").select("*");
     S.players=p.data||[];
+    /* V36: Load sponsors cho giải này */
+    await loadSponsors();
     if(S.events.length)await selE(S.events[0].id);
     else{S.eid=null;S.teams=[];S.matches=[];render();}
   }catch(e){render();}
 }
 async function selE(id){S.eid=id||null;S.draft=[];if(!S.eid){render();return;}try{var t=await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name,skill_rating))").eq("event_id",id);S.teams=(t.data||[]).map(function(x){var m=x.team_members||[],tot=0;m.forEach(function(k){tot+=(k.players&&k.players.skill_rating)||0;});return Object.assign({},x,{members:m,total_rating:r2(tot)});});var st=await sb.from("stages").select("*").eq("event_id",id);S.stages=st.data||[];S.gStage=null;S.kStage=null;S.stages.forEach(function(s){if(s.stage_type==="group_stage")S.gStage=s;if(s.stage_type==="knockout")S.kStage=s;});var ids=S.stages.map(function(s){return s.id;});if(ids.length){var g=await sb.from("groups").select("*").in("stage_id",ids);S.groups=g.data||[];var gt=await sb.from("group_teams").select("*").in("stage_id",ids);S.groupTeams=gt.data||[];}else{S.groups=[];S.groupTeams=[];}var m=await sb.from("matches").select("*").eq("event_id",id).order("match_seq");S.matches=m.data||[];await syncKO();await loadRefAssign();render();}catch(e){render();}}
 async function loadUsers(){var a=await sb.from("app_users").select("*");var u=await sb.from("user_roles").select("*");var mp={};(a.data||[]).forEach(function(x){mp[x.user_id]=Object.assign({},x,{role:null});});(u.data||[]).forEach(function(r){if(mp[r.user_id])mp[r.user_id].role=r.role;});var arr=[];for(var k in mp)arr.push(mp[k]);S.users=arr;}
-/* V35: Lọc trọng tài theo chủ sở hữu */
 async function loadRefs(){
   var u=await sb.from("user_roles").select("user_id").eq("role","referee");
   var ids=(u.data||[]).map(function(x){return x.user_id;});
   if(ids.length){
     var a=await sb.from("app_users").select("user_id,username,created_by").in("user_id",ids);
     var allRefs=a.data||[];
-    /* V35: Organizer chỉ thấy trọng tài do mình tạo, admin thấy hết */
     if(isAdmin()){
       S.refs=allRefs;
     }else{
@@ -430,8 +535,16 @@ async function toggleTournament(){
 }
 async function delT(id){
   if(!isOwnerOfTournament(id)){alert("❌ Chỉ chủ giải mới xóa được");return;}
-  if(!confirm("Xóa giải + toàn bộ dữ liệu?"))return;
-  try{var ev=await sb.from("events").select("id").eq("tournament_id",id);var eids=(ev.data||[]).map(function(e){return e.id;});if(eids.length){var mr=await sb.from("matches").select("id").in("event_id",eids);var mids=(mr.data||[]).map(function(m){return m.id;});if(mids.length)await sb.from("referee_matches").delete().in("match_id",mids);await sb.from("matches").delete().in("event_id",eids);var st=await sb.from("stages").select("id").in("event_id",eids);var sids=(st.data||[]).map(function(s){return s.id;});if(sids.length){await sb.from("group_teams").delete().in("stage_id",sids);await sb.from("groups").delete().in("stage_id",sids);await sb.from("stages").delete().in("stage_id",sids);}await sb.from("team_members").delete().in("event_id",eids);await sb.from("teams").delete().in("event_id",eids);await sb.from("events").delete().in("id",eids);}await sb.from("courts").delete().eq("tournament_id",id);await sb.from("tournaments").delete().eq("id",id);toast("✅ Đã xóa");await loadAll();}catch(e){alert("❌ "+e.message);}
+  if(!confirm("Xóa giải + toàn bộ dữ liệu (gồm nhà tài trợ)?"))return;
+  try{var ev=await sb.from("events").select("id").eq("tournament_id",id);var eids=(ev.data||[]).map(function(e){return e.id;});if(eids.length){var mr=await sb.from("matches").select("id").in("event_id",eids);var mids=(mr.data||[]).map(function(m){return m.id;});if(mids.length)await sb.from("referee_matches").delete().in("match_id",mids);await sb.from("matches").delete().in("event_id",eids);var st=await sb.from("stages").select("id").in("event_id",eids);var sids=(st.data||[]).map(function(s){return s.id;});if(sids.length){await sb.from("group_teams").delete().in("stage_id",sids);await sb.from("groups").delete().in("stage_id",sids);await sb.from("stages").delete().in("stage_id",sids);}await sb.from("team_members").delete().in("event_id",eids);await sb.from("teams").delete().in("event_id",eids);await sb.from("events").delete().in("id",eids);}
+    /* V36: Xóa sponsors (cascade đã có, nhưng xóa thêm file storage) */
+    try{
+      var slist=await sb.from("sponsors").select("id,logo_url").eq("tournament_id",id);
+      var files=(slist.data||[]).filter(function(x){return x.logo_url&&x.logo_url.indexOf('/sponsor-logos/')>=0;}).map(function(x){return decodeURIComponent(x.logo_url.split('/sponsor-logos/')[1]);});
+      if(files.length)await sb.storage.from('sponsor-logos').remove(files);
+      await sb.from("sponsors").delete().eq("tournament_id",id);
+    }catch(se){console.warn("Xóa sponsors:",se);}
+    await sb.from("courts").delete().eq("tournament_id",id);await sb.from("tournaments").delete().eq("id",id);toast("✅ Đã xóa");await loadAll();}catch(e){alert("❌ "+e.message);}
 }
 
 /* === EVENT CRUD === */
@@ -607,14 +720,12 @@ function refOptsHtml(mid){
   var cur=S.refAssign[mid]||null;
   var html='<select onchange="assignRef(\''+mid+"',this.value)\">";
   html+='<option value="">-- TT --</option>';
-  /* V35: S.refs đã được lọc theo chủ sở hữu trong loadRefs() */
   S.refs.forEach(function(r){
     html+='<option value="'+r.user_id+'"'+(cur===r.user_id?" selected":"")+'>'+esc(r.username)+'</option>';
   });
   html+='</select>';return html;
 }
 async function assignRef(mid,uid){
-  /* V25: Kiểm tra quyền - chỉ phân được trọng tài do mình tạo */
   if(uid && !isOwnerOfUser(uid)){
     alert("❌ Bạn chỉ phân được trọng tài do mình tạo");
     return;
@@ -626,7 +737,6 @@ async function assignRef(mid,uid){
 async function createUser(){
   var em=el("nu-email").value.trim();var ps=el("nu-pass").value||CFG.PASS;var ro=el("nu-role").value;
   if(!em){alert("Nhập tên user");return;}
-  /* V35: Organizer chỉ tạo được referee */
   if(isOrganizer()&&ro!=="referee"){alert("❌ Organizer chỉ tạo được trọng tài (referee)");return;}
   if(em.indexOf("@")<0)em=em+CFG.DOMAIN;
   try{var tmp=window.supabase.createClient(CFG.URL,CFG.KEY,{auth:{storageKey:"tmp_"+Date.now(),persistSession:false,detectSessionInUrl:false}});
@@ -639,7 +749,6 @@ async function createUser(){
 }
 async function chRole(uid,ro){
   if(!isOwnerOfUser(uid)){alert("❌ Bạn chỉ đổi được role user do mình tạo");return;}
-  /* V35: Organizer không đổi thành admin/organizer */
   if(isOrganizer()&&ro!=="referee"){alert("❌ Organizer chỉ gán được role referee");return;}
   try{await sb.from("user_roles").delete().eq("user_id",uid);await sb.from("user_roles").insert({user_id:uid,role:ro});await loadUsers();await loadRefs();render();}catch(e){alert("❌ "+e.message);}
 }
@@ -697,6 +806,44 @@ function renderBXH(gid,groupCode){
   });
   H+='</tbody></table>';return H;
 }
+
+/* V36: Render bảng nhà tài trợ với preview logo */
+function renderSponsorSection(){
+  var H='<div class="section-divider"><div class="section-title">🤝 NHÀ TÀI TRỢ</div>';
+  if(!isOwnerOfCurrent()){
+    H+='<div class="alert">⚠ Bạn không có quyền quản lý nhà tài trợ giải này.</div>';
+    H+='</div>';
+    return H;
+  }
+  H+='<div class="fg">';
+  H+='<input id="sp-file" type="file" accept="image/*"/>';
+  H+='<input id="sp-name" placeholder="Tên nhà tài trợ"/>';
+  H+='<input id="sp-url" placeholder="https://web-nha-tai-tro.com"/>';
+  H+='<button class="btn btn-p" onclick="addSponsor()">➕ Thêm</button>';
+  H+='</div>';
+  H+='<div class="hint">💡 Logo (PNG/JPG/SVG/WEBP/GIF, tối đa 2MB) sẽ được upload lên Storage. Logo + link tự đồng bộ lên index & tournament.</div>';
+  if(S.sponsors.length){
+    H+='<div class="tw"><table class="sponsor-table"><thead><tr><th>Logo</th><th>Tên</th><th>Website</th><th>Thứ tự</th><th></th></tr></thead><tbody>';
+    S.sponsors.forEach(function(sp,i){
+      H+='<tr>';
+      H+='<td class="sp-logo">'+(sp.logo_url?'<img src="'+esc(sp.logo_url)+'" alt="" onerror="this.style.display=\'none\'"/>':'—')+'</td>';
+      H+='<td><b>'+esc(sp.name)+'</b></td>';
+      H+='<td class="sp-url"><a href="'+esc(sp.website_url)+'" target="_blank" rel="noopener noreferrer">'+esc(sp.website_url)+'</a></td>';
+      H+='<td style="white-space:nowrap">';
+      H+='<button class="btn btn-l btn-xs" onclick="moveSponsor(\''+sp.id+'\','+(-1)+')" title="Lên"'+(i===0?" disabled":"")+'>↑</button> ';
+      H+='<button class="btn btn-l btn-xs" onclick="moveSponsor(\''+sp.id+'\','+(1)+')" title="Xuống"'+(i===S.sponsors.length-1?" disabled":"")+'>↓</button>';
+      H+='</td>';
+      H+='<td><button class="btn btn-d btn-s" onclick="delSponsor(\''+sp.id+'\')">🗑</button></td>';
+      H+='</tr>';
+    });
+    H+='</tbody></table></div>';
+  }else{
+    H+='<div class="info">Chưa có nhà tài trợ cho giải này.</div>';
+  }
+  H+='</div>';
+  return H;
+}
+
 function accH(num,title,key,status,txt){var stCls=status==="done"?"st-done":status==="part"?"st-part":"st-empty";return '<div class="acc-h" onclick="toggleAcc(\''+key+'\')"><span>'+num+'. '+esc(title)+'</span><span style="display:flex;gap:6px;align-items:center"><span class="st '+stCls+'">'+esc(txt)+'</span><span>▼</span></span></div>';}
 function toggleAcc(key){S.acc[key]=!S.acc[key];render();}
 function renderKOSection(km){
@@ -745,10 +892,7 @@ function renderSchedule(){
   var km=S.matches.filter(function(m){return!m.group_id;}).sort(function(a,b){return Number(a.bracket_slot)-Number(b.bracket_slot);});
   H+=renderKOSection(km);return H;
 }
-
-/* V35: Render user table - lọc theo chủ sở hữu */
 function renderUserTable(){
-  /* V35: Organizer chỉ thấy user do mình tạo; admin thấy hết */
   var list=S.users.filter(function(u){return isOwnerOfUser(u.user_id);});
   if(!list.length)return '<div class="info">Chưa có user nào'+(isOrganizer()?" do bạn tạo":"")+'.</div>';
   var H='<div class="tw"><table><thead><tr><th>User</th><th>Role</th><th>Thao tác</th></tr></thead><tbody>';
@@ -759,7 +903,6 @@ function renderUserTable(){
     H+='<tr>';
     H+='<td>'+esc(dispName)+(isMe?'<span class="me-badge">BẠN</span>':'')+roleTag+'</td>';
     H+='<td><select onchange="chRole(\''+u.user_id+"',this.value)\">";
-    /* V35: Organizer chỉ chọn được referee */
     if(isAdmin()){
       ["referee","organizer","admin"].forEach(function(rr){H+='<option value="'+rr+'"'+(u.role===rr?" selected":"")+'>'+rr+'</option>';});
     }else{
@@ -785,7 +928,6 @@ function render(){
     var gm=S.matches.filter(function(m){return m.group_id;});
     var km=S.matches.filter(function(m){return!m.group_id;});
     var H="";
-    /* V35: Bước 1 - VĐV: admin tạo/sửa/xóa, organizer chỉ xem */
     H+='<div class="acc">'+accH("1","VĐV","s1",S.players.length?"done":"empty",S.players.length+" VĐV");
     H+='<div class="acc-b'+(S.acc.s1?" open":"")+'">';
     if(isAdmin()){
@@ -803,12 +945,10 @@ function render(){
       H+='</tbody></table></div>';
     }
     H+='</div></div>';
-    /* Bước 2: Tạo giải - cả admin và organizer đều tạo được */
     H+='<div class="acc">'+accH("2","Tạo giải","s2",S.tournaments.length?"done":"empty",S.tournaments.length+" giải");
     H+='<div class="acc-b'+(S.acc.s2?" open":"")+'"><div class="fg"><input id="t-name" placeholder="Tên giải"/><input id="t-location" placeholder="📍 Địa điểm"/><input id="t-start" type="date"/><input id="t-end" type="date"/><button class="btn btn-p" onclick="createT()">➕ Tạo</button></div>';
     if(isOrganizer())H+='<div class="hint">💡 Bạn là Organizer: chỉ quản lý được giải do chính bạn tạo.</div>';
     H+='</div></div>';
-    /* Bước 3: Giải đấu · Nội dung · Tạo đội */
     var t3st="empty";if(S.teams.length>=16)t3st="done";else if(S.teams.length>0)t3st="part";else if(S.eid)t3st="part";
     H+='<div class="acc">'+accH("3","Giải đấu · Nội dung · Tạo đội","s3",t3st,S.teams.length+(S.eid?"/16":""));
     H+='<div class="acc-b'+(S.acc.s3?" open":"")+'">';
@@ -831,6 +971,8 @@ function render(){
       H+='</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button></div>';
       if(S.events.length){H+='<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th>Luật</th><th colspan="2">Thao tác</th></tr></thead><tbody>';S.events.forEach(function(e){var rule=e.rating_rule==="max_total"?"Tổng ≤"+e.rating_limit:"Mở";H+='<tr><td>'+esc(e.code)+'</td><td>'+esc(e.name)+'</td><td>'+(e.rating_limit||"—")+'</td><td>'+esc(rule)+'</td><td><button class="btn btn-b btn-s" onclick="editEventName(\''+e.id+'\')">✏️</button></td><td><button class="btn btn-d btn-s" onclick="delE(\''+e.id+'\')">🗑</button></td></tr>';});H+='</tbody></table></div>';}
       H+='</div>';
+      /* V36: NHÀ TÀI TRỢ section */
+      H+=renderSponsorSection();
       H+='<div class="section-divider"><div class="section-title">👥 TẠO ĐỘI</div>';
       if(!S.eid){H+=S.events.length===0?'<div class="alert">⚠ Chưa có nội dung. Bấm ➕ Tạo nội dung.</div>':'<div class="alert">⚠ Chọn nội dung để tạo đội</div>';
       }else{
@@ -868,7 +1010,6 @@ function render(){
     var s4st=(gm.length===24&&km.length===7)?"done":(gm.length||km.length?"part":"empty");
     H+='<div class="acc">'+accH("4","Lịch + Trọng tài","s4",s4st,gm.length+"/24 · KO "+km.length+"/7");
     H+='<div class="acc-b'+(S.acc.s4?" open":"")+'">'+renderSchedule()+'</div></div>';
-    /* V35: Bước 5 - Người dùng: phân quyền theo chủ sở hữu */
     H+='<div class="acc">'+accH("5","Người dùng & Trọng tài","s5",S.users.length?"done":"empty",S.users.length+" user");
     H+='<div class="acc-b'+(S.acc.s5?" open":"")+'">';
     if(isOrganizer()){
