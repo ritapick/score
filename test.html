@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Quản trị - Pickleball Pro v38.1</title>
+<title>Quản trị - Pickleball Pro v39</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 :root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
@@ -111,6 +111,9 @@ table.match-table td.m-score .sep{color:var(--mu);padding:0 4px;font-weight:700}
 table.match-table td.m-ref select{padding:4px 6px;font-size:11px;background:#0d1626;border:1px solid var(--ln);border-radius:4px;color:var(--tx);min-width:110px;width:auto}
 table.match-table td.m-status{min-width:80px}
 table.match-table td.m-actions{min-width:50px}
+/* V39: Nút chỉnh tay */
+.btn-edit{background:rgba(34,211,238,.1);color:var(--cy);border:1px solid rgba(34,211,238,.3);padding:4px 8px;font-size:11px}
+.btn-edit:hover{background:rgba(34,211,238,.25)}
 .status-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;white-space:nowrap;display:inline-block}
 .status-tag.scheduled{background:rgba(148,163,184,.2);color:var(--mu)}
 .status-tag.live{background:rgba(248,113,113,.2);color:var(--rd);animation:pulse 1.5s infinite}
@@ -162,7 +165,7 @@ table.sponsor-table td.sp-url a{color:var(--cy);word-break:break-all;font-size:1
 <nav class="topnav">
 <div class="brand-row">
   <a href="index.html" class="home-btn" title="Về trang chủ">🏠 Trang chủ</a>
-  <span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v38.1</span></span>
+  <span class="logo">⚙ Quản trị <span style="font-size:10px;background:var(--cy);color:#0b1220;padding:2px 6px;border-radius:4px">v39</span></span>
 </div>
 <div>
 <span id="user-chip" class="chip hidden"></span>
@@ -203,9 +206,8 @@ var CFG={
   SPONSOR_TYPES:["image/png","image/jpeg","image/jpg","image/svg+xml","image/webp","image/gif"]
 };
 
-/* ===== V38.1 FIX: Khai báo TOURNAMENT_ID ===== */
 var params=new URLSearchParams(location.search);
-var TOURNAMENT_ID=params.get("id"); /* Có thể null cho admin.html */
+var TOURNAMENT_ID=params.get("id");
 
 var KO_DEFS=[
   {slot:25,code:"TK1",round:2,group:"tk",ph:{h:"Nhất A",a:"Nhì B"}},
@@ -220,54 +222,35 @@ var sb;
 try{sb=window.supabase.createClient(CFG.URL,CFG.KEY);}catch(e){console.error("Supabase init error:",e);}
 var S={user:null,userId:null,role:null,username:null,tournaments:[],tournament:null,events:[],eid:null,courts:[],players:[],teams:[],stages:[],groups:[],groupTeams:[],matches:[],gStage:null,kStage:null,users:[],refs:[],refAssign:{},sponsors:[],draft:[],acc:{s1:false,s2:false,s3:true,s4:false,s5:false}};
 
-/* ===== V38.1 FIX: Realtime channel quản lý theo giải hiện tại ===== */
 var _realtimeChannel=null;
 
 function setupRealtimeChannel(tid){
-  /* Unsubscribe channel cũ nếu có */
   if(_realtimeChannel){
-    try{sb.removeChannel(_realtimeChannel);}catch(e){console.warn("removeChannel:",e);}
+    try{sb.removeChannel(_realtimeChannel);}catch(e){}
     _realtimeChannel=null;
   }
-  
-  if(!tid){
-    console.warn("⚠️ setupRealtimeChannel: tid is null");
-    return;
-  }
-  
-  console.log("📡 V38.1: Subscribing realtime for tournament:",tid);
-  
+  if(!tid)return;
   _realtimeChannel=sb.channel("pb-matches-"+tid).on("postgres_changes",{event:"*",schema:"public",table:"matches"},(p)=>{
     const row=p.new||p.old;
     if(!row||row.tournament_id!==tid) return;
-    
     if(p.eventType==="DELETE"){
       S.matches=S.matches.filter(m=>m.id!==row.id);
     } else {
-      /* V38: Detect chuyển sang live */
       const oldMatch=S.matches.find(m=>m.id===row.id);
       const oldStatus=oldMatch?autoStatus(oldMatch):"scheduled";
-      
       const i=S.matches.findIndex(m=>m.id===row.id);
       if(i>=0){
         S.matches[i]={...S.matches[i],...row};
       }else{
         S.matches.push(row);
       }
-      
-      /* Q2-C: Nếu trận vừa chuyển sang live → trigger adjust */
       const newStatus=autoStatus(row);
       if(oldStatus!=="live" && newStatus==="live"){
-        console.log("⏰ V38.1: Detect match go live:",row.id);
         onMatchGoLive(row.id);
       }
     }
-    
-    /* Debounce render */
     if(window._rtDebounce)clearTimeout(window._rtDebounce);
-    window._rtDebounce=setTimeout(function(){
-      render();
-    },200);
+    window._rtDebounce=setTimeout(function(){render();},200);
   }).subscribe();
 }
 
@@ -402,27 +385,161 @@ function updateSchedPreview(){
   box.innerHTML=html;
 }
 
+/* ===== V39: AUTO 6 TRẬN + LƯU TỰ ĐỘNG ===== */
+async function autoCreateAndSave(gid){
+  if(!S.eid){toast("Chọn nội dung trước",true);return;}
+  if(!isOwnerOfCurrent()){alert("❌ Không có quyền");return;}
+  
+  var grp=S.groups.find(function(x){return x.id===gid;});
+  if(!grp){alert("Không tìm thấy bảng");return;}
+  
+  var mb=teamsInG(gid);
+  if(mb.length!==4){
+    alert("❌ Bảng "+grp.code+" cần đủ 4 đội (hiện có "+mb.length+")");
+    return;
+  }
+  
+  /* Kiểm tra đã có trận chưa */
+  var ex=S.matches.filter(function(m){return m.group_id===gid;});
+  if(ex.length>0){
+    if(!confirm("Bảng "+grp.code+" đã có "+ex.length+" trận.\nBấm OK để tạo lại 6 trận mới?")){
+      return;
+    }
+  }
+  
+  /* Xóa trận cũ nếu có */
+  if(ex.length>0){
+    var oldIds=ex.map(function(m){return m.id;});
+    await sb.from("referee_matches").delete().in("match_id",oldIds);
+    await sb.from("matches").delete().in("id",oldIds);
+    console.log("🗑️ V39: Đã xóa "+oldIds.length+" trận cũ của bảng "+grp.code);
+  }
+  
+  /* Tạo draft 6 trận tự động */
+  var draft=[{a:0,b:1},{a:2,b:3},{a:0,b:2},{a:1,b:3},{a:0,b:3},{a:1,b:2}];
+  var base=CFG.GROUPS.indexOf(grp.code)*6;
+  var ins=[];
+  draft.forEach(function(p,i){
+    ins.push({
+      event_id:S.eid,
+      tournament_id:S.tournament.id,
+      stage_id:S.gStage.id,
+      group_id:gid,
+      round:1,
+      bracket_slot:base+i+1,
+      match_code:bCode(grp.code+(i+1)),
+      match_seq:base+i+1,
+      home_team_id:mb[p.a].id,
+      away_team_id:mb[p.b].id,
+      home_score:0,
+      away_score:0,
+      status:"scheduled"
+    });
+  });
+  
+  /* Lưu vào DB */
+  var r=await sb.from("matches").insert(ins);
+  if(r.error){
+    alert("❌ Lỗi tạo trận: "+r.error.message);
+    return;
+  }
+  
+  console.log("✅ V39: Đã tạo 6 trận cho bảng "+grp.code);
+  toast("✅ Đã tạo 6 trận Bảng "+grp.code);
+  
+  /* Tạo KO nếu chưa có */
+  await createKO();
+  
+  /* Reload và auto time */
+  await selE(S.eid);
+  
+  /* Auto time tự động */
+  await applyAutoTimes();
+}
+
+/* ===== V39: AUTO TIME CHO TẤT CẢ TRẬN ===== */
 async function applyAutoTimes(){
   if(!S.eid){toast("Chọn nội dung trước",true);return;}
   if(!isOwnerOfCurrent()){alert("❌ Không có quyền");return;}
+  
+  if(S.matches.length===0){
+    toast("❌ Chưa có trận nào. Hãy tạo trận cho các bảng trước.",true);
+    return;
+  }
+  
   var cfg=getSchedConfig();
   var defaultCourt=S.courts.length?S.courts[0].id:null;
   var count=0;
+  var errors=0;
+  
   try{
     for(var i=0;i<S.matches.length;i++){
       var m=S.matches[i];
-      var roundIdx=calcMatchRoundIndex(m);
-      var hm=calcRoundTime(roundIdx,cfg);
-      var u={scheduled_at:isoFromTime(hm)};
-      if(!m.court_id&&defaultCourt)u.court_id=defaultCourt;
-      await sb.from("matches").update(u).eq("id",m.id);
-      m.scheduled_at=u.scheduled_at;
-      if(u.court_id)m.court_id=u.court_id;
-      count++;
+      try{
+        var roundIdx=calcMatchRoundIndex(m);
+        var hm=calcRoundTime(roundIdx,cfg);
+        var u={scheduled_at:isoFromTime(hm)};
+        if(!m.court_id&&defaultCourt)u.court_id=defaultCourt;
+        
+        var result=await sb.from("matches").update(u).eq("id",m.id).select();
+        if(result.error){
+          console.error("❌ V39: Lỗi update match",m.id,result.error);
+          errors++;
+        }else{
+          m.scheduled_at=u.scheduled_at;
+          if(u.court_id)m.court_id=u.court_id;
+          count++;
+        }
+      }catch(e){
+        console.error("❌ V39: Exception match",m.id,e);
+        errors++;
+      }
     }
-    toast("✅ Auto giờ cho "+count+" trận · Bắt đầu "+pad(cfg.startH,2)+":"+pad(cfg.startM,2)+" · Cách "+cfg.step+" phút");
+    
+    var msg="✅ Auto giờ cho "+count+" trận";
+    if(errors>0) msg+=" · ⚠️ "+errors+" lỗi";
+    msg+=" · Bắt đầu "+pad(cfg.startH,2)+":"+pad(cfg.startM,2)+" · Cách "+cfg.step+" phút";
+    toast(msg,errors>0);
+    
     await selE(S.eid);
-  }catch(e){toast("❌ "+e.message,true);}
+  }catch(e){
+    console.error("❌ V39: applyAutoTimes error:",e);
+    toast("❌ "+e.message,true);
+  }
+}
+
+/* ===== V39: CHỈNH TAY TỪNG TRẬN ===== */
+async function editMatchManual(mid){
+  var m=S.matches.find(function(x){return x.id===mid;});
+  if(!m)return;
+  
+  var currentHM=splitTimeVN(m.scheduled_at);
+  var newTime=prompt("Sửa giờ trận "+displayCode(m)+" (hiện tại: "+currentHM.h+":"+currentHM.m+")","Giờ (VD: 09:30):");
+  if(newTime===null)return;
+  
+  /* Parse thời gian */
+  var match=newTime.match(/^(\d{1,2}):(\d{2})$/);
+  if(!match){
+    alert("❌ Định dạng giờ không đúng. Dùng format HH:MM (VD: 09:30)");
+    return;
+  }
+  var hh=parseInt(match[1]);
+  var mm=parseInt(match[2]);
+  if(hh<0||hh>23||mm<0||mm>59){
+    alert("❌ Giờ không hợp lệ");
+    return;
+  }
+  
+  var hm=pad(hh,2)+":"+pad(mm,2);
+  
+  try{
+    await sb.from("matches").update({scheduled_at:isoFromTime(hm)}).eq("id",mid);
+    m.scheduled_at=isoFromTime(hm);
+    toast("✅ Đã sửa giờ trận "+displayCode(m)+" thành "+hm);
+    render();
+  }catch(e){
+    alert("❌ Lỗi: "+e.message);
+  }
 }
 
 async function onMatchGoLive(matchId){
@@ -437,7 +554,6 @@ async function onMatchGoLive(matchId){
   try{
     await sb.from("matches").update({scheduled_at:nowISO}).eq("id",matchId);
     m.scheduled_at=nowISO;
-    console.log("⏰ V38.1: Match "+displayCode(m)+" live → giờ = "+nowHM);
     
     var seq=S.matches.slice().sort(function(a,b){return Number(a.match_seq)-Number(b.match_seq);});
     var idx=seq.findIndex(function(x){return x.id===matchId;});
@@ -465,13 +581,13 @@ async function onMatchGoLive(matchId){
       try{
         await sb.from("matches").update({scheduled_at:iso}).eq("id",curM.id);
         curM.scheduled_at=iso;
-      }catch(e){console.error("V38.1 adjust error:",e);}
+      }catch(e){console.error("V39 adjust error:",e);}
     }
     
     render();
     toast("⏰ Đã điều chỉnh giờ dây chuyền từ "+displayCode(m));
   }catch(e){
-    console.error("V38.1 onMatchGoLive error:",e);
+    console.error("V39 onMatchGoLive error:",e);
   }
 }
 
@@ -509,7 +625,7 @@ function applyUI(){
   el("login-btn").classList.toggle("hidden",logged);
   el("logout-btn").classList.toggle("hidden",!logged);
   el("user-chip").classList.toggle("hidden",!logged);
-  if(logged)el("user-chip").textContent=(S.username||"")+(S.role?" • "+S.role:"");
+  if(logged)el("user-chip").textContent=(S.username||"")+(state.role?" • "+state.role:"");
   if(!canAccessAdmin()&&logged)el("admin").innerHTML='<div class="alert">⚠ Chỉ admin/organizer mới truy cập được.</div>';
 }
 
@@ -660,7 +776,6 @@ async function selT(id){
   if(!S.tournament){render();return;}
   if(!isOwnerOfTournament(id)){alert("❌ Bạn không có quyền quản lý giải này");S.tournament=null;render();return;}
   
-  /* V38.1 FIX: Setup realtime cho giải này */
   setupRealtimeChannel(id);
   
   try{
@@ -851,7 +966,12 @@ function rmDraft(i){S.draft.splice(i,1);render();}
 function upDraft(i,f,v){S.draft[i][f]=v;render();}
 function autoRR(g){var t=teamsInG(g);if(t.length!==4){alert("Cần 4 đội");return;}S.draft=S.draft.filter(function(x){return x.g!==g;});[{a:0,b:1},{a:2,b:3},{a:0,b:2},{a:1,b:3},{a:0,b:3},{a:1,b:2}].forEach(function(p){S.draft.push({g:g,h:t[p.a].id,a:t[p.b].id});});render();}
 function valDraft(g){var t=teamsInG(g);if(t.length!==4)return"Bảng cần 4 đội";var d=draftOf(g);if(d.length!==6)return"Cần 6 trận";var cm={};t.forEach(function(x){cm[x.id]=0;});var seen={};for(var i=0;i<d.length;i++){var m=d[i];if(!m.h||!m.a)return"Trận "+(i+1)+" thiếu đội";if(m.h===m.a)return"Trùng đội";cm[m.h]++;cm[m.a]++;var k=[m.h,m.a].sort().join("-");if(seen[k])return"Trùng cặp";seen[k]=1;}for(var k in cm)if(cm[k]!==3)return"Mỗi đội đấu 3 trận";return"";}
-async function saveGroup(g){var err=valDraft(g);if(err){alert("❌ "+err);return;}var grp=S.groups.find(function(x){return x.id===g;});var old=S.matches.filter(function(m){return m.group_id===g;});if(old.length){var ids=old.map(function(m){return m.id;});await sb.from("referee_matches").delete().in("match_id",ids);await sb.from("matches").delete().in("id",ids);}var base=CFG.GROUPS.indexOf(grp.code)*6;var ins=[];draftOf(g).forEach(function(m,i){ins.push({event_id:S.eid,tournament_id:S.tournament.id,stage_id:S.gStage.id,group_id:g,round:1,bracket_slot:base+i+1,match_code:bCode(grp.code+(i+1)),match_seq:base+i+1,home_team_id:m.h,away_team_id:m.a,home_score:0,away_score:0,status:"scheduled"});});var r=await sb.from("matches").insert(ins);if(r.error){alert("❌ "+r.error.message);return;}toast("✅ Lưu 6 trận "+grp.code);await createKO();await selE(S.eid);}
+
+/* ===== V39: GỘP AUTO + LƯU ===== */
+async function saveGroup(g){
+  await autoCreateAndSave(g);
+}
+
 async function delAll(){if(!isOwnerOfCurrent()){alert("❌ Không có quyền");return;}if(!confirm("Xóa toàn bộ trận + TT?"))return;try{var mr=await sb.from("matches").select("id").eq("event_id",S.eid);var ids=(mr.data||[]).map(function(m){return m.id;});if(ids.length)await sb.from("referee_matches").delete().in("match_id",ids);await sb.from("matches").delete().eq("event_id",S.eid);toast("✅ Đã xóa");await selE(S.eid);}catch(e){alert("❌ "+e.message);}}
 
 function standings(g){
@@ -1011,12 +1131,13 @@ function renderMatchRow(m,isKO){
   html+='<td class="m-team '+awayClass+'">'+esc(awayText)+'</td>';
   html+='<td class="m-ref">'+refOptsHtml(mid)+'</td>';
   html+='<td class="m-status">'+statusTag(m)+'</td>';
+  html+='<td class="m-actions"><button class="btn-edit btn-xs" onclick="editMatchManual(\''+mid+'\')" title="Sửa giờ tay">✏️</button></td>';
   if(isKO)html+='<td class="m-actions"><button class="btn btn-d btn-xs" onclick="resetKOScore(\''+mid+'\')">🗑</button></td>';
   html+='</tr>';return html;
 }
 function renderMatchTable(matches,isKO){
   if(!matches.length)return '';
-  var H='<div class="tw"><table class="match-table"><thead><tr><th>Mã</th><th>⏰ Giờ</th><th>🏟️ Sân</th><th style="text-align:right">🟢 Team 1</th><th>🏓 Tỉ số</th><th style="text-align:left">🔵 Team 2</th><th>👨‍⚖️ TT</th><th>Trạng thái</th>';
+  var H='<div class="tw"><table class="match-table"><thead><tr><th>Mã</th><th>⏰ Giờ</th><th>🏟️ Sân</th><th style="text-align:right">🟢 Team 1</th><th>🏓 Tỉ số</th><th style="text-align:left">🔵 Team 2</th><th>👨‍⚖️ TT</th><th>Trạng thái</th><th>✏️</th>';
   if(isKO)H+='<th>🗑</th>';
   H+='</tr></thead><tbody>';matches.forEach(function(m){H+=renderMatchRow(m,isKO);});H+='</tbody></table></div>';return H;
 }
@@ -1142,13 +1263,9 @@ function renderSchedule(){
     if(ex.length>0){
       H+=renderMatchTable(ex,false);
     }else if(mb.length===4){
-      H+='<div class="info" style="margin-bottom:8px">💡 Đủ 4 đội. Tạo 6 trận bên dưới rồi bấm <b>💾 Lưu 6 trận</b>.</div>';
-      var teamOpts=mb.map(function(t){return '<option value="'+t.id+'">'+esc(sn(t.name))+'</option>';}).join("");
-      d.forEach(function(m,i){var ri=S.draft.indexOf(m);H+='<div class="mrow"><span class="n">'+c+(i+1)+'</span><select onchange="upDraft('+ri+",'h',this.value)\"><option value=\"\">--</option>"+teamOpts+'</select><span style="color:var(--mu);font-weight:700">vs</span><select onchange="upDraft('+ri+",'a',this.value)\"><option value=\"\">--</option>"+teamOpts+'</select><button class="btn btn-d btn-s" onclick="rmDraft('+ri+')">✕</button></div>';});
+      H+='<div class="info" style="margin-bottom:8px">💡 Đủ 4 đội. Bấm nút bên dưới để tự động tạo 6 trận + lưu + auto time.</div>';
       H+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
-      if(d.length<6)H+='<button class="btn btn-l btn-s" onclick="addDraft(\''+g.id+'\')">➕ Trận</button>';
-      H+='<button class="btn btn-b btn-s" onclick="autoRR(\''+g.id+'\')">⚡ Auto 6 trận</button>';
-      if(valDraft(g.id)==="")H+='<button class="btn btn-p btn-s" onclick="saveGroup(\''+g.id+'\')">💾 Lưu 6 trận + KO</button>';
+      H+='<button class="btn btn-p" onclick="autoCreateAndSave(\''+g.id+'\')">⚡ Auto 6 trận + Lưu + Auto time</button>';
       H+='</div>';
     }
     
