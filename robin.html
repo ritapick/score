@@ -2,70 +2,110 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Hệ thống Quản lý Giải đấu Round Robin</title>
+<title>Pickleball Round Robin Manager</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--p:#4f46e5;--pd:#4338ca;--s:#10b981;--d:#ef4444;--w:#f59e0b;--bg:#f8fafc;--c:#fff;--tx:#0f172a;--ts:#64748b;--bd:#e2e8f0;--r:10px}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--tx);line-height:1.5}
-.header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:20px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1)}
-.header h1{font-size:20px;font-weight:800}.header p{font-size:13px;opacity:.9;margin-top:4px}
-.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
-.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--pd)}
-.btn-s{background:var(--s);color:#fff}.btn-d{background:var(--d);color:#fff}.btn-w{background:var(--w);color:#fff}
-.btn-o{background:#fff;color:var(--p);border:2px solid var(--p)}
-.btn-sm{padding:5px 10px;font-size:12px}
+:root {
+  --pb-lime: #d4f23d;       /* Màu bóng Pickleball */
+  --pb-dark: #0f172a;       /* Xanh đen chuyên nghiệp */
+  --pb-green: #22c55e;      /* Màu thắng */
+  --pb-red: #ef4444;        /* Màu thua */
+  --bg: #f8fafc;
+  --c: #ffffff;
+  --tx: #0f172a;
+  --ts: #64748b;
+  --bd: #e2e8f0;
+  --r: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--tx); line-height: 1.5; }
 
-.container{max-width:900px;margin:20px auto;padding:0 16px}
-.card{background:var(--c);border-radius:var(--r);padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h2{font-size:16px;font-weight:700;color:var(--p);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+/* HEADER */
+.header { background: var(--pb-dark); color: #fff; padding: 20px; text-align: center; position: relative; border-bottom: 4px solid var(--pb-lime); }
+.header h1 { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; }
+.header h1 span { color: var(--pb-lime); }
+.header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
 
-/* Form & Input */
-.form-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.form-row input{flex:1;min-width:150px;padding:10px;border:2px solid var(--bd);border-radius:6px;font-size:14px}
-.form-row input:focus{outline:none;border-color:var(--p)}
+/* BUTTONS */
+.btn { padding: 10px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-p { background: var(--pb-lime); color: var(--pb-dark); } .btn-p:hover { background: #bce327; }
+.btn-s { background: var(--pb-green); color: #fff; } .btn-s:hover { background: #16a34a; }
+.btn-d { background: var(--pb-red); color: #fff; } .btn-d:hover { background: #dc2626; }
+.btn-o { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.3); } .btn-o:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
 
-/* Tabs */
-.tabs{display:flex;background:#fff;border-radius:var(--r);padding:4px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.tab-btn{flex:1;padding:10px;background:transparent;border:none;font-weight:600;font-size:14px;color:var(--ts);cursor:pointer;border-radius:6px}
-.tab-btn.active{background:var(--p);color:#fff}
-.tab{display:none}.tab.active{display:block;animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+/* LAYOUT */
+.container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+.card { background: var(--c); border-radius: var(--r); padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid var(--bd); }
+.card h2 { font-size: 16px; font-weight: 800; color: var(--pb-dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--pb-lime); padding-bottom: 8px; display: inline-flex; }
 
-/* Tables & Lists */
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--r);overflow:hidden}
-th{background:#f1f5f9;color:var(--ts);font-size:11px;font-weight:700;text-transform:uppercase;padding:10px;text-align:center}
-td{padding:10px;border-top:1px solid var(--bd);text-align:center;font-size:14px}
-tr:hover{background:#f8fafc}
-.rank-1{background:#fef3c7 !important;font-weight:800;color:#92400e}
-.rank-2{background:#f3f4f6 !important;font-weight:700}
-.rank-3{background:#ffedd5 !important;font-weight:700}
-.plus{color:var(--s);font-weight:700}.minus{color:var(--d);font-weight:700}
+/* TOUR LIST */
+.tour-list { display: grid; gap: 12px; }
+.tour-card { background: var(--c); border: 2px solid var(--bd); border-radius: var(--r); padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+.tour-card:hover { border-color: var(--pb-lime); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+.tour-card h3 { font-size: 16px; font-weight: 800; color: var(--pb-dark); }
+.tour-card p { font-size: 13px; color: var(--ts); margin-top: 4px; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--ts); }
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
 
-/* Match Row */
-.round-block{margin-bottom:16px;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
-.round-head{background:#f1f5f9;padding:10px 14px;font-weight:700;font-size:14px;color:var(--p);border-bottom:1px solid var(--bd)}
-.match-row{display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;padding:12px;border-bottom:1px solid var(--bd)}
-.match-row:last-child{border-bottom:none}
-.match-row.da-dau{background:#f0fdf4}
-.team-name{font-weight:600;font-size:14px}
-.team-a{text-align:right}.team-b{text-align:left}
-.score-input{width:50px;padding:6px;border:2px solid var(--bd);border-radius:6px;text-align:center;font-size:15px;font-weight:700}
-.score-input:focus{outline:none;border-color:var(--p)}
-.vs{color:var(--ts);font-weight:800;font-size:12px}
+/* TABS */
+.tabs { display: flex; background: var(--pb-dark); border-radius: var(--r); padding: 4px; margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 12px; background: transparent; border: none; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; border-radius: 8px; transition: 0.2s; }
+.tab-btn.active { background: var(--pb-lime); color: var(--pb-dark); }
+.tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Toast */
-#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;display:none;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-#toast.show{display:block;animation:slideD .3s}
-#toast.err{background:var(--d)}
-@keyframes slideD{from{transform:translate(-50%,-20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+/* TABLES */
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--r); overflow: hidden; font-size: 14px; }
+th { background: #f1f5f9; color: var(--ts); font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 12px 8px; text-align: center; letter-spacing: 0.5px; }
+td { padding: 12px 8px; border-top: 1px solid var(--bd); text-align: center; font-variant-numeric: tabular-nums; }
+tr:hover { background: #f8fafc; }
+.rank-1 { background: #fef9c3 !important; font-weight: 800; color: #854d0e; }
+.rank-2 { background: #f1f5f9 !important; font-weight: 700; }
+.rank-3 { background: #ffedd5 !important; font-weight: 700; color: #9a3412; }
+.plus { color: var(--pb-green); font-weight: 800; }
+.minus { color: var(--pb-red); font-weight: 800; }
 
-/* Admin Badge */
-.admin-badge{background:var(--w);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-left:8px;display:none}
-.is-admin .admin-badge{display:inline-block}
-.is-admin .admin-only{display:inline-flex !important}
-.admin-only{display:none !important}
+/* MATCH ROW */
+.round-block { margin-bottom: 20px; border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; }
+.round-head { background: var(--pb-dark); color: var(--pb-lime); padding: 10px 16px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+.match-row { display: grid; grid-template-columns: 1fr 60px 40px 60px 1fr; gap: 8px; align-items: center; padding: 14px; border-bottom: 1px solid var(--bd); background: #fff; }
+.match-row:last-child { border-bottom: none; }
+.match-row.da-dau { background: #f0fdf4; }
+.team-name { font-weight: 700; font-size: 14px; transition: 0.2s; }
+.team-a { text-align: right; }
+.team-b { text-align: left; }
+.vs { text-align: center; font-weight: 900; color: var(--ts); font-size: 12px; }
+.score { text-align: center; font-weight: 900; font-size: 18px; color: var(--pb-dark); }
+.score-input { width: 100%; padding: 6px; border: 2px solid var(--bd); border-radius: 6px; text-align: center; font-size: 16px; font-weight: 800; background: #fff; }
+.score-input:focus { outline: none; border-color: var(--pb-lime); }
+
+/* WINNER HIGHLIGHT */
+.winner-text { color: var(--pb-green) !important; font-weight: 900 !important; font-size: 15px; }
+.winner-score { color: var(--pb-green) !important; font-weight: 900 !important; font-size: 20px; }
+
+/* FORM & MODAL */
+.form-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.form-row input { flex: 1; min-width: 150px; padding: 10px 14px; border: 2px solid var(--bd); border-radius: 8px; font-size: 14px; font-weight: 600; }
+.form-row input:focus { outline: none; border-color: var(--pb-lime); }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+.modal-box { background: #fff; padding: 24px; border-radius: 16px; width: 400px; max-width: 90vw; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+.modal-box h2 { border: none; margin-bottom: 16px; font-size: 20px; }
+
+/* TOAST */
+#toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: var(--pb-dark); color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; z-index: 2000; display: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); border-left: 4px solid var(--pb-lime); }
+#toast.show { display: block; animation: slideD 0.3s; }
+#toast.err { border-left-color: var(--pb-red); background: #450a0a; }
+@keyframes slideD { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+/* ADMIN CONTROLS */
+.admin-only { display: none !important; }
+.is-admin .admin-only { display: flex !important; }
+.is-admin .admin-block { display: block !important; }
+.admin-block { display: none; }
+.badge-admin { background: var(--pb-lime); color: var(--pb-dark); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: none; }
+.is-admin .badge-admin { display: inline-block; }
 </style>
 </head>
 <body>
@@ -75,102 +115,128 @@ tr:hover{background:#f8fafc}
 
 <!-- HEADER -->
 <header class="header">
-  <h1>🏆 HỆ THỐNG QUẢN LÝ GIẢI ĐẤU ROUND ROBIN</h1>
-  <p id="tourInfo">Đang tải...</p>
-  <button id="adminToggleBtn" class="btn btn-o btn-sm" style="position:absolute;top:16px;right:16px" onclick="toggleAdmin()">🔑 Đăng nhập Admin</button>
+  <h1>🎾 <span>PICKLEBALL</span> ROUND ROBIN</h1>
+  <p id="headerSub">Hệ thống quản lý và xếp hạng giải đấu chuyên nghiệp</p>
+  <button id="adminToggleBtn" class="btn btn-o btn-sm" style="position:absolute;top:16px;right:16px" onclick="toggleAdmin()">
+    🔑 Admin <span class="badge-admin">ON</span>
+  </button>
 </header>
 
-<div class="container" id="appContainer" style="display:none">
+<div class="container">
   
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('schedule')">📅 Lịch thi đấu & Đội</button>
-    <button class="tab-btn" onclick="switchTab('standings')">🏆 Bảng xếp hạng</button>
+  <!-- MÀN HÌNH 1: DANH SÁCH GIẢI ĐẤU -->
+  <div id="tourListScreen">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="border:none;margin:0;font-size:18px">📋 Các giải đấu hiện có</h2>
+      <button class="btn btn-p btn-sm admin-only" onclick="showCreateTourModal()">➕ Tạo giải mới</button>
+    </div>
+    <div id="tourListContainer" class="tour-list"></div>
   </div>
 
-  <!-- TAB 1: LỊCH THI ĐẤU & ĐỘI -->
-  <div class="tab active" id="tab-schedule">
-    <div class="card admin-only">
-      <h2>➕ Quản lý đội thi đấu</h2>
-      <div class="form-row">
-        <input type="text" id="newTeamName" placeholder="Tên đội (VD: Đội A)" onkeypress="if(event.key==='Enter')addTeam()">
-        <button class="btn btn-p" onclick="addTeam()">Thêm đội</button>
-      </div>
-      <div id="teamsList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+  <!-- MÀN HÌNH 2: CHI TIẾT GIẢI ĐẤU -->
+  <div id="tourDetailScreen" style="display:none">
+    <button class="btn btn-o btn-sm" style="color:var(--pb-dark);border-color:var(--bd);margin-bottom:16px" onclick="backToList()">← Quay lại danh sách giải</button>
+    
+    <div class="card" style="background:var(--pb-dark);color:#fff;border:none">
+      <h2 id="detailTourName" style="color:var(--pb-lime);border-color:rgba(255,255,255,0.2);font-size:20px">Tên giải</h2>
+      <p id="detailTourInfo" style="opacity:0.8;font-size:14px">📍 Địa điểm · 📅 Ngày</p>
     </div>
 
-    <div class="card admin-only">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-s" onclick="generateSchedule()">⚡ Tạo lịch tự động</button>
-        <button class="btn btn-d btn-sm" onclick="resetSchedule()">🗑️ Xóa lịch</button>
-        <span style="margin-left:auto;font-size:12px;color:var(--ts)">
-          Tổng: <b id="totalMatches">0</b> trận · Đã đấu: <b id="completedMatches">0</b>
-        </span>
-      </div>
-      <div style="font-size:12px;color:var(--d);margin-top:8px;font-weight:600">
-        ⚠️ Lưu ý: Tạo lịch mới sẽ XÓA toàn bộ lịch và điểm số cũ của giải này.
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('standings')">🏆 Bảng Xếp Hạng</button>
+      <button class="tab-btn" onclick="switchTab('schedule')">📅 Lịch Thi Đấu</button>
+    </div>
+
+    <!-- TAB: BẢNG XẾP HẠNG -->
+    <div class="tab active" id="tab-standings">
+      <div class="card">
+        <div style="font-size:12px;color:var(--ts);margin-bottom:12px;padding:10px;background:#f8fafc;border-radius:8px;border-left:4px solid var(--pb-lime)">
+          📏 <b>Quy tắc:</b> Thắng = 1 điểm, Thua = 0 điểm. <br>
+          ⚖️ <b>Tiêu chí xếp hạng:</b> Điểm → Hiệu số (Điểm thắng - Điểm thua) → Tên đội.
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th style="text-align:left">Đội</th>
+                <th>Trận<br><small>(Đấu/Tổng)</small></th>
+                <th>Thắng</th>
+                <th>Thua</th>
+                <th>Điểm</th>
+                <th>Đ. thắng</th>
+                <th>Đ. thua</th>
+                <th>Hiệu số</th>
+              </tr>
+            </thead>
+            <tbody id="standingsBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div id="scheduleList"></div>
-  </div>
+    <!-- TAB: LỊCH THI ĐẤU -->
+    <div class="tab" id="tab-schedule">
+      <!-- Admin Controls -->
+      <div class="card admin-only admin-block">
+        <h2>⚙️ Quản lý Giải đấu</h2>
+        <div class="form-row">
+          <input type="text" id="newTeamName" placeholder="Tên đội / cặp đôi (VD: Nam A)" onkeypress="if(event.key==='Enter')addTeam()">
+          <button class="btn btn-p" onclick="addTeam()">Thêm</button>
+        </div>
+        <div id="teamsList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
+        
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:12px;border-top:1px solid var(--bd)">
+          <button class="btn btn-s" onclick="generateSchedule()">⚡ Tạo lịch tự động</button>
+          <button class="btn btn-d btn-sm" onclick="resetSchedule()">🗑️ Xóa lịch & điểm</button>
+          <span style="margin-left:auto;font-size:12px;color:var(--ts)">
+            Tổng: <b id="totalMatches">0</b> · Đã đấu: <b id="completedMatches">0</b>
+          </span>
+        </div>
+        <div style="font-size:11px;color:var(--pb-red);margin-top:8px;font-weight:700">
+          ⚠️ Cảnh báo: Tạo lịch mới sẽ XÓA toàn bộ lịch và điểm số hiện tại của giải này.
+        </div
+      </div>
 
-  <!-- TAB 2: BẢNG XẾP HẠNG -->
-  <div class="tab" id="tab-standings">
-    <div class="card">
-      <h2>🏆 Bảng xếp hạng</h2>
-      <div style="font-size:12px;color:var(--ts);margin-bottom:12px;padding:8px;background:#f8fafc;border-radius:6px">
-        📏 <b>Quy tắc xếp hạng:</b> Điểm (Thắng=1, Thua=0) → Hiệu số (Tổng điểm thắng - Tổng điểm thua) → Tên đội.
-      </div>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:40px">#</th>
-              <th style="text-align:left">Đội</th>
-              <th>Trận</th>
-              <th>Thắng</th>
-              <th>Thua</th>
-              <th>Điểm</th>
-              <th>Đ. thắng</th>
-              <th>Đ. thua</th>
-              <th>Hiệu số</th>
-            </tr>
-          </thead>
-          <tbody id="standingsBody"></tbody>
-        </table>
-      </div>
+      <div id="scheduleList"></div>
     </div>
   </div>
 
 </div>
 
-<!-- MODAL: TẠO GIẢI MỚI (Hiển thị khi chưa có giải) -->
-<div id="createTourModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center">
-  <div class="card" style="width:400px;max-width:90vw">
+<!-- MODAL: TẠO GIẢI MỚI -->
+<div id="createTourModal" class="modal-overlay">
+  <div class="modal-box">
     <h2>🎉 Tạo giải đấu mới</h2>
-    <div class="form-row"><input type="text" id="c_ten_giai" placeholder="Tên giải đấu (VD: Giải Vô Địch 2024)" required></div>
-    <div class="form-row"><input type="text" id="c_dia_diem" placeholder="Địa điểm tổ chức" required></div>
+    <div class="form-row"><input type="text" id="c_ten_giai" placeholder="Tên giải (VD: CLB Pickleball Cup 2024)" required></div>
+    <div class="form-row"><input type="text" id="c_dia_diem" placeholder="Địa điểm (VD: Sân ABC, Q.1)" required></div>
     <div class="form-row"><input type="date" id="c_ngay" required></div>
     <div class="form-row"><input type="password" id="c_mat_khau" placeholder="Mật khẩu Admin (Mặc định: 123)" value="123"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="createNewTour()">Tạo giải đấu</button>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-p" style="flex:1" onclick="createNewTour()">Tạo giải</button>
+      <button class="btn btn-o" style="flex:1;color:var(--tx);border-color:var(--bd)" onclick="closeModal('createTourModal')">Hủy</button>
+    </div>
   </div>
 </div>
 
 <!-- MODAL: ĐĂNG NHẬP ADMIN -->
-<div id="loginModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center">
-  <div class="card" style="width:320px;text-align:center">
+<div id="loginModal" class="modal-overlay">
+  <div class="modal-box" style="text-align:center">
     <h2>🔑 Đăng nhập Admin</h2>
-    <input type="password" id="adminPwdInput" placeholder="Nhập mật khẩu" style="width:100%;padding:10px;margin:12px 0;border:2px solid var(--bd);border-radius:6px;text-align:center">
+    <p style="font-size:13px;color:var(--ts);margin-bottom:16px">Nhập mật khẩu để quản lý giải đấu hiện tại.</p>
+    <input type="password" id="adminPwdInput" placeholder="Mật khẩu" style="width:100%;padding:12px;margin-bottom:16px;border:2px solid var(--bd);border-radius:8px;text-align:center;font-size:16px">
     <button class="btn btn-p" style="width:100%" onclick="verifyAdmin()">Xác nhận</button>
-    <button class="btn btn-o" style="width:100%;margin-top:8px" onclick="closeLoginModal()">Hủy</button>
+    <button class="btn btn-o" style="width:100%;margin-top:8px;color:var(--tx);border-color:var(--bd)" onclick="closeModal('loginModal')">Hủy</button>
   </div>
 </div>
 
 <script>
-// ================= CẤU HÌNH =================
-const SUPABASE_URL = 'https://mvefkcaqvjflrgmaybev.supabase.co'; // Thay bằng URL của bạn
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12ZWZrY2FxdmpmbHJnbWF5YmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDAzOTksImV4cCI6MjEwMjE3NjM5OX0.vCY4_JlSBqi6QRh7DYWAe42Ot-pChKaVSHn7DY2C34Q'; // Thay bằng Anon Key của bạn
+// ================= CẤU HÌNH SUPABASE =================
+// ⚠️ THAY THẾ 2 DÒNG DƯỚI ĐÂY BẰNG THÔNG TIN PROJECT CỦA BẠN
+const SUPABASE_URL = 'https://mvefkcaqvjflrgmaybev.supabase.co'.trim().replace(/\/+$/, '');
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12ZWZrY2FxdmpmbHJnbWF5YmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDAzOTksImV4cCI6MjEwMjE3NjM5OX0.vCY4_JlSBqi6QRh7DYWAe42Ot-pChKaVSHn7DY2C34Q'.trim();
+
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let CURRENT_TOUR = null;
@@ -183,7 +249,7 @@ function toast(msg, err = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'show' + (err ? ' err' : '');
-  setTimeout(() => t.className = '', 2500);
+  setTimeout(() => t.className = '', 3000);
 }
 
 function switchTab(tabName) {
@@ -194,17 +260,43 @@ function switchTab(tabName) {
   if (tabName === 'standings') renderStandings();
 }
 
-// ================= KHỞI TẠO =================
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// ================= KHỞI TẠO & DANH SÁCH GIẢI =================
 async function init() {
-  const savedTour = localStorage.getItem('robin_current_tour');
-  if (savedTour) {
-    await loadTour(savedTour);
-  } else {
-    showCreateTourModal();
+  await loadTourList();
+}
+
+async function loadTourList() {
+  document.getElementById('tourListScreen').style.display = 'block';
+  document.getElementById('tourDetailScreen').style.display = 'none';
+  
+  const { data: tours, error } = await sb.from('robin_tour').select('*').order('created_at', { ascending: false });
+  const container = document.getElementById('tourListContainer');
+  
+  if (error || !tours || tours.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🎾</div>
+        <h3>Hệ thống hiện chưa có giải đấu nào</h3>
+        <p style="margin-top:8px">Hãy đăng nhập Admin để tạo giải đấu mới.</p>
+      </div>`;
+    return;
   }
+
+  container.innerHTML = tours.map(t => `
+    <div class="tour-card" onclick="openTour('${t.ma_giai}')">
+      <div>
+        <h3>${t.ten_giai}</h3>
+        <p>📍 ${t.dia_diem} · 📅 ${new Date(t.ngay_to_chuc).toLocaleDateString('vi-VN')}</p>
+      </div>
+      <div style="font-size:24px;color:var(--pb-lime)">→</div>
+    </div>
+  `).join('');
 }
 
 function showCreateTourModal() {
+  if (!IS_ADMIN) return toggleAdmin(); // Yêu cầu đăng nhập nếu chưa là admin
   document.getElementById('createTourModal').style.display = 'flex';
   document.getElementById('c_ngay').valueAsDate = new Date();
 }
@@ -217,7 +309,6 @@ async function createNewTour() {
 
   if (!ten || !dia_diem || !ngay) return toast('Vui lòng điền đầy đủ thông tin', true);
 
-  // Sinh mã giải tuần tự: G001, G002...
   const { data: lastTour } = await sb.from('robin_tour').select('ma_giai').order('ma_giai', { ascending: false }).limit(1);
   let nextNum = 1;
   if (lastTour && lastTour.length > 0 && lastTour[0].ma_giai.startsWith('G')) {
@@ -229,30 +320,34 @@ async function createNewTour() {
   const { error } = await sb.from('robin_tour').insert({ ma_giai, ten_giai: ten, dia_diem, ngay_to_chuc: ngay, mat_khau_admin: mk });
   if (error) return toast('Lỗi tạo giải: ' + error.message, true);
 
-  localStorage.setItem('robin_current_tour', ma_giai);
-  document.getElementById('createTourModal').style.display = 'none';
-  await loadTour(ma_giai);
+  closeModal('createTourModal');
   toast('✅ Đã tạo giải đấu: ' + ten);
+  loadTourList();
 }
 
-async function loadTour(ma_giai) {
+// ================= CHI TIẾT GIẢI ĐẤU =================
+async function openTour(ma_giai) {
   const { data: tour } = await sb.from('robin_tour').select('*').eq('ma_giai', ma_giai).single();
-  if (!tour) {
-    localStorage.removeItem('robin_current_tour');
-    return showCreateTourModal();
-  }
+  if (!tour) return toast('Không tìm thấy giải đấu', true);
   
   CURRENT_TOUR = tour;
-  document.getElementById('tourInfo').textContent = `${tour.ten_giai} · 📍 ${tour.dia_diem} · 📅 ${new Date(tour.ngay_to_chuc).toLocaleDateString('vi-VN')}`;
-  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('tourListScreen').style.display = 'none';
+  document.getElementById('tourDetailScreen').style.display = 'block';
+  document.getElementById('detailTourName').textContent = tour.ten_giai;
+  document.getElementById('detailTourInfo').textContent = `📍 ${tour.dia_diem} · 📅 ${new Date(tour.ngay_to_chuc).toLocaleDateString('vi-VN')}`;
   
   await loadData();
   
-  // Realtime subscription
+  // Realtime
   sb.channel(`tour_${ma_giai}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'robin_team', filter: `ma_giai=eq.${ma_giai}` }, loadData)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'robin_tran_dau', filter: `ma_giai=eq.${ma_giai}` }, loadData)
     .subscribe();
+}
+
+function backToList() {
+  CURRENT_TOUR = null;
+  loadTourList();
 }
 
 async function loadData() {
@@ -275,33 +370,29 @@ function toggleAdmin() {
   if (IS_ADMIN) {
     IS_ADMIN = false;
     document.body.classList.remove('is-admin');
-    document.getElementById('adminToggleBtn').textContent = '🔑 Đăng nhập Admin';
     toast('Đã đăng xuất Admin');
   } else {
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('adminPwdInput').value = '';
-    document.getElementById('adminPwdInput').focus();
+    setTimeout(() => document.getElementById('adminPwdInput').focus(), 100);
   }
-}
-
-function closeLoginModal() {
-  document.getElementById('loginModal').style.display = 'none';
 }
 
 function verifyAdmin() {
   const pwd = document.getElementById('adminPwdInput').value;
+  if (!CURRENT_TOUR) return toast('Vui lòng chọn một giải đấu trước', true);
+  
   if (pwd === CURRENT_TOUR.mat_khau_admin) {
     IS_ADMIN = true;
     document.body.classList.add('is-admin');
-    document.getElementById('adminToggleBtn').textContent = '🚪 Đăng xuất Admin';
-    closeLoginModal();
+    closeModal('loginModal');
     toast('✅ Đăng nhập Admin thành công');
   } else {
     toast('Sai mật khẩu!', true);
   }
 }
 
-// ================= ĐỘI THI ĐẤU =================
+// ================= QUẢN LÝ ĐỘI =================
 async function addTeam() {
   const name = document.getElementById('newTeamName').value.trim();
   if (!name) return toast('Nhập tên đội', true);
@@ -322,13 +413,13 @@ async function deleteTeam(id) {
 function renderTeams() {
   const list = document.getElementById('teamsList');
   if (TEAMS.length === 0) {
-    list.innerHTML = '<span style="color:var(--ts);font-size:13px">Chưa có đội nào.</span>';
+    list.innerHTML = '<span style="color:var(--ts);font-size:13px">Chưa có đội nào. Hãy thêm đội để tạo lịch.</span>';
     return;
   }
   list.innerHTML = TEAMS.map(t => `
-    <div style="background:#f1f5f9;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px">
-      ${t.ten_doi}
-      <button class="btn btn-d btn-sm" style="padding:2px 6px;font-size:10px" onclick="deleteTeam('${t.id}')">✕</button>
+    <div style="background:#f1f5f9;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;border:1px solid var(--bd)">
+      🎾 ${t.ten_doi}
+      <button class="btn btn-d btn-sm" style="padding:2px 6px;font-size:10px;border-radius:50%" onclick="deleteTeam('${t.id}')">✕</button>
     </div>
   `).join('');
 }
@@ -336,28 +427,21 @@ function renderTeams() {
 // ================= LỊCH THI ĐẤU (ROUND ROBIN) =================
 function roundRobinAlgorithm(teams) {
   const list = teams.map(t => ({ id: t.id, name: t.ten_doi }));
-  if (list.length % 2 !== 0) list.push({ id: null, name: 'BYE' }); // Xử lý số lẻ
+  if (list.length % 2 !== 0) list.push({ id: null, name: 'BYE' });
   
   const n = list.length;
   const rounds = n - 1;
   const matchesPerRound = n / 2;
   const matches = [];
-  let matchNum = 1;
 
   for (let r = 0; r < rounds; r++) {
     for (let i = 0; i < matchesPerRound; i++) {
       const a = list[i];
       const b = list[n - 1 - i];
-      if (a.id && b.id) { // Bỏ qua trận gặp BYE
-        matches.push({
-          vong: r + 1,
-          doi_a_id: a.id,
-          doi_b_id: b.id,
-          trang_thai: 'chua_dau'
-        });
+      if (a.id && b.id) {
+        matches.push({ vong: r + 1, doi_a_id: a.id, doi_b_id: b.id, trang_thai: 'chua_dau' });
       }
     }
-    // Xoay vòng: giữ nguyên phần tử đầu, đưa phần tử cuối lên vị trí thứ 2
     const fixed = list[0];
     const rotated = [list[n - 1], ...list.slice(1, n - 1)];
     list.splice(0, n, fixed, ...rotated);
@@ -370,12 +454,9 @@ async function generateSchedule() {
   if (!confirm(`Tạo lịch cho ${TEAMS.length} đội?\n⚠️ TOÀN BỘ lịch và điểm số cũ sẽ bị XÓA.`)) return;
   
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
+  const matches = roundRobinAlgorithm(TEAMS).map(m => ({ ...m, ma_giai: CURRENT_TOUR.ma_giai }));
   
-  const matches = roundRobinAlgorithm(TEAMS);
-  // Gắn thêm ma_giai vào từng trận
-  const matchesToInsert = matches.map(m => ({ ...m, ma_giai: CURRENT_TOUR.ma_giai }));
-  
-  const { error } = await sb.from('robin_tran_dau').insert(matchesToInsert);
+  const { error } = await sb.from('robin_tran_dau').insert(matches);
   if (error) return toast('Lỗi tạo lịch: ' + error.message, true);
   
   toast(`✅ Đã tạo ${matches.length} trận đấu`);
@@ -384,7 +465,7 @@ async function generateSchedule() {
 async function resetSchedule() {
   if (!confirm('Xóa TOÀN BỘ lịch thi đấu và điểm số?')) return;
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
-  toast('Đã xóa lịch');
+  toast('Đã xóa lịch và điểm');
 }
 
 function getTeamName(id) {
@@ -398,7 +479,7 @@ function renderSchedule() {
   
   const list = document.getElementById('scheduleList');
   if (MATCHES.length === 0) {
-    list.innerHTML = '<div class="card" style="text-align:center;padding:30px;color:var(--ts)">Chưa có lịch thi đấu. Admin hãy bấm "Tạo lịch tự động".</div>';
+    list.innerHTML = '<div class="card empty-state"><div class="icon">📅</div><h3>Chưa có lịch thi đấu</h3><p>Admin hãy bấm "Tạo lịch tự động" ở trên.</p></div>';
     return;
   }
   
@@ -410,7 +491,7 @@ function renderSchedule() {
   
   list.innerHTML = Object.keys(byRound).sort((a,b) => a-b).map(round => `
     <div class="round-block">
-      <div class="round-head">Vòng ${round} (${byRound[round].length} trận)</div>
+      <div class="round-head">Vòng ${round} <span style="opacity:0.7;font-weight:400">(${byRound[round].length} trận)</span></div>
       ${byRound[round].map(m => renderMatchRow(m)).join('')}
     </div>
   `).join('');
@@ -419,20 +500,40 @@ function renderSchedule() {
 function renderMatchRow(m) {
   const isDone = m.trang_thai === 'da_dau';
   const canEdit = IS_ADMIN;
+  const aWins = isDone && m.diem_a > m.diem_b;
+  const bWins = isDone && m.diem_b > m.diem_a;
   
+  const nameA = getTeamName(m.doi_a_id);
+  const nameB = getTeamName(m.doi_b_id);
+
   return `
     <div class="match-row ${isDone ? 'da-dau' : ''}">
-      <div class="team-name team-a">${getTeamName(m.doi_a_id)}</div>
-      <input type="number" class="score-input" id="sa-${m.id}" value="${m.diem_a ?? ''}" placeholder="-" ${!canEdit ? 'disabled' : ''}>
-      <input type="number" class="score-input" id="sb-${m.id}" value="${m.diem_b ?? ''}" placeholder="-" ${!canEdit ? 'disabled' : ''}>
-      <div class="team-name team-b">${getTeamName(m.doi_b_id)}</div>
+      <div class="team-name team-a ${aWins ? 'winner-text' : ''}">${nameA}</div>
+      
+      ${canEdit ? 
+        `<input type="number" class="score-input" id="sa-${m.id}" value="${m.diem_a ?? ''}" placeholder="-">` : 
+        `<div class="score ${aWins ? 'winner-score' : ''}">${m.diem_a ?? '-'}</div>`
+      }
+      
+      <div class="vs">VS</div>
+      
+      ${canEdit ? 
+        `<input type="number" class="score-input" id="sb-${m.id}" value="${m.diem_b ?? ''}" placeholder="-">` : 
+        `<div class="score ${bWins ? 'winner-score' : ''}">${m.diem_b ?? '-'}</div>`
+      }
+      
+      <div class="team-name team-b ${bWins ? 'winner-text' : ''}">${nameB}</div>
       
       ${canEdit ? `
-        <div style="grid-column:1/-1;display:flex;justify-content:center;gap:8px;margin-top:8px">
-          <button class="btn btn-s btn-sm" onclick="saveScore('${m.id}')">💾 Lưu điểm</button>
-          ${isDone ? `<button class="btn btn-w btn-sm" onclick="resetScore('${m.id}')">↺ Sửa lại</button>` : ''}
+        <div style="grid-column:1/-1;display:flex;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
+          <button class="btn btn-s btn-sm" onclick="saveScore('${m.id}')">💾 Lưu tỷ số</button>
+          ${isDone ? `<button class="btn btn-d btn-sm" onclick="resetScore('${m.id}')">↺ Reset</button>` : ''}
         </div>
-      ` : `<div class="vs" style="grid-column:1/-1;text-align:center;margin-top:4px;font-size:13px;color:var(--ts)">${isDone ? `Kết quả: ${m.diem_a} - ${m.diem_b}` : 'Chưa thi đấu'}</div>`}
+      ` : `
+        <div style="grid-column:1/-1;text-align:center;margin-top:6px;font-size:12px;font-weight:700;color:${isDone ? 'var(--pb-green)' : 'var(--ts)'}">
+          ${isDone ? '✅ ĐÃ ĐẤU' : '⏳ CHƯA ĐẤU'}
+        </div>
+      `}
     </div>
   `;
 }
@@ -441,43 +542,38 @@ async function saveScore(id) {
   const sa = parseInt(document.getElementById('sa-' + id).value);
   const sbVal = parseInt(document.getElementById('sb-' + id).value);
   
-  if (isNaN(sa) || isNaN(sbVal)) return toast('Vui lòng nhập đủ 2 điểm số', true);
-  if (sa === sbVal) return toast('Giải đấu không có kết quả Hòa!', true);
-  if (sa < 0 || sbVal < 0) return toast('Điểm số không được âm', true);
+  if (isNaN(sa) || isNaN(sbVal)) return toast('Vui lòng nhập đủ 2 tỷ số', true);
+  if (sa === sbVal) return toast('Pickleball không có kết quả Hòa! Phải có phân thắng bại.', true);
+  if (sa < 0 || sbVal < 0) return toast('Tỷ số không được âm', true);
   
   const { error } = await sb.from('robin_tran_dau').update({
-    diem_a: sa,
-    diem_b: sbVal,
-    trang_thai: 'da_dau'
+    diem_a: sa, diem_b: sbVal, trang_thai: 'da_dau'
   }).eq('id', id);
   
   if (error) return toast('Lỗi: ' + error.message, true);
-  toast('✅ Đã lưu kết quả');
+  toast('✅ Đã lưu tỷ số');
 }
 
 async function resetScore(id) {
   if (!confirm('Reset trận này về chưa thi đấu?')) return;
-  await sb.from('robin_tran_dau').update({
-    diem_a: null, diem_b: null, trang_thai: 'chua_dau'
-  }).eq('id', id);
+  await sb.from('robin_tran_dau').update({ diem_a: null, diem_b: null, trang_thai: 'chua_dau' }).eq('id', id);
   toast('Đã reset trận đấu');
 }
 
-// ================= BẢNG XẾP HẠNG (TÍNH TOÁN REALTIME) =================
+// ================= BẢNG XẾP HẠNG =================
 function renderStandings() {
   const tbody = document.getElementById('standingsBody');
   if (TEAMS.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:30px;color:var(--ts)">Chưa có đội nào</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:40px;color:var(--ts)">Chưa có đội nào tham gia</td></tr>';
     return;
   }
   
-  // Khởi tạo thống kê
+  const totalMatchesPerTeam = Math.max(0, TEAMS.length - 1);
   const stats = {};
   TEAMS.forEach(t => {
     stats[t.id] = { id: t.id, ten_doi: t.ten_doi, tran: 0, thang: 0, thua: 0, diem: 0, diem_thang: 0, diem_thua: 0, hieu_so: 0 };
   });
   
-  // Cộng dồn từ các trận đã đấu
   MATCHES.filter(m => m.trang_thai === 'da_dau').forEach(m => {
     const a = stats[m.doi_a_id], b = stats[m.doi_b_id];
     if (!a || !b) return;
@@ -486,21 +582,12 @@ function renderStandings() {
     a.diem_thang += m.diem_a; a.diem_thua += m.diem_b;
     b.diem_thang += m.diem_b; b.diem_thua += m.diem_a;
     
-    if (m.diem_a > m.diem_b) {
-      a.thang++; a.diem += 1;
-      b.thua++;
-    } else {
-      b.thang++; b.diem += 1;
-      a.thua++;
-    }
+    if (m.diem_a > m.diem_b) { a.thang++; a.diem += 1; b.thua++; } 
+    else { b.thang++; b.diem += 1; a.thua++; }
   });
   
-  // Tính hiệu số
-  Object.values(stats).forEach(s => {
-    s.hieu_so = s.diem_thang - s.diem_thua;
-  });
+  Object.values(stats).forEach(s => { s.hieu_so = s.diem_thang - s.diem_thua; });
   
-  // Sắp xếp: Điểm giảm dần -> Hiệu số giảm dần -> Tên đội tăng dần
   const sorted = Object.values(stats).sort((x, y) => {
     if (y.diem !== x.diem) return y.diem - x.diem;
     if (y.hieu_so !== x.hieu_so) return y.hieu_so - x.hieu_so;
@@ -516,11 +603,11 @@ function renderStandings() {
     return `
       <tr class="${cls}">
         <td>${rank}</td>
-        <td style="text-align:left;font-weight:600">${s.ten_doi}</td>
-        <td>${s.tran}</td>
-        <td style="color:var(--s);font-weight:700">${s.thang}</td>
-        <td style="color:var(--d);font-weight:700">${s.thua}</td>
-        <td style="font-weight:800;font-size:16px">${s.diem}</td>
+        <td style="text-align:left;font-weight:700">🎾 ${s.ten_doi}</td>
+        <td><b>${s.tran}</b>/${totalMatchesPerTeam}</td>
+        <td style="color:var(--pb-green);font-weight:800">${s.thang}</td>
+        <td style="color:var(--pb-red);font-weight:800">${s.thua}</td>
+        <td style="font-weight:900;font-size:16px">${s.diem}</td>
         <td>${s.diem_thang}</td>
         <td>${s.diem_thua}</td>
         <td class="${hsCls}">${hsStr}</td>
