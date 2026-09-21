@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Admin - Giải đấu Round Robin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#6366f1;--pd:#4f46e5;--s:#10b981;--sd:#059669;--d:#ef4444;--w:#f59e0b;--bg:#f1f5f9;--c:#fff;--tx:#1e293b;--ts:#64748b;--bd:#e2e8f0;--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);min-height:100vh;color:var(--tx)}
+.header{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:#fff;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.header p{font-size:13px;opacity:.9;margin-top:4px}
+#logoutBtn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;display:none}
+#logoutBtn:hover{background:rgba(255,255,255,.3)}
+
+.container{max-width:1100px;margin:20px auto;padding:0 16px}
+.card{background:var(--c);border-radius:var(--r);padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:700;color:var(--p);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* Login */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:#fff;padding:32px;border-radius:16px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.login-box h2{color:var(--p);margin-bottom:20px}
+.login-box input{width:100%;padding:12px;border:2px solid var(--bd);border-radius:8px;font-size:16px;margin-bottom:12px;text-align:center}
+.login-box button{width:100%;padding:12px;background:var(--p);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer}
+.login-box button:hover{background:var(--pd)}
+.login-error{color:var(--d);font-size:13px;margin-top:8px;display:none}
+
+/* Tabs */
+.tabs{display:flex;background:#fff;border-radius:var(--r);padding:4px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.tab-btn{flex:1;padding:10px;background:transparent;border:none;font-weight:600;font-size:14px;color:var(--ts);cursor:pointer;border-radius:8px;transition:.2s}
+.tab-btn.active{background:var(--p);color:#fff}
+.tab{display:none}.tab.active{display:block;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* Form */
+.form-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.form-row input{flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--bd);border-radius:8px;font-size:14px}
+.form-row input:focus{outline:none;border-color:var(--p)}
+.btn{padding:10px 16px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--pd)}
+.btn-s{background:var(--s);color:#fff}.btn-s:hover{background:var(--sd)}
+.btn-d{background:var(--d);color:#fff}
+.btn-w{background:var(--w);color:#fff}
+.btn-o{background:#fff;color:var(--p);border:2px solid var(--p)}
+.btn-sm{padding:6px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Table */
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--r);overflow:hidden}
+th{background:#f8fafc;color:var(--ts);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:10px;text-align:center}
+td{padding:10px;border-top:1px solid var(--bd);text-align:center;font-size:14px}
+tr:hover{background:#f8fafc}
+.team-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px}
+.team-row .name{flex:1;font-weight:600}
+.team-row .actions{display:flex;gap:4px}
+
+/* Score input */
+.score-input{width:60px;padding:6px;border:2px solid var(--bd);border-radius:6px;text-align:center;font-size:15px;font-weight:700}
+.score-input:focus{outline:none;border-color:var(--p)}
+.vs{color:var(--ts);font-weight:700;padding:0 4px}
+
+/* Round */
+.round-block{margin-bottom:20px;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.round-head{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:10px 14px;font-weight:700;font-size:14px}
+.match-row{display:grid;grid-template-columns:1fr auto 1fr auto auto;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--bd)}
+.match-row:last-child{border-bottom:none}
+.team-a{text-align:right;font-weight:600}
+.team-b{text-align:left;font-weight:600}
+.match-row.completed{background:#f0fdf4}
+.match-actions{display:flex;gap:4px}
+
+/* Standings */
+.standings-table th.rank{width:50px}
+.rank-1{background:#fef3c7 !important;font-weight:800;color:#92400e}
+.rank-2{background:#f3f4f6 !important;font-weight:700;color:#374151}
+.rank-3{background:#fed7aa !important;font-weight:700;color:#9a3412}
+.plus{color:var(--s);font-weight:700}
+.minus{color:var(--d);font-weight:700}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.stat-box{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px;border-radius:10px;text-align:center}
+.stat-val{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:11px;opacity:.9;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* Password change */
+.pwd-section{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:12px;margin-top:12px}
+.pwd-section h3{font-size:13px;margin-bottom:8px;color:#92400e}
+
+/* Toast */
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;display:none;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#toast.show{display:block;animation:slideD .3s}
+#toast.err{background:var(--d)}
+@keyframes slideD{from{transform:translate(-50%,-20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>🏆 Đăng nhập Admin</h2>
+    <input type="password" id="loginPwd" placeholder="Mật khẩu" autocomplete="off">
+    <button onclick="doLogin()">Vào hệ thống</button>
+    <div class="login-error" id="loginErr">Sai mật khẩu!</div>
+    <div style="margin-top:12px;font-size:12px;color:#64748b">Mặc định: <b>123</b></div>
+  </div>
+</div>
+
+<!-- APP -->
+<header class="header" style="position:relative">
+  <h1>🏆 QUẢN LÝ GIẢI ĐẤU ROUND ROBIN</h1>
+  <p id="tName">Vòng tròn tính điểm</p>
+  <button id="logoutBtn" onclick="logout()">🚪 Thoát</button>
+</header>
+
+<div class="container" id="mainApp" style="display:none">
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="teams">👥 Đội thi đấu</button>
+    <button class="tab-btn" data-tab="schedule">📅 Lịch thi đấu</button>
+    <button class="tab-btn" data-tab="standings">🏆 Bảng xếp hạng</button>
+    <button class="tab-btn" data-tab="settings">⚙️ Cài đặt</button>
+  </div>
+
+  <!-- TAB: TEAMS -->
+  <div class="tab active" id="tab-teams">
+    <div class="card">
+      <h2>➕ Thêm đội mới</h2>
+      <div class="form-row">
+        <input type="text" id="teamName" placeholder="Tên đội (VD: Đội A)" onkeypress="if(event.key==='Enter')addTeam()">
+        <button class="btn btn-p" onclick="addTeam()">➕ Thêm</button>
+      </div>
+      <div style="font-size:12px;color:var(--ts)">💡 Không giới hạn số đội. Số đội lẻ sẽ tự động có 1 đội được nghỉ mỗi vòng.</div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Danh sách đội (<span id="teamCount">0</span>)</h2>
+      <div id="teamsList"></div>
+    </div>
+  </div>
+
+  <!-- TAB: SCHEDULE -->
+  <div class="tab" id="tab-schedule">
+    <div class="card">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-s" onclick="generateSchedule()">⚡ Tạo lịch tự động</button>
+        <button class="btn btn-d btn-sm" onclick="resetSchedule()">🗑️ Xóa toàn bộ lịch</button>
+        <span style="margin-left:auto;font-size:12px;color:var(--ts);align-self:center">
+          Tổng: <b id="totalMatches">0</b> trận · Đã đấu: <b id="completedMatches">0</b>
+        </span>
+      </div>
+      <div style="font-size:12px;color:var(--ts);padding:8px;background:#fef3c7;border-radius:6px;border:1px solid #fbbf24">
+        ⚠️ <b>Lưu ý:</b> Nút "Tạo lịch" sẽ xóa lịch cũ và tạo mới theo số đội hiện tại.
+      </div>
+    </div>
+
+    <div id="scheduleList"></div>
+  </div>
+
+  <!-- TAB: STANDINGS -->
+  <div class="tab" id="tab-standings">
+    <div class="card">
+      <h2>🏆 Bảng xếp hạng</h2>
+      <div style="font-size:12px;color:var(--ts);margin-bottom:10px">
+        📏 Xếp hạng: <b>Điểm (1 thắng / 0 thua)</b> → <b>Hiệu số (tổng điểm thắng - tổng điểm thua)</b>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th style="text-align:left">Đội</th>
+              <th>Đã đấu</th>
+              <th>Thắng</th>
+              <th>Thua</th>
+              <th>Điểm</th>
+              <th>Đ.thắng</th>
+              <th>Đ.thua</th>
+              <th>Hiệu số</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SETTINGS -->
+  <div class="tab" id="tab-settings">
+    <div class="card">
+      <h2>⚙️ Cấu hình giải</h2>
+      <div class="form-row">
+        <input type="text" id="setName" placeholder="Tên giải đấu">
+        <button class="btn btn-s" onclick="saveTournamentName()">💾 Lưu</button>
+      </div>
+
+      <div class="pwd-section">
+        <h3>🔐 Đổi mật khẩu admin</h3>
+        <div class="form-row">
+          <input type="password" id="newPwd" placeholder="Mật khẩu mới">
+          <button class="btn btn-w" onclick="changePassword()">🔑 Đổi</button>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--bd)">
+        <button class="btn btn-d" onclick="resetAll()">💥 Reset toàn bộ giải</button>
+        <div style="font-size:11px;color:var(--ts);margin-top:6px">Xóa toàn bộ đội, lịch và điểm số. Không thể hoàn tác!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://nmgofzqtebcnfhttaudy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZ29menF0ZWJjbmZodHRhdWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1OTQ3NzQsImV4cCI6MjEwMjE3MDc3NH0.R9sPaChT0I96n42zSVI5umCITV9G7y-H2cl18qK3RMY';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let TEAMS = [], MATCHES = [], SETTINGS = {};
+let adminPwd = '123';
+
+// ============ TOAST ============
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (err ? ' err' : '');
+  setTimeout(() => t.className = '', 2500);
+}
+
+// ============ AUTH ============
+async function loadPassword() {
+  const { data } = await sb.from('rr_settings').select('*');
+  SETTINGS = {};
+  (data || []).forEach(r => SETTINGS[r.key] = r.value);
+  adminPwd = SETTINGS.admin_password || '123';
+  document.getElementById('tName').textContent = SETTINGS.tournament_name || 'Vòng tròn tính điểm';
+  document.getElementById('setName').value = SETTINGS.tournament_name || '';
+}
+
+function doLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd === adminPwd) {
+    sessionStorage.setItem('rr_admin', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('logoutBtn').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('rr_admin');
+  location.reload();
+}
+
+// ============ DATA ============
+async function loadTeams() {
+  const { data } = await sb.from('rr_teams').select('*').order('created_at');
+  TEAMS = data || [];
+  renderTeams();
+}
+
+async function loadMatches() {
+  const { data } = await sb.from('rr_matches').select('*').order('round').order('match_number');
+  MATCHES = data || [];
+  renderSchedule();
+  renderStandings();
+  renderStats();
+}
+
+// ============ TEAMS ============
+async function addTeam() {
+  const name = document.getElementById('teamName').value.trim();
+  if (!name) return toast('Nhập tên đội', true);
+  const { error } = await sb.from('rr_teams').insert({ name });
+  if (error) return toast('Lỗi: ' + error.message, true);
+  document.getElementById('teamName').value = '';
+  toast('✅ Đã thêm: ' + name);
+  loadTeams();
+}
+
+async function deleteTeam(id, name) {
+  if (!confirm(`Xóa đội "${name}"?\nCác trận đấu liên quan cũng sẽ bị xóa.`)) return;
+  await sb.from('rr_teams').delete().eq('id', id);
+  toast('Đã xóa');
+  loadTeams();
+  loadMatches();
+}
+
+async function editTeam(id, oldName) {
+  const newName = prompt('Sửa tên đội:', oldName);
+  if (!newName || newName.trim() === '' || newName === oldName) return;
+  await sb.from('rr_teams').update({ name: newName.trim() }).eq('id', id);
+  toast('Đã cập nhật');
+  loadTeams();
+  loadMatches();
+}
+
+function renderTeams() {
+  document.getElementById('teamCount').textContent = TEAMS.length;
+  const list = document.getElementById('teamsList');
+  if (TEAMS.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ts)">Chưa có đội nào. Thêm đội để bắt đầu.</div>';
+    return;
+  }
+  list.innerHTML = TEAMS.map((t, i) => `
+    <div class="team-row">
+      <span style="width:30px;color:var(--ts);font-weight:700">${i+1}.</span>
+      <span class="name">${t.name}</span>
+      <div class="actions">
+        <button class="btn btn-o btn-sm" onclick="editTeam('${t.id}','${t.name.replace(/'/g,"\\'")}')">✏️</button>
+        <button class="btn btn-d btn-sm" onclick="deleteTeam('${t.id}','${t.name.replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ ROUND ROBIN ALGORITHM ============
+function roundRobin(teams) {
+  const list = teams.map(t => ({ id: t.id, name: t.name }));
+  // Nếu lẻ, thêm BYE
+  if (list.length % 2 !== 0) list.push({ id: null, name: 'BYE' });
+  const n = list.length;
+  const rounds = n - 1;
+  const matchesPerRound = n / 2;
+  const matches = [];
+  let matchNum = 1;
+
+  for (let r = 0; r < rounds; r++) {
+    for (let i = 0; i < matchesPerRound; i++) {
+      const a = list[i];
+      const b = list[n - 1 - i];
+      if (a.id && b.id) {
+        matches.push({
+          round: r + 1,
+          match_number: matchNum++,
+          team_a_id: a.id,
+          team_b_id: b.id,
+          status: 'scheduled'
+        });
+      }
+    }
+    // Xoay: giữ list[0], xoay các phần tử còn lại
+    const fixed = list[0];
+    const rotated = [list[n - 1], ...list.slice(1, n - 1)];
+    list.splice(0, n, fixed, ...rotated);
+  }
+  return matches;
+}
+
+async function generateSchedule() {
+  if (TEAMS.length < 2) return toast('Cần ít nhất 2 đội', true);
+  if (!confirm(`Tạo lịch cho ${TEAMS.length} đội?\nLịch cũ sẽ bị xóa!`)) return;
+  
+  await sb.from('rr_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  
+  const matches = roundRobin(TEAMS);
+  const { error } = await sb.from('rr_matches').insert(matches);
+  if (error) return toast('Lỗi: ' + error.message, true);
+  toast(`✅ Đã tạo ${matches.length} trận`);
+  loadMatches();
+}
+
+async function resetSchedule() {
+  if (!confirm('Xóa TOÀN BỘ lịch thi đấu?')) return;
+  await sb.from('rr_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  toast('Đã xóa lịch');
+  loadMatches();
+}
+
+// ============ RENDER SCHEDULE ============
+function teamName(id) {
+  const t = TEAMS.find(x => x.id === id);
+  return t ? t.name : '?';
+}
+
+function renderSchedule() {
+  const list = document.getElementById('scheduleList');
+  document.getElementById('totalMatches').textContent = MATCHES.length;
+  document.getElementById('completedMatches').textContent = MATCHES.filter(m => m.status === 'completed').length;
+  
+  if (MATCHES.length === 0) {
+    list.innerHTML = '<div class="card" style="text-align:center;padding:30px;color:var(--ts)">Chưa có lịch. Hãy bấm "Tạo lịch tự động".</div>';
+    return;
+  }
+  
+  const byRound = {};
+  MATCHES.forEach(m => {
+    if (!byRound[m.round]) byRound[m.round] = [];
+    byRound[m.round].push(m);
+  });
+  
+  list.innerHTML = Object.keys(byRound).sort((a,b)=>a-b).map(round => `
+    <div class="round-block">
+      <div class="round-head">🎯 Vòng ${round} (${byRound[round].length} trận)</div>
+      ${byRound[round].map(m => renderMatchRow(m)).join('')}
+    </div>
+  `).join('');
+}
+
+function renderMatchRow(m) {
+  const done = m.status === 'completed';
+  return `
+    <div class="match-row ${done ? 'completed' : ''}">
+      <div class="team-a">${teamName(m.team_a_id)}</div>
+      <input type="number" class="score-input" id="sa-${m.id}" value="${m.score_a ?? ''}" placeholder="-" ${done ? '' : ''}>
+      <span class="vs">vs</span>
+      <input type="number" class="score-input" id="sb-${m.id}" value="${m.score_b ?? ''}" placeholder="-">
+      <div class="team-b">${teamName(m.team_b_id)}</div>
+      <div class="match-actions" style="grid-column:1/-1;justify-content:center;display:flex;margin-top:6px">
+        <button class="btn btn-s btn-sm" onclick="saveScore('${m.id}')">💾 Lưu điểm</button>
+        ${done ? `<button class="btn btn-w btn-sm" onclick="resetScore('${m.id}')">↺ Sửa</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+async function saveScore(id) {
+  const sa = parseInt(document.getElementById('sa-' + id).value);
+  const sbVal = parseInt(document.getElementById('sb-' + id).value);
+  if (isNaN(sa) || isNaN(sbVal)) return toast('Nhập đủ 2 điểm', true);
+  if (sa === sbVal) return toast('Không được hòa', true);
+  
+  const { error } = await sb.from('rr_matches').update({
+    score_a: sa, score_b: sbVal,
+    status: 'completed',
+    played_at: new Date().toISOString()
+  }).eq('id', id);
+  
+  if (error) return toast('Lỗi: ' + error.message, true);
+  toast('✅ Đã lưu');
+  loadMatches();
+}
+
+async function resetScore(id) {
+  if (!confirm('Reset trận này?')) return;
+  await sb.from('rr_matches').update({
+    score_a: null, score_b: null,
+    status: 'scheduled', played_at: null
+  }).eq('id', id);
+  toast('Đã reset');
+  loadMatches();
+}
+
+// ============ STANDINGS ============
+function computeStandings() {
+  const stats = {};
+  TEAMS.forEach(t => {
+    stats[t.id] = { id: t.id, name: t.name, played: 0, won: 0, lost: 0, points: 0, scored: 0, against: 0, diff: 0 };
+  });
+  
+  MATCHES.filter(m => m.status === 'completed').forEach(m => {
+    const a = stats[m.team_a_id], b = stats[m.team_b_id];
+    if (!a || !b) return;
+    
+    a.played++; b.played++;
+    a.scored += m.score_a; a.against += m.score_b;
+    b.scored += m.score_b; b.against += m.score_a;
+    
+    if (m.score_a > m.score_b) { a.won++; a.points++; b.lost++; }
+    else { b.won++; b.points++; a.lost++; }
+  });
+  
+  Object.values(stats).forEach(s => s.diff = s.scored - s.against);
+  
+  return Object.values(stats).sort((x, y) => {
+    if (y.points !== x.points) return y.points - x.points;
+    return y.diff - x.diff;
+  });
+}
+
+function renderStandings() {
+  const tbody = document.getElementById('standingsBody');
+  if (TEAMS.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:30px;color:var(--ts)">Chưa có đội</td></tr>';
+    return;
+  }
+  
+  const st = computeStandings();
+  tbody.innerHTML = st.map((s, i) => {
+    const rank = i + 1;
+    const cls = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+    const diffCls = s.diff > 0 ? 'plus' : s.diff < 0 ? 'minus' : '';
+    const diffStr = s.diff > 0 ? '+' + s.diff : s.diff;
+    return `
+      <tr class="${cls}">
+        <td>${rank}</td>
+        <td style="text-align:left;font-weight:600">${s.name}</td>
+        <td>${s.played}</td>
+        <td style="color:var(--s);font-weight:700">${s.won}</td>
+        <td style="color:var(--d);font-weight:700">${s.lost}</td>
+        <td style="font-weight:800;font-size:16px">${s.points}</td>
+        <td>${s.scored}</td>
+        <td>${s.against}</td>
+        <td class="${diffCls}">${diffStr}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderStats() {
+  const completed = MATCHES.filter(m => m.status === 'completed').length;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-box"><div class="stat-val">${TEAMS.length}</div><div class="stat-lbl">Đội</div></div>
+    <div class="stat-box"><div class="stat-val">${MATCHES.length}</div><div class="stat-lbl">Tổng trận</div></div>
+    <div class="stat-box"><div class="stat-val">${completed}</div><div class="stat-lbl">Đã đấu</div></div>
+    <div class="stat-box"><div class="stat-val">${MATCHES.length - completed}</div><div class="stat-lbl">Còn lại</div></div>
+  `;
+}
+
+// ============ SETTINGS ============
+async function saveTournamentName() {
+  const name = document.getElementById('setName').value.trim();
+  if (!name) return toast('Nhập tên giải', true);
+  await sb.from('rr_settings').update({ value: name, updated_at: new Date().toISOString() }).eq('key', 'tournament_name');
+  toast('✅ Đã lưu');
+  document.getElementById('tName').textContent = name;
+}
+
+async function changePassword() {
+  const pwd = document.getElementById('newPwd').value.trim();
+  if (!pwd) return toast('Nhập mật khẩu mới', true);
+  await sb.from('rr_settings').update({ value: pwd, updated_at: new Date().toISOString() }).eq('key', 'admin_password');
+  adminPwd = pwd;
+  document.getElementById('newPwd').value = '';
+  toast('✅ Đã đổi mật khẩu');
+}
+
+async function resetAll() {
+  if (!confirm('XÓA TOÀN BỘ: đội, lịch, điểm số?\nKhông thể hoàn tác!')) return;
+  if (!confirm('Xác nhận lại: XÓA HẾT?')) return;
+  await sb.from('rr_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await sb.from('rr_teams').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  toast('Đã reset');
+  loadTeams();
+  loadMatches();
+}
+
+// ============ TABS ============
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ============ INIT ============
+async function initApp() {
+  await loadPassword();
+  await loadTeams();
+  await loadMatches();
+  
+  sb.channel('rr-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rr_teams' }, () => { loadTeams(); loadMatches(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rr_matches' }, () => loadMatches())
+    .subscribe();
+}
+
+// Check login
+(async () => {
+  await loadPassword();
+  if (sessionStorage.getItem('rr_admin') === '1') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('logoutBtn').style.display = 'block';
+    initApp();
+  }
+})();
+</script>
+</body>
+</html>
