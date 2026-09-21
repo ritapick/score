@@ -2,110 +2,121 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Pickleball Round Robin Manager</title>
+<title>Pickleball Pro Manager</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --pb-lime: #d4f23d;       /* Màu bóng Pickleball */
-  --pb-dark: #0f172a;       /* Xanh đen chuyên nghiệp */
-  --pb-green: #22c55e;      /* Màu thắng */
-  --pb-red: #ef4444;        /* Màu thua */
-  --bg: #f8fafc;
+  --grad-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --grad-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --grad-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --grad-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   --c: #ffffff;
   --tx: #0f172a;
   --ts: #64748b;
   --bd: #e2e8f0;
-  --r: 12px;
+  --r: 16px;
+  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--tx); line-height: 1.5; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--grad-bg); color: var(--tx); line-height: 1.6; min-height: 100vh; }
 
 /* HEADER */
-.header { background: var(--pb-dark); color: #fff; padding: 20px; text-align: center; position: relative; border-bottom: 4px solid var(--pb-lime); }
-.header h1 { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; }
-.header h1 span { color: var(--pb-lime); }
-.header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+.header { background: var(--grad-primary); color: #fff; padding: 20px 0; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3); position: sticky; top: 0; z-index: 50; }
+.header-inner { max-width: 1000px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+.logo span { color: #fbbf24; }
+.auth-btns { display: flex; gap: 10px; }
 
 /* BUTTONS */
-.btn { padding: 10px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-.btn-p { background: var(--pb-lime); color: var(--pb-dark); } .btn-p:hover { background: #bce327; }
-.btn-s { background: var(--pb-green); color: #fff; } .btn-s:hover { background: #16a34a; }
-.btn-d { background: var(--pb-red); color: #fff; } .btn-d:hover { background: #dc2626; }
-.btn-o { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.3); } .btn-o:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn { padding: 10px 20px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4); }
+.btn-success { background: var(--grad-success); color: #fff; }
+.btn-danger { background: var(--grad-danger); color: #fff; }
+.btn-ghost { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+.btn-ghost:hover { background: rgba(255,255,255,0.25); }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+.btn-icon { padding: 8px; border-radius: 8px; background: #f1f5f9; color: var(--ts); border: none; cursor: pointer; }
+.btn-icon:hover { background: #e2e8f0; color: var(--tx); }
 
 /* LAYOUT */
-.container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
-.card { background: var(--c); border-radius: var(--r); padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid var(--bd); }
-.card h2 { font-size: 16px; font-weight: 800; color: var(--pb-dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--pb-lime); padding-bottom: 8px; display: inline-flex; }
+.container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+.card { background: var(--c); border-radius: var(--r); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--bd); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+.card-title { font-size: 18px; font-weight: 800; color: var(--tx); display: flex; align-items: center; gap: 8px; }
 
 /* TOUR LIST */
-.tour-list { display: grid; gap: 12px; }
-.tour-card { background: var(--c); border: 2px solid var(--bd); border-radius: var(--r); padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
-.tour-card:hover { border-color: var(--pb-lime); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-.tour-card h3 { font-size: 16px; font-weight: 800; color: var(--pb-dark); }
-.tour-card p { font-size: 13px; color: var(--ts); margin-top: 4px; }
-.empty-state { text-align: center; padding: 60px 20px; color: var(--ts); }
-.empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.tour-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.tour-card { background: var(--c); border-radius: var(--r); padding: 20px; border: 1px solid var(--bd); cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+.tour-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border-color: #8b5cf6; }
+.tour-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--grad-primary); }
+.tour-card h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--tx); }
+.tour-card p { font-size: 13px; color: var(--ts); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.badge-own { position: absolute; top: 12px; right: 12px; background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 20px; text-transform: uppercase; }
 
 /* TABS */
-.tabs { display: flex; background: var(--pb-dark); border-radius: var(--r); padding: 4px; margin-bottom: 20px; }
-.tab-btn { flex: 1; padding: 12px; background: transparent; border: none; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; border-radius: 8px; transition: 0.2s; }
-.tab-btn.active { background: var(--pb-lime); color: var(--pb-dark); }
-.tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
+.tabs { display: flex; background: #f1f5f9; border-radius: 12px; padding: 4px; margin-bottom: 24px; }
+.tab-btn { flex: 1; padding: 12px; background: transparent; border: none; font-weight: 700; font-size: 14px; color: var(--ts); cursor: pointer; border-radius: 10px; transition: 0.2s; }
+.tab-btn.active { background: #fff; color: #6366f1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.tab { display: none; animation: fadeIn 0.3s; }
+.tab.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* TABLES */
-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--r); overflow: hidden; font-size: 14px; }
-th { background: #f1f5f9; color: var(--ts); font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 12px 8px; text-align: center; letter-spacing: 0.5px; }
-td { padding: 12px 8px; border-top: 1px solid var(--bd); text-align: center; font-variant-numeric: tabular-nums; }
-tr:hover { background: #f8fafc; }
-.rank-1 { background: #fef9c3 !important; font-weight: 800; color: #854d0e; }
-.rank-2 { background: #f1f5f9 !important; font-weight: 700; }
-.rank-3 { background: #ffedd5 !important; font-weight: 700; color: #9a3412; }
-.plus { color: var(--pb-green); font-weight: 800; }
-.minus { color: var(--pb-red); font-weight: 800; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: #f8fafc; color: var(--ts); font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 14px 10px; text-align: center; letter-spacing: 0.5px; border-bottom: 2px solid var(--bd); }
+td { padding: 14px 10px; border-bottom: 1px solid var(--bd); text-align: center; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fafc; }
+.rank-1 td { background: #fef9c3 !important; font-weight: 800; color: #854d0e; }
+.rank-2 td { background: #f1f5f9 !important; font-weight: 700; }
+.rank-3 td { background: #ffedd5 !important; font-weight: 700; color: #9a3412; }
+.plus { color: #10b981; font-weight: 800; }
+.minus { color: #ef4444; font-weight: 800; }
 
 /* MATCH ROW */
-.round-block { margin-bottom: 20px; border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; }
-.round-head { background: var(--pb-dark); color: var(--pb-lime); padding: 10px 16px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-.match-row { display: grid; grid-template-columns: 1fr 60px 40px 60px 1fr; gap: 8px; align-items: center; padding: 14px; border-bottom: 1px solid var(--bd); background: #fff; }
+.round-block { margin-bottom: 24px; border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; background: #fff; }
+.round-head { background: #f8fafc; padding: 12px 20px; font-weight: 800; font-size: 14px; color: #6366f1; border-bottom: 1px solid var(--bd); display: flex; justify-content: space-between; }
+.match-row { display: grid; grid-template-columns: 1fr 70px 40px 70px 1fr; gap: 10px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--bd); transition: 0.2s; }
 .match-row:last-child { border-bottom: none; }
 .match-row.da-dau { background: #f0fdf4; }
-.team-name { font-weight: 700; font-size: 14px; transition: 0.2s; }
+.team-name { font-weight: 700; font-size: 15px; }
 .team-a { text-align: right; }
 .team-b { text-align: left; }
 .vs { text-align: center; font-weight: 900; color: var(--ts); font-size: 12px; }
-.score { text-align: center; font-weight: 900; font-size: 18px; color: var(--pb-dark); }
-.score-input { width: 100%; padding: 6px; border: 2px solid var(--bd); border-radius: 6px; text-align: center; font-size: 16px; font-weight: 800; background: #fff; }
-.score-input:focus { outline: none; border-color: var(--pb-lime); }
+.score { text-align: center; font-weight: 900; font-size: 20px; color: var(--tx); }
+.score-input { width: 100%; padding: 8px; border: 2px solid var(--bd); border-radius: 8px; text-align: center; font-size: 18px; font-weight: 800; background: #fff; transition: 0.2s; }
+.score-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
 
 /* WINNER HIGHLIGHT */
-.winner-text { color: var(--pb-green) !important; font-weight: 900 !important; font-size: 15px; }
-.winner-score { color: var(--pb-green) !important; font-weight: 900 !important; font-size: 20px; }
+.winner-text { color: #059669 !important; font-weight: 900 !important; }
+.winner-score { color: #059669 !important; font-weight: 900 !important; font-size: 22px; }
 
 /* FORM & MODAL */
-.form-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.form-row input { flex: 1; min-width: 150px; padding: 10px 14px; border: 2px solid var(--bd); border-radius: 8px; font-size: 14px; font-weight: 600; }
-.form-row input:focus { outline: none; border-color: var(--pb-lime); }
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
-.modal-box { background: #fff; padding: 24px; border-radius: 16px; width: 400px; max-width: 90vw; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-.modal-box h2 { border: none; margin-bottom: 16px; font-size: 20px; }
+.form-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.form-row input { flex: 1; min-width: 200px; padding: 12px 16px; border: 2px solid var(--bd); border-radius: 10px; font-size: 14px; font-weight: 600; transition: 0.2s; }
+.form-row input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+.modal-box { background: #fff; padding: 32px; border-radius: 20px; width: 420px; max-width: 90vw; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: modalPop 0.3s; }
+@keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 20px; text-align: center; color: var(--tx); }
 
 /* TOAST */
-#toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: var(--pb-dark); color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; z-index: 2000; display: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); border-left: 4px solid var(--pb-lime); }
-#toast.show { display: block; animation: slideD 0.3s; }
-#toast.err { border-left-color: var(--pb-red); background: #450a0a; }
-@keyframes slideD { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+#toast { position: fixed; top: 24px; right: 24px; background: #0f172a; color: #fff; padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 700; z-index: 2000; display: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); border-left: 4px solid #10b981; max-width: 400px; }
+#toast.show { display: block; animation: slideIn 0.3s; }
+#toast.err { border-left-color: #ef4444; background: #450a0a; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
 /* ADMIN CONTROLS */
 .admin-only { display: none !important; }
 .is-admin .admin-only { display: flex !important; }
 .is-admin .admin-block { display: block !important; }
 .admin-block { display: none; }
-.badge-admin { background: var(--pb-lime); color: var(--pb-dark); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: none; }
-.is-admin .badge-admin { display: inline-block; }
+.team-counter { background: #6366f1; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; margin-left: 8px; }
+.edit-name-btn { background: none; border: none; color: var(--ts); cursor: pointer; font-size: 16px; padding: 4px; border-radius: 6px; }
+.edit-name-btn:hover { background: #f1f5f9; color: #6366f1; }
 </style>
 </head>
 <body>
@@ -115,31 +126,42 @@ tr:hover { background: #f8fafc; }
 
 <!-- HEADER -->
 <header class="header">
-  <h1>🎾 <span>PICKLEBALL</span> ROUND ROBIN</h1>
-  <p id="headerSub">Hệ thống quản lý và xếp hạng giải đấu chuyên nghiệp</p>
-  <button id="adminToggleBtn" class="btn btn-o btn-sm" style="position:absolute;top:16px;right:16px" onclick="toggleAdmin()">
-    🔑 Admin <span class="badge-admin">ON</span>
-  </button>
+  <div class="header-inner">
+    <div class="logo">🎾 <span>PICKLEBALL</span> PRO</div>
+    <div class="auth-btns" id="authBtns">
+      <!-- Dynamic content: Login/Register or User Info -->
+    </div>
+  </div>
 </header>
 
 <div class="container">
   
   <!-- MÀN HÌNH 1: DANH SÁCH GIẢI ĐẤU -->
   <div id="tourListScreen">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2 style="border:none;margin:0;font-size:18px">📋 Các giải đấu hiện có</h2>
-      <button class="btn btn-p btn-sm admin-only" onclick="showCreateTourModal()">➕ Tạo giải mới</button>
+    <div class="card-header">
+      <div class="card-title">📋 Danh sách giải đấu</div>
+      <button class="btn btn-primary btn-sm admin-only" onclick="showCreateTourModal()">➕ Tạo giải mới</button>
     </div>
-    <div id="tourListContainer" class="tour-list"></div>
+    <div id="tourListContainer" class="tour-grid"></div>
   </div>
 
   <!-- MÀN HÌNH 2: CHI TIẾT GIẢI ĐẤU -->
   <div id="tourDetailScreen" style="display:none">
-    <button class="btn btn-o btn-sm" style="color:var(--pb-dark);border-color:var(--bd);margin-bottom:16px" onclick="backToList()">← Quay lại danh sách giải</button>
+    <button class="btn btn-ghost btn-sm" style="color:var(--tx);border-color:var(--bd);margin-bottom:20px" onclick="backToList()">← Quay lại danh sách</button>
     
-    <div class="card" style="background:var(--pb-dark);color:#fff;border:none">
-      <h2 id="detailTourName" style="color:var(--pb-lime);border-color:rgba(255,255,255,0.2);font-size:20px">Tên giải</h2>
-      <p id="detailTourInfo" style="opacity:0.8;font-size:14px">📍 Địa điểm · 📅 Ngày</p>
+    <div class="card" style="background: var(--grad-primary); color: #fff; border: none;">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <h2 id="detailTourName" style="font-size:24px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+            Tên giải 
+            <button class="edit-name-btn admin-only" onclick="editTourName()" title="Sửa tên giải">✏️</button>
+          </h2>
+          <p id="detailTourInfo" style="opacity:0.9;font-size:15px">📍 Địa điểm · 📅 Ngày</p>
+        </div>
+        <div class="admin-only">
+          <span style="background:rgba(255,255,255,0.2);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700">Quản trị viên</span>
+        </div>
+      </div>
     </div>
 
     <!-- Tabs -->
@@ -151,11 +173,11 @@ tr:hover { background: #f8fafc; }
     <!-- TAB: BẢNG XẾP HẠNG -->
     <div class="tab active" id="tab-standings">
       <div class="card">
-        <div style="font-size:12px;color:var(--ts);margin-bottom:12px;padding:10px;background:#f8fafc;border-radius:8px;border-left:4px solid var(--pb-lime)">
+        <div style="font-size:13px;color:var(--ts);margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:10px;border-left:4px solid #6366f1">
           📏 <b>Quy tắc:</b> Thắng = 1 điểm, Thua = 0 điểm. <br>
-          ⚖️ <b>Tiêu chí xếp hạng:</b> Điểm → Hiệu số (Điểm thắng - Điểm thua) → Tên đội.
+          ⚖️ <b>Tiêu chí:</b> Điểm → Hiệu số (Điểm thắng - Điểm thua) → Tên đội.
         </div>
-        <div style="overflow-x:auto">
+        <div class="table-wrap">
           <table>
             <thead>
               <tr>
@@ -180,23 +202,26 @@ tr:hover { background: #f8fafc; }
     <div class="tab" id="tab-schedule">
       <!-- Admin Controls -->
       <div class="card admin-only admin-block">
-        <h2>⚙️ Quản lý Giải đấu</h2>
-        <div class="form-row">
-          <input type="text" id="newTeamName" placeholder="Tên đội / cặp đôi (VD: Nam A)" onkeypress="if(event.key==='Enter')addTeam()">
-          <button class="btn btn-p" onclick="addTeam()">Thêm</button>
+        <div class="card-header" style="margin-bottom:12px">
+          <div class="card-title">⚙️ Quản lý Đội & Lịch</div>
         </div>
-        <div id="teamsList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
+        <div class="form-row">
+          <input type="text" id="newTeamName" placeholder="Nhập tên đội / cặp đôi..." onkeypress="if(event.key==='Enter')addTeam()">
+          <button class="btn btn-primary" onclick="addTeam()">Thêm đội</button>
+        </div>
+        <div style="margin-bottom:16px;display:flex;align-items:center">
+          <span style="font-size:13px;color:var(--ts);font-weight:600">Danh sách đội:</span>
+          <span id="teamCountBadge" class="team-counter">0 đội</span>
+        </div>
+        <div id="teamsList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
         
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:12px;border-top:1px solid var(--bd)">
-          <button class="btn btn-s" onclick="generateSchedule()">⚡ Tạo lịch tự động</button>
-          <button class="btn btn-d btn-sm" onclick="resetSchedule()">🗑️ Xóa lịch & điểm</button>
-          <span style="margin-left:auto;font-size:12px;color:var(--ts)">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:16px;border-top:1px solid var(--bd)">
+          <button class="btn btn-success" onclick="generateSchedule()">⚡ Tạo lịch tự động</button>
+          <button class="btn btn-danger btn-sm" onclick="resetSchedule()">🗑️ Xóa lịch & điểm</button>
+          <span style="margin-left:auto;font-size:13px;color:var(--ts);font-weight:600">
             Tổng: <b id="totalMatches">0</b> · Đã đấu: <b id="completedMatches">0</b>
           </span>
         </div>
-        <div style="font-size:11px;color:var(--pb-red);margin-top:8px;font-weight:700">
-          ⚠️ Cảnh báo: Tạo lịch mới sẽ XÓA toàn bộ lịch và điểm số hiện tại của giải này.
-        </div
       </div>
 
       <div id="scheduleList"></div>
@@ -205,42 +230,57 @@ tr:hover { background: #f8fafc; }
 
 </div>
 
+<!-- MODAL: ĐĂNG NHẬP -->
+<div id="loginModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>🔑 Đăng nhập Admin</h2>
+    <div class="form-row" style="flex-direction:column">
+      <input type="text" id="loginUser" placeholder="Tên đăng nhập">
+      <input type="password" id="loginPass" placeholder="Mật khẩu" onkeypress="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="doLogin()">Đăng nhập</button>
+    <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--ts)">
+      Chưa có tài khoản? <a href="#" onclick="closeModal('loginModal');showModal('registerModal')" style="color:#6366f1;font-weight:700">Đăng ký ngay</a>
+    </p>
+    <button class="btn btn-ghost" style="width:100%;margin-top:12px;color:var(--tx);border-color:var(--bd)" onclick="closeModal('loginModal')">Hủy</button>
+  </div>
+</div>
+
+<!-- MODAL: ĐĂNG KÝ -->
+<div id="registerModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>📝 Đăng ký Admin mới</h2>
+    <div class="form-row" style="flex-direction:column">
+      <input type="text" id="regUser" placeholder="Tên đăng nhập (không dấu, không khoảng trắng)">
+      <input type="password" id="regPass" placeholder="Mật khẩu">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="doRegister()">Tạo tài khoản</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:12px;color:var(--tx);border-color:var(--bd)" onclick="closeModal('registerModal')">Hủy</button>
+  </div>
+</div>
+
 <!-- MODAL: TẠO GIẢI MỚI -->
 <div id="createTourModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🎉 Tạo giải đấu mới</h2>
-    <div class="form-row"><input type="text" id="c_ten_giai" placeholder="Tên giải (VD: CLB Pickleball Cup 2024)" required></div>
-    <div class="form-row"><input type="text" id="c_dia_diem" placeholder="Địa điểm (VD: Sân ABC, Q.1)" required></div>
-    <div class="form-row"><input type="date" id="c_ngay" required></div>
-    <div class="form-row"><input type="password" id="c_mat_khau" placeholder="Mật khẩu Admin (Mặc định: 123)" value="123"></div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn btn-p" style="flex:1" onclick="createNewTour()">Tạo giải</button>
-      <button class="btn btn-o" style="flex:1;color:var(--tx);border-color:var(--bd)" onclick="closeModal('createTourModal')">Hủy</button>
+    <div class="form-row" style="flex-direction:column">
+      <input type="text" id="c_ten_giai" placeholder="Tên giải (VD: CLB Pickleball Cup 2024)">
+      <input type="text" id="c_dia_diem" placeholder="Địa điểm (VD: Sân ABC, Q.1)">
+      <input type="date" id="c_ngay">
     </div>
-  </div>
-</div>
-
-<!-- MODAL: ĐĂNG NHẬP ADMIN -->
-<div id="loginModal" class="modal-overlay">
-  <div class="modal-box" style="text-align:center">
-    <h2>🔑 Đăng nhập Admin</h2>
-    <p style="font-size:13px;color:var(--ts);margin-bottom:16px">Nhập mật khẩu để quản lý giải đấu hiện tại.</p>
-    <input type="password" id="adminPwdInput" placeholder="Mật khẩu" style="width:100%;padding:12px;margin-bottom:16px;border:2px solid var(--bd);border-radius:8px;text-align:center;font-size:16px">
-    <button class="btn btn-p" style="width:100%" onclick="verifyAdmin()">Xác nhận</button>
-    <button class="btn btn-o" style="width:100%;margin-top:8px;color:var(--tx);border-color:var(--bd)" onclick="closeModal('loginModal')">Hủy</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="createNewTour()">Tạo giải</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:12px;color:var(--tx);border-color:var(--bd)" onclick="closeModal('createTourModal')">Hủy</button>
   </div>
 </div>
 
 <script>
 // ================= CẤU HÌNH SUPABASE =================
-// ⚠️ THAY THẾ 2 DÒNG DƯỚI ĐÂY BẰNG THÔNG TIN PROJECT CỦA BẠN
 const SUPABASE_URL = 'https://mvefkcaqvjflrgmaybev.supabase.co'.trim().replace(/\/+$/, '');
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12ZWZrY2FxdmpmbHJnbWF5YmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDAzOTksImV4cCI6MjEwMjE3NjM5OX0.vCY4_JlSBqi6QRh7DYWAe42Ot-pChKaVSHn7DY2C34Q'.trim();
-
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let CURRENT_USER = null; // { id, username }
 let CURRENT_TOUR = null;
-let IS_ADMIN = false;
 let TEAMS = [];
 let MATCHES = [];
 
@@ -252,6 +292,9 @@ function toast(msg, err = false) {
   setTimeout(() => t.className = '', 3000);
 }
 
+function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -260,13 +303,66 @@ function switchTab(tabName) {
   if (tabName === 'standings') renderStandings();
 }
 
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-// ================= KHỞI TẠO & DANH SÁCH GIẢI =================
-async function init() {
-  await loadTourList();
+// ================= AUTH =================
+function updateAuthUI() {
+  const container = document.getElementById('authBtns');
+  if (CURRENT_USER) {
+    container.innerHTML = `
+      <span style="color:#fff;font-weight:700;font-size:14px;margin-right:8px">👤 ${CURRENT_USER.username}</span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Đăng xuất</button>
+    `;
+    document.body.classList.add('is-admin');
+  } else {
+    container.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="showModal('loginModal')">Đăng nhập</button>
+      <button class="btn btn-primary btn-sm" style="background:#fff;color:#6366f1" onclick="showModal('registerModal')">Đăng ký</button>
+    `;
+    document.body.classList.remove('is-admin');
+  }
 }
 
+async function doRegister() {
+  const user = document.getElementById('regUser').value.trim().toLowerCase();
+  const pass = document.getElementById('regPass').value.trim();
+  if (!user || !pass) return toast('Vui lòng nhập đầy đủ thông tin', true);
+  if (user.includes(' ')) return toast('Tên đăng nhập không được có khoảng trắng', true);
+
+  const { error } = await sb.from('admin_users').insert({ username: user, password: pass });
+  if (error) {
+    if (error.code === '23505') return toast('Tên đăng nhập đã tồn tại!', true);
+    return toast('Lỗi: ' + error.message, true);
+  }
+  
+  closeModal('registerModal');
+  toast('✅ Đăng ký thành công! Hãy đăng nhập.');
+  showModal('loginModal');
+  document.getElementById('loginUser').value = user;
+}
+
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value.trim();
+  
+  const { data, error } = await sb.from('admin_users').select('*').eq('username', user).eq('password', pass).single();
+  if (error || !data) return toast('Sai tên đăng nhập hoặc mật khẩu!', true);
+  
+  CURRENT_USER = data;
+  sessionStorage.setItem('pb_admin_user', JSON.stringify(data));
+  closeModal('loginModal');
+  updateAuthUI();
+  toast('✅ Chào mừng, ' + CURRENT_USER.username);
+  loadTourList(); // Reload để hiện badge "Của bạn"
+}
+
+function doLogout() {
+  CURRENT_USER = null;
+  sessionStorage.removeItem('pb_admin_user');
+  updateAuthUI();
+  backToList();
+  toast('Đã đăng xuất');
+}
+
+// ================= DANH SÁCH GIẢI =================
 async function loadTourList() {
   document.getElementById('tourListScreen').style.display = 'block';
   document.getElementById('tourDetailScreen').style.display = 'none';
@@ -275,39 +371,34 @@ async function loadTourList() {
   const container = document.getElementById('tourListContainer');
   
   if (error || !tours || tours.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="icon">🎾</div>
-        <h3>Hệ thống hiện chưa có giải đấu nào</h3>
-        <p style="margin-top:8px">Hãy đăng nhập Admin để tạo giải đấu mới.</p>
-      </div>`;
+    container.innerHTML = `<div class="card" style="text-align:center;padding:60px;color:var(--ts)"><h3>🎾 Chưa có giải đấu nào</h3><p>Hãy đăng ký và tạo giải đầu tiên!</p></div>`;
     return;
   }
 
-  container.innerHTML = tours.map(t => `
+  container.innerHTML = tours.map(t => {
+    const isOwn = CURRENT_USER && t.admin_id === CURRENT_USER.id;
+    return `
     <div class="tour-card" onclick="openTour('${t.ma_giai}')">
-      <div>
-        <h3>${t.ten_giai}</h3>
-        <p>📍 ${t.dia_diem} · 📅 ${new Date(t.ngay_to_chuc).toLocaleDateString('vi-VN')}</p>
-      </div>
-      <div style="font-size:24px;color:var(--pb-lime)">→</div>
+      ${isOwn ? '<div class="badge-own">Của bạn</div>' : ''}
+      <h3>${t.ten_giai}</h3>
+      <p>📍 ${t.dia_diem || 'Chưa cập nhật'}</p>
+      <p>📅 ${new Date(t.ngay_to_chuc).toLocaleDateString('vi-VN')}</p>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function showCreateTourModal() {
-  if (!IS_ADMIN) return toggleAdmin(); // Yêu cầu đăng nhập nếu chưa là admin
-  document.getElementById('createTourModal').style.display = 'flex';
+  if (!CURRENT_USER) return showModal('loginModal');
   document.getElementById('c_ngay').valueAsDate = new Date();
+  showModal('createTourModal');
 }
 
 async function createNewTour() {
   const ten = document.getElementById('c_ten_giai').value.trim();
   const dia_diem = document.getElementById('c_dia_diem').value.trim();
   const ngay = document.getElementById('c_ngay').value;
-  const mk = document.getElementById('c_mat_khau').value.trim() || '123';
 
-  if (!ten || !dia_diem || !ngay) return toast('Vui lòng điền đầy đủ thông tin', true);
+  if (!ten || !ngay) return toast('Vui lòng nhập tên giải và ngày', true);
 
   const { data: lastTour } = await sb.from('robin_tour').select('ma_giai').order('ma_giai', { ascending: false }).limit(1);
   let nextNum = 1;
@@ -317,15 +408,18 @@ async function createNewTour() {
   }
   const ma_giai = 'G' + String(nextNum).padStart(3, '0');
 
-  const { error } = await sb.from('robin_tour').insert({ ma_giai, ten_giai: ten, dia_diem, ngay_to_chuc: ngay, mat_khau_admin: mk });
+  const { error } = await sb.from('robin_tour').insert({ 
+    ma_giai, ten_giai: ten, dia_diem, ngay_to_chuc: ngay, admin_id: CURRENT_USER.id 
+  });
+  
   if (error) return toast('Lỗi tạo giải: ' + error.message, true);
 
   closeModal('createTourModal');
-  toast('✅ Đã tạo giải đấu: ' + ten);
+  toast('✅ Đã tạo giải đấu thành công!');
   loadTourList();
 }
 
-// ================= CHI TIẾT GIẢI ĐẤU =================
+// ================= CHI TIẾT GIẢI =================
 async function openTour(ma_giai) {
   const { data: tour } = await sb.from('robin_tour').select('*').eq('ma_giai', ma_giai).single();
   if (!tour) return toast('Không tìm thấy giải đấu', true);
@@ -333,20 +427,38 @@ async function openTour(ma_giai) {
   CURRENT_TOUR = tour;
   document.getElementById('tourListScreen').style.display = 'none';
   document.getElementById('tourDetailScreen').style.display = 'block';
-  document.getElementById('detailTourName').textContent = tour.ten_giai;
-  document.getElementById('detailTourInfo').textContent = `📍 ${tour.dia_diem} · 📅 ${new Date(tour.ngay_to_chuc).toLocaleDateString('vi-VN')}`;
   
+  renderTourHeader();
   await loadData();
   
-  // Realtime
+  // Realtime Subscription
   sb.channel(`tour_${ma_giai}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'robin_team', filter: `ma_giai=eq.${ma_giai}` }, loadData)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'robin_tran_dau', filter: `ma_giai=eq.${ma_giai}` }, loadData)
     .subscribe();
 }
 
+function renderTourHeader() {
+  document.getElementById('detailTourName').childNodes[0].textContent = CURRENT_TOUR.ten_giai + ' ';
+  document.getElementById('detailTourInfo').textContent = `📍 ${CURRENT_TOUR.dia_diem || 'Chưa cập nhật'} · 📅 ${new Date(CURRENT_TOUR.ngay_to_chuc).toLocaleDateString('vi-VN')}`;
+}
+
+async function editTourName() {
+  const newName = prompt('Nhập tên giải đấu mới:', CURRENT_TOUR.ten_giai);
+  if (!newName || newName.trim() === '' || newName === CURRENT_TOUR.ten_giai) return;
+  
+  const { error } = await sb.from('robin_tour').update({ ten_giai: newName.trim() }).eq('ma_giai', CURRENT_TOUR.ma_giai);
+  if (error) return toast('Lỗi cập nhật: ' + error.message, true);
+  
+  CURRENT_TOUR.ten_giai = newName.trim();
+  renderTourHeader();
+  toast('✅ Đã đổi tên giải');
+}
+
 function backToList() {
   CURRENT_TOUR = null;
+  // Unsubscribe realtime
+  sb.removeAllChannels();
   loadTourList();
 }
 
@@ -365,33 +477,6 @@ async function loadData() {
   renderStandings();
 }
 
-// ================= ADMIN =================
-function toggleAdmin() {
-  if (IS_ADMIN) {
-    IS_ADMIN = false;
-    document.body.classList.remove('is-admin');
-    toast('Đã đăng xuất Admin');
-  } else {
-    document.getElementById('loginModal').style.display = 'flex';
-    document.getElementById('adminPwdInput').value = '';
-    setTimeout(() => document.getElementById('adminPwdInput').focus(), 100);
-  }
-}
-
-function verifyAdmin() {
-  const pwd = document.getElementById('adminPwdInput').value;
-  if (!CURRENT_TOUR) return toast('Vui lòng chọn một giải đấu trước', true);
-  
-  if (pwd === CURRENT_TOUR.mat_khau_admin) {
-    IS_ADMIN = true;
-    document.body.classList.add('is-admin');
-    closeModal('loginModal');
-    toast('✅ Đăng nhập Admin thành công');
-  } else {
-    toast('Sai mật khẩu!', true);
-  }
-}
-
 // ================= QUẢN LÝ ĐỘI =================
 async function addTeam() {
   const name = document.getElementById('newTeamName').value.trim();
@@ -405,26 +490,28 @@ async function addTeam() {
 }
 
 async function deleteTeam(id) {
-  if (!confirm('Xóa đội này? Lịch đấu liên quan cũng sẽ bị xóa.')) return;
+  if (!confirm('Xóa đội này? Các trận đấu liên quan sẽ bị xóa.')) return;
   await sb.from('robin_team').delete().eq('id', id);
   toast('Đã xóa đội');
 }
 
 function renderTeams() {
   const list = document.getElementById('teamsList');
+  document.getElementById('teamCountBadge').textContent = `${TEAMS.length} đội`;
+  
   if (TEAMS.length === 0) {
-    list.innerHTML = '<span style="color:var(--ts);font-size:13px">Chưa có đội nào. Hãy thêm đội để tạo lịch.</span>';
+    list.innerHTML = '<span style="color:var(--ts);font-size:13px;font-style:italic">Chưa có đội nào.</span>';
     return;
   }
   list.innerHTML = TEAMS.map(t => `
-    <div style="background:#f1f5f9;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;border:1px solid var(--bd)">
+    <div style="background:#f1f5f9;padding:8px 14px;border-radius:10px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;border:1px solid var(--bd)">
       🎾 ${t.ten_doi}
-      <button class="btn btn-d btn-sm" style="padding:2px 6px;font-size:10px;border-radius:50%" onclick="deleteTeam('${t.id}')">✕</button>
+      <button class="btn-icon" style="padding:4px 8px;font-size:12px" onclick="deleteTeam('${t.id}')">✕</button>
     </div>
   `).join('');
 }
 
-// ================= LỊCH THI ĐẤU (ROUND ROBIN) =================
+// ================= LỊCH THI ĐẤU =================
 function roundRobinAlgorithm(teams) {
   const list = teams.map(t => ({ id: t.id, name: t.ten_doi }));
   if (list.length % 2 !== 0) list.push({ id: null, name: 'BYE' });
@@ -450,20 +537,20 @@ function roundRobinAlgorithm(teams) {
 }
 
 async function generateSchedule() {
-  if (TEAMS.length < 2) return toast('Cần ít nhất 2 đội để tạo lịch', true);
+  if (TEAMS.length < 2) return toast('Cần ít nhất 2 đội', true);
   if (!confirm(`Tạo lịch cho ${TEAMS.length} đội?\n⚠️ TOÀN BỘ lịch và điểm số cũ sẽ bị XÓA.`)) return;
   
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
   const matches = roundRobinAlgorithm(TEAMS).map(m => ({ ...m, ma_giai: CURRENT_TOUR.ma_giai }));
   
   const { error } = await sb.from('robin_tran_dau').insert(matches);
-  if (error) return toast('Lỗi tạo lịch: ' + error.message, true);
+  if (error) return toast('Lỗi: ' + error.message, true);
   
   toast(`✅ Đã tạo ${matches.length} trận đấu`);
 }
 
 async function resetSchedule() {
-  if (!confirm('Xóa TOÀN BỘ lịch thi đấu và điểm số?')) return;
+  if (!confirm('Xóa TOÀN BỘ lịch và điểm số?')) return;
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
   toast('Đã xóa lịch và điểm');
 }
@@ -479,19 +566,19 @@ function renderSchedule() {
   
   const list = document.getElementById('scheduleList');
   if (MATCHES.length === 0) {
-    list.innerHTML = '<div class="card empty-state"><div class="icon">📅</div><h3>Chưa có lịch thi đấu</h3><p>Admin hãy bấm "Tạo lịch tự động" ở trên.</p></div>';
+    list.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--ts)"><h3>📅 Chưa có lịch thi đấu</h3><p>Admin hãy bấm "Tạo lịch tự động" ở trên.</p></div>';
     return;
   }
   
   const byRound = {};
-  MATCHES.forEach(m => {
-    if (!byRound[m.vong]) byRound[m.vong] = [];
-    byRound[m.vong].push(m);
-  });
+  MATCHES.forEach(m => { if (!byRound[m.vong]) byRound[m.vong] = []; byRound[m.vong].push(m); });
   
   list.innerHTML = Object.keys(byRound).sort((a,b) => a-b).map(round => `
     <div class="round-block">
-      <div class="round-head">Vòng ${round} <span style="opacity:0.7;font-weight:400">(${byRound[round].length} trận)</span></div>
+      <div class="round-head">
+        <span>VÒNG ${round}</span>
+        <span style="font-weight:400;color:var(--ts)">${byRound[round].length} trận</span>
+      </div>
       ${byRound[round].map(m => renderMatchRow(m)).join('')}
     </div>
   `).join('');
@@ -499,16 +586,13 @@ function renderSchedule() {
 
 function renderMatchRow(m) {
   const isDone = m.trang_thai === 'da_dau';
-  const canEdit = IS_ADMIN;
+  const canEdit = CURRENT_USER && CURRENT_TOUR && CURRENT_TOUR.admin_id === CURRENT_USER.id;
   const aWins = isDone && m.diem_a > m.diem_b;
   const bWins = isDone && m.diem_b > m.diem_a;
   
-  const nameA = getTeamName(m.doi_a_id);
-  const nameB = getTeamName(m.doi_b_id);
-
   return `
     <div class="match-row ${isDone ? 'da-dau' : ''}">
-      <div class="team-name team-a ${aWins ? 'winner-text' : ''}">${nameA}</div>
+      <div class="team-name team-a ${aWins ? 'winner-text' : ''}">${getTeamName(m.doi_a_id)}</div>
       
       ${canEdit ? 
         `<input type="number" class="score-input" id="sa-${m.id}" value="${m.diem_a ?? ''}" placeholder="-">` : 
@@ -522,16 +606,16 @@ function renderMatchRow(m) {
         `<div class="score ${bWins ? 'winner-score' : ''}">${m.diem_b ?? '-'}</div>`
       }
       
-      <div class="team-name team-b ${bWins ? 'winner-text' : ''}">${nameB}</div>
+      <div class="team-name team-b ${bWins ? 'winner-text' : ''}">${getTeamName(m.doi_b_id)}</div>
       
       ${canEdit ? `
-        <div style="grid-column:1/-1;display:flex;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
-          <button class="btn btn-s btn-sm" onclick="saveScore('${m.id}')">💾 Lưu tỷ số</button>
-          ${isDone ? `<button class="btn btn-d btn-sm" onclick="resetScore('${m.id}')">↺ Reset</button>` : ''}
+        <div style="grid-column:1/-1;display:flex;justify-content:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--bd)">
+          <button class="btn btn-success btn-sm" onclick="saveScore('${m.id}')">💾 Lưu tỷ số</button>
+          ${isDone ? `<button class="btn btn-danger btn-sm" onclick="resetScore('${m.id}')">↺ Reset</button>` : ''}
         </div>
       ` : `
-        <div style="grid-column:1/-1;text-align:center;margin-top:6px;font-size:12px;font-weight:700;color:${isDone ? 'var(--pb-green)' : 'var(--ts)'}">
-          ${isDone ? '✅ ĐÃ ĐẤU' : '⏳ CHƯA ĐẤU'}
+        <div style="grid-column:1/-1;text-align:center;margin-top:8px;font-size:12px;font-weight:800;color:${isDone ? '#059669' : 'var(--ts)'};text-transform:uppercase;letter-spacing:0.5px">
+          ${isDone ? '✅ Đã thi đấu' : '⏳ Chưa thi đấu'}
         </div>
       `}
     </div>
@@ -543,7 +627,7 @@ async function saveScore(id) {
   const sbVal = parseInt(document.getElementById('sb-' + id).value);
   
   if (isNaN(sa) || isNaN(sbVal)) return toast('Vui lòng nhập đủ 2 tỷ số', true);
-  if (sa === sbVal) return toast('Pickleball không có kết quả Hòa! Phải có phân thắng bại.', true);
+  if (sa === sbVal) return toast('Pickleball không có kết quả Hòa!', true);
   if (sa < 0 || sbVal < 0) return toast('Tỷ số không được âm', true);
   
   const { error } = await sb.from('robin_tran_dau').update({
@@ -551,7 +635,7 @@ async function saveScore(id) {
   }).eq('id', id);
   
   if (error) return toast('Lỗi: ' + error.message, true);
-  toast('✅ Đã lưu tỷ số');
+  toast('✅ Đã lưu tỷ số (Cập nhật realtime)');
 }
 
 async function resetScore(id) {
@@ -603,11 +687,11 @@ function renderStandings() {
     return `
       <tr class="${cls}">
         <td>${rank}</td>
-        <td style="text-align:left;font-weight:700">🎾 ${s.ten_doi}</td>
+        <td style="text-align:left;font-weight:800">🎾 ${s.ten_doi}</td>
         <td><b>${s.tran}</b>/${totalMatchesPerTeam}</td>
-        <td style="color:var(--pb-green);font-weight:800">${s.thang}</td>
-        <td style="color:var(--pb-red);font-weight:800">${s.thua}</td>
-        <td style="font-weight:900;font-size:16px">${s.diem}</td>
+        <td style="color:#059669;font-weight:800">${s.thang}</td>
+        <td style="color:#ef4444;font-weight:800">${s.thua}</td>
+        <td style="font-weight:900;font-size:18px">${s.diem}</td>
         <td>${s.diem_thang}</td>
         <td>${s.diem_thua}</td>
         <td class="${hsCls}">${hsStr}</td>
@@ -616,8 +700,15 @@ function renderStandings() {
   }).join('');
 }
 
-// Khởi chạy
-init();
+// ================= KHỞI TẠO =================
+(async () => {
+  const savedUser = sessionStorage.getItem('pb_admin_user');
+  if (savedUser) {
+    CURRENT_USER = JSON.parse(savedUser);
+  }
+  updateAuthUI();
+  loadTourList();
+})();
 </script>
 </body>
 </html>
