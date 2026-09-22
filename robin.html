@@ -46,6 +46,7 @@ body {
 .logo span { color: #fbbf24; }
 .auth-btns { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 .user-label { color: #fff; font-weight: 700; font-size: 12px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.super-admin-badge { background: #fbbf24; color: #000; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 4px; text-transform: uppercase; }
 
 /* ===== BUTTONS ===== */
 .btn {
@@ -93,6 +94,11 @@ body {
 .badge-own {
   position: absolute; top: 10px; right: 10px;
   background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800;
+  padding: 3px 8px; border-radius: 20px; text-transform: uppercase;
+}
+.badge-admin-manage {
+  position: absolute; top: 10px; right: 10px;
+  background: #dbeafe; color: #1e40af; font-size: 10px; font-weight: 800;
   padding: 3px 8px; border-radius: 20px; text-transform: uppercase;
 }
 
@@ -202,10 +208,10 @@ tr:hover td { background: #f8fafc; }
 #toast.err { border-left-color: #ef4444; background: #450a0a; }
 @keyframes slideIn { from { transform: translate(-50%,-20px); opacity: 0; } to { transform: translate(-50%,0); opacity: 1; } }
 
-/* ===== ADMIN ===== */
+/* ===== ADMIN CONTROLS ===== */
 .admin-only { display: none !important; }
-.is-admin .admin-only { display: flex !important; }
-.is-admin .admin-block { display: block !important; }
+.is-owner .admin-only { display: flex !important; }
+.is-owner .admin-block { display: block !important; }
 .admin-block { display: none; }
 .team-counter {
   background: #6366f1; color: #fff; padding: 2px 9px;
@@ -229,81 +235,32 @@ tr:hover td { background: #f8fafc; }
 .empty-state h3 { font-size: 15px; margin-bottom: 4px; color: var(--tx); }
 .empty-state p { font-size: 12px; }
 
-/* ===== EXPORT AREA (ẩn, dùng để chụp ảnh) ===== */
-#exportArea {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  width: 800px;
-}
+/* ===== EXPORT AREA ===== */
+#exportArea { position: absolute; left: -9999px; top: 0; width: 800px; }
 .export-card {
-  width: 800px;
-  min-height: 600px;
-  padding: 40px;
-  background: 
-    linear-gradient(135deg, rgba(99,102,241,0.95) 0%, rgba(139,92,246,0.95) 50%, rgba(236,72,153,0.95) 100%),
-    repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,0.04) 30px, rgba(255,255,255,0.04) 60px),
-    repeating-linear-gradient(-45deg, transparent, transparent 30px, rgba(255,255,255,0.04) 30px, rgba(255,255,255,0.04) 60px);
-  color: #fff;
-  font-family: 'Inter', system-ui, sans-serif;
-  position: relative;
-  overflow: hidden;
+  width: 800px; min-height: 600px; padding: 40px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.95) 0%, rgba(139,92,246,0.95) 50%, rgba(236,72,153,0.95) 100%),
+  repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,0.04) 30px, rgba(255,255,255,0.04) 60px),
+  repeating-linear-gradient(-45deg, transparent, transparent 30px, rgba(255,255,255,0.04) 30px, rgba(255,255,255,0.04) 60px);
+  color: #fff; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;
 }
 .export-card::before {
-  content: '🎾';
-  position: absolute;
-  font-size: 300px;
-  opacity: 0.08;
-  right: -50px;
-  bottom: -80px;
-  transform: rotate(-15deg);
+  content: '🎾'; position: absolute; font-size: 300px; opacity: 0.08;
+  right: -50px; bottom: -80px; transform: rotate(-15deg);
 }
-.export-header {
-  text-align: center;
-  margin-bottom: 30px;
-  position: relative;
-  z-index: 1;
-}
-.export-title {
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -1px;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  margin-bottom: 8px;
-}
-.export-subtitle {
-  font-size: 16px;
-  opacity: 0.9;
-  font-weight: 600;
-}
+.export-header { text-align: center; margin-bottom: 30px; position: relative; z-index: 1; }
+.export-title { font-size: 36px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 8px; }
+.export-subtitle { font-size: 16px; opacity: 0.9; font-weight: 600; }
 .export-table {
-  background: rgba(255,255,255,0.98);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  position: relative;
-  z-index: 1;
+  background: rgba(255,255,255,0.98); border-radius: 16px; overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; z-index: 1;
 }
-.export-table table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 16px;
-  min-width: 0;
-}
+.export-table table { width: 100%; border-collapse: collapse; font-size: 16px; min-width: 0; }
 .export-table th {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 16px 12px;
-  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff;
+  font-size: 12px; font-weight: 800; text-transform: uppercase; padding: 16px 12px; letter-spacing: 0.5px;
 }
-.export-table td {
-  padding: 14px 12px;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 15px;
-}
+.export-table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-size: 15px; }
 .export-table tr:last-child td { border-bottom: none; }
 .export-table .rank-1 td { background: #fef9c3 !important; font-weight: 800; }
 .export-table .rank-2 td { background: #f1f5f9 !important; font-weight: 700; }
@@ -312,15 +269,7 @@ tr:hover td { background: #f8fafc; }
 .export-table .td-rank { font-weight: 900; font-size: 18px; }
 .export-table .td-points { font-weight: 900; font-size: 18px; color: #6366f1; }
 .export-table .medal { font-size: 22px; margin-right: 4px; }
-.export-footer {
-  text-align: center;
-  margin-top: 24px;
-  font-size: 13px;
-  opacity: 0.8;
-  font-weight: 600;
-  position: relative;
-  z-index: 1;
-}
+.export-footer { text-align: center; margin-top: 24px; font-size: 13px; opacity: 0.8; font-weight: 600; position: relative; z-index: 1; }
 
 /* ===== RESPONSIVE ===== */
 @media (min-width: 480px) {
@@ -330,7 +279,6 @@ tr:hover td { background: #f8fafc; }
   th { font-size: 10px; padding: 10px 6px; }
   td { padding: 10px 6px; }
 }
-
 @media (min-width: 640px) {
   .tour-grid { grid-template-columns: repeat(2, 1fr); }
   .match-row { grid-template-columns: 1fr 60px 36px 60px 1fr; padding: 14px 18px; gap: 8px; }
@@ -340,7 +288,6 @@ tr:hover td { background: #f8fafc; }
   td { padding: 12px 8px; }
   .logo { font-size: 18px; }
 }
-
 @media (min-width: 768px) {
   .container { padding: 0 20px; margin: 20px auto; }
   .card { padding: 18px; }
@@ -357,7 +304,6 @@ tr:hover td { background: #f8fafc; }
 
 <div id="toast"></div>
 
-<!-- HEADER -->
 <header class="header">
   <div class="header-inner">
     <div class="logo">🎾 <span>PICKLEBALL</span> PRO</div>
@@ -366,8 +312,6 @@ tr:hover td { background: #f8fafc; }
 </header>
 
 <div class="container">
-
-  <!-- DANH SÁCH GIẢI -->
   <div id="tourListScreen">
     <div class="card-header">
       <div class="card-title" id="listTitle">📋 Danh sách giải</div>
@@ -376,10 +320,8 @@ tr:hover td { background: #f8fafc; }
     <div id="tourListContainer" class="tour-grid"></div>
   </div>
 
-  <!-- CHI TIẾT GIẢI -->
   <div id="tourDetailScreen" style="display:none">
     <button class="btn btn-ghost-dark btn-sm" style="margin-bottom:12px" onclick="backToList()">← Quay lại</button>
-
     <div class="card" style="background:var(--grad-primary);color:#fff;border:none">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <div style="flex:1;min-width:0">
@@ -389,7 +331,7 @@ tr:hover td { background: #f8fafc; }
           </h2>
           <p id="detailTourInfo" style="opacity:0.9;font-size:12px">📍 · 📅</p>
         </div>
-        <span class="admin-only" style="background:rgba(255,255,255,0.2);padding:3px 9px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap">Admin</span>
+        <span class="admin-only" id="ownerBadge" style="background:rgba(255,255,255,0.2);padding:3px 9px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap">Quản lý</span>
       </div>
     </div>
 
@@ -398,7 +340,6 @@ tr:hover td { background: #f8fafc; }
       <button class="tab-btn" onclick="switchTab('schedule',this)">📅 Lịch đấu</button>
     </div>
 
-    <!-- TAB XẾP HẠNG -->
     <div class="tab active" id="tab-standings">
       <div class="card">
         <div style="font-size:11px;color:var(--ts);margin-bottom:10px;padding:8px;background:#f8fafc;border-radius:8px;border-left:4px solid #6366f1">
@@ -426,7 +367,6 @@ tr:hover td { background: #f8fafc; }
       </div>
     </div>
 
-    <!-- TAB LỊCH ĐẤU -->
     <div class="tab" id="tab-schedule">
       <div class="card admin-only admin-block">
         <div class="card-header" style="margin-bottom:10px">
@@ -452,19 +392,17 @@ tr:hover td { background: #f8fafc; }
       <div id="scheduleList"></div>
     </div>
   </div>
-
 </div>
 
-<!-- DIV ẨN ĐỂ XUẤT ẢNH -->
 <div id="exportArea"></div>
 
-<!-- MODAL ĐĂNG NHẬP -->
+<!-- MODALS -->
 <div id="loginModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🔑 Đăng nhập</h2>
     <div class="form-row" style="flex-direction:column">
-      <input type="text" id="loginUser" placeholder="Tên đăng nhập (VD: admin)">
-      <input type="password" id="loginPass" placeholder="Mật khẩu (VD: 123)" onkeypress="if(event.key==='Enter')doLogin()">
+      <input type="text" id="loginUser" placeholder="Tên đăng nhập">
+      <input type="password" id="loginPass" placeholder="Mật khẩu" onkeypress="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="doLogin()">Đăng nhập</button>
     <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--ts)">
@@ -474,7 +412,6 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- MODAL ĐĂNG KÝ -->
 <div id="registerModal" class="modal-overlay">
   <div class="modal-box">
     <h2>📝 Đăng ký</h2>
@@ -487,7 +424,6 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- MODAL TẠO GIẢI -->
 <div id="createTourModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🎉 Tạo giải mới</h2>
@@ -508,7 +444,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let CURRENT_USER = null;
 let CURRENT_TOUR = null;
-let IS_TOUR_OWNER = false;
+let IS_TOUR_OWNER = false; 
 let TEAMS = [], MATCHES = [];
 
 // ===== TIỆN ÍCH =====
@@ -528,15 +464,27 @@ function switchTab(name, btn) {
   if (name === 'standings') renderStandings();
 }
 
+// ===== LOGIC PHÂN QUYỀN CỐT LÕI =====
+function isSuperAdmin() {
+  return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin';
+}
+
+function canManageTour(tour) {
+  if (!CURRENT_USER) return false;
+  // Admin toàn quyền HOẶC user thường là người tạo ra giải (admin_id trùng với id user)
+  return isSuperAdmin() || (tour.admin_id === CURRENT_USER.id);
+}
+
 // ===== AUTH =====
 function updateAuthUI() {
   const c = document.getElementById('authBtns');
   if (CURRENT_USER) {
-    c.innerHTML = `<span class="user-label">👤 ${CURRENT_USER.username}</span><button class="btn btn-ghost btn-sm" onclick="doLogout()">Thoát</button>`;
-    document.body.classList.add('is-admin');
+    const adminBadge = isSuperAdmin() ? '<span class="super-admin-badge">SUPER ADMIN</span>' : '';
+    c.innerHTML = `<span class="user-label">👤 ${CURRENT_USER.username}${adminBadge}</span><button class="btn btn-ghost btn-sm" onclick="doLogout()">Thoát</button>`;
+    document.body.classList.add('is-owner'); // Dùng class này để hiện nút quản lý
   } else {
     c.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="showModal('loginModal')">Đăng nhập</button><button class="btn btn-sm" style="background:#fff;color:#6366f1" onclick="showModal('registerModal')">Đăng ký</button>`;
-    document.body.classList.remove('is-admin');
+    document.body.classList.remove('is-owner');
   }
 }
 
@@ -545,6 +493,7 @@ async function doRegister() {
   const pass = document.getElementById('regPass').value.trim();
   if (!user || !pass) return toast('Nhập đầy đủ thông tin', true);
   if (user.includes(' ')) return toast('Tên không được có khoảng trắng', true);
+  if (user === 'admin') return toast('Tên này đã được hệ thống sử dụng', true);
   
   const { error } = await sb.from('admin_users').insert({ username: user, password: pass });
   if (error) {
@@ -560,25 +509,11 @@ async function doRegister() {
 async function doLogin() {
   const user = document.getElementById('loginUser').value.trim().toLowerCase();
   const pass = document.getElementById('loginPass').value.trim();
-  
   if (!user || !pass) return toast('Vui lòng nhập tên và mật khẩu', true);
 
-  console.log('Đang thử đăng nhập:', { user, pass }); // Debug log
-  
   const { data, error } = await sb.from('admin_users').select('*').eq('username', user).eq('password', pass).single();
+  if (error || !data) return toast('Sai tên đăng nhập hoặc mật khẩu!', true);
   
-  if (error) {
-    console.error('Lỗi Supabase khi đăng nhập:', error);
-    if (error.code === 'PGRST116') {
-      return toast('Sai tên đăng nhập hoặc mật khẩu!', true);
-    }
-    return toast('Lỗi kết nối: ' + error.message, true);
-  }
-  
-  if (!data) {
-    return toast('Sai tên đăng nhập hoặc mật khẩu!', true);
-  }
-
   CURRENT_USER = data;
   sessionStorage.setItem('pb_admin', JSON.stringify(data));
   closeModal('loginModal');
@@ -614,21 +549,28 @@ async function loadTourList() {
     return;
   }
   
-  const filtered = CURRENT_USER ? tours.filter(t => t.admin_id === CURRENT_USER.id) : tours;
+  // LOGIC LỌC DANH SÁCH
+  let filtered = tours;
+  if (CURRENT_USER) {
+    if (!isSuperAdmin()) {
+      // User thường chỉ thấy giải do mình tạo
+      filtered = tours.filter(t => t.admin_id === CURRENT_USER.id);
+    }
+  }
   
   if (filtered.length === 0) {
     c.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">📭</div><h3>Bạn chưa quản lý giải nào</h3><p>Bấm "➕ Tạo giải" để bắt đầu.</p></div>`;
-    title.textContent = '📋 Giải của tôi';
+    title.textContent = isSuperAdmin() ? '📋 Quản lý tất cả (Admin)' : '📋 Giải của tôi';
     return;
   }
   
-  title.textContent = CURRENT_USER ? '📋 Giải của tôi' : '📋 Tất cả giải đấu';
+  title.textContent = isSuperAdmin() ? '📋 Quản lý tất cả giải (Admin)' : (CURRENT_USER ? '📋 Giải của tôi' : '📋 Tất cả giải đấu');
   
   c.innerHTML = filtered.map(t => {
-    const own = CURRENT_USER && t.admin_id === CURRENT_USER.id;
+    const isOwner = canManageTour(t);
     const ngayStr = new Date(t.ngay_to_chuc).toLocaleDateString('vi-VN');
     return `<div class="tour-card" onclick="openTour('${t.ma_giai}')">
-      ${own ? '<div class="badge-own">Của bạn</div>' : ''}
+      ${isOwner ? (isSuperAdmin() ? '<div class="badge-admin-manage">Admin quản lý</div>' : '<div class="badge-own">Của bạn</div>') : ''}
       <h3>${t.ten_giai}</h3>
       <p>📍 ${t.dia_diem || 'Chưa cập nhật'}</p>
       <p>📅 ${ngayStr}</p>
@@ -670,23 +612,20 @@ async function openTour(mg) {
   if (!tour) return toast('Không tìm thấy giải', true);
   
   CURRENT_TOUR = tour;
-  IS_TOUR_OWNER = CURRENT_USER && tour.admin_id === CURRENT_USER.id;
+  IS_TOUR_OWNER = canManageTour(tour); // Kiểm tra quyền tại đây
   
   document.getElementById('tourListScreen').style.display = 'none';
   document.getElementById('tourDetailScreen').style.display = 'block';
   document.getElementById('tourNameText').textContent = tour.ten_giai;
   document.getElementById('detailTourInfo').textContent = `📍 ${tour.dia_diem || 'Chưa cập nhật'} · 📅 ${new Date(tour.ngay_to_chuc).toLocaleDateString('vi-VN')}`;
   
-  document.querySelectorAll('#tourDetailScreen .admin-only').forEach(el => {
-    el.style.display = IS_TOUR_OWNER ? '' : 'none';
-  });
-  document.querySelectorAll('#tourDetailScreen .admin-block').forEach(el => {
-    el.style.display = IS_TOUR_OWNER ? 'block' : 'none';
-  });
-  
+  // Cập nhật badge
+  const badge = document.getElementById('ownerBadge');
   if (IS_TOUR_OWNER) {
+    badge.textContent = isSuperAdmin() ? '👑 Super Admin' : '👤 Chủ giải';
     document.getElementById('tourDetailScreen').classList.add('is-owner');
   } else {
+    badge.textContent = '👁️ Chỉ xem';
     document.getElementById('tourDetailScreen').classList.remove('is-owner');
   }
   
@@ -727,21 +666,19 @@ async function loadData() {
   renderTeams(); renderSchedule(); renderStandings();
 }
 
-// ===== ĐỘI =====
+// ===== HÀNH ĐỘNG (Chỉ cho phép nếu IS_TOUR_OWNER === true) =====
 async function addTeam() {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   const name = document.getElementById('newTeamName').value.trim();
   if (!name) return toast('Nhập tên đội', true);
-  
   const { error } = await sb.from('robin_team').insert({ ma_giai: CURRENT_TOUR.ma_giai, ten_doi: name });
   if (error) return toast('Lỗi: ' + error.message, true);
-  
   document.getElementById('newTeamName').value = '';
   toast('✅ Đã thêm: ' + name);
 }
 
 async function deleteTeam(id) {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   if (!confirm('Xóa đội này?')) return;
   await sb.from('robin_team').delete().eq('id', id);
   toast('Đã xóa');
@@ -754,7 +691,6 @@ function renderTeams() {
   c.innerHTML = TEAMS.map(t => `<div class="team-tag">🎾 ${t.ten_doi}<button class="btn-icon" style="padding:2px 5px;font-size:10px" onclick="deleteTeam('${t.id}')">✕</button></div>`).join('');
 }
 
-// ===== LỊCH THI ĐẤU =====
 function roundRobin(teams) {
   const list = teams.map(t => ({ id: t.id, name: t.ten_doi }));
   if (list.length % 2) list.push({ id: null, name: 'BYE' });
@@ -771,20 +707,18 @@ function roundRobin(teams) {
 }
 
 async function generateSchedule() {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   if (TEAMS.length < 2) return toast('Cần ít nhất 2 đội', true);
   if (!confirm('Tạo lịch cho ' + TEAMS.length + ' đội?\nLịch cũ sẽ bị XÓA.')) return;
-  
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
   const matches = roundRobin(TEAMS).map(m => ({ ...m, ma_giai: CURRENT_TOUR.ma_giai }));
   const { error } = await sb.from('robin_tran_dau').insert(matches);
   if (error) return toast('Lỗi: ' + error.message, true);
-  
   toast('✅ Đã tạo ' + matches.length + ' trận');
 }
 
 async function resetSchedule() {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   if (!confirm('Xóa toàn bộ lịch và điểm?')) return;
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
   toast('Đã xóa');
@@ -834,20 +768,19 @@ function renderMatch(m) {
 }
 
 async function saveScore(id) {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   const a = parseInt(document.getElementById('sa-' + id).value);
   const b = parseInt(document.getElementById('sb-' + id).value);
   if (isNaN(a) || isNaN(b)) return toast('Nhập đủ 2 tỷ số', true);
   if (a === b) return toast('Không có hòa!', true);
   if (a < 0 || b < 0) return toast('Tỷ số không âm', true);
-  
   const { error } = await sb.from('robin_tran_dau').update({ diem_a: a, diem_b: b, trang_thai: 'da_dau' }).eq('id', id);
   if (error) return toast('Lỗi: ' + error.message, true);
   toast('✅ Đã lưu');
 }
 
 async function resetScore(id) {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   if (!confirm('Reset trận này?')) return;
   await sb.from('robin_tran_dau').update({ diem_a: null, diem_b: null, trang_thai: 'chua_dau' }).eq('id', id);
   toast('Đã reset');
@@ -909,12 +842,10 @@ function renderStandings() {
   }).join('');
 }
 
-// ===== XUẤT BẢNG XẾP HẠNG RA ẢNH =====
+// ===== XUẤT ẢNH =====
 async function exportStandings() {
   if (!TEAMS.length) return toast('Chưa có đội để xuất', true);
-  
   toast('📸 Đang tạo ảnh...');
-  
   const { sorted, total } = computeStandings();
   const ngayStr = new Date(CURRENT_TOUR.ngay_to_chuc).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
@@ -964,26 +895,16 @@ async function exportStandings() {
       </div>
     </div>
   `;
-  
   await new Promise(r => setTimeout(r, 100));
-  
   try {
     const card = exportArea.querySelector('.export-card');
-    const canvas = await html2canvas(card, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
-      logging: false
-    });
-    
+    const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `BXH_${CURRENT_TOUR.ten_giai.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast('✅ Đã tải ảnh bảng xếp hạng!');
     }, 'image/png');
