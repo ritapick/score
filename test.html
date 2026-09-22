@@ -110,7 +110,7 @@ body {
   padding: 10px 14px; border: none; border-radius: 10px;
   font-size: 13px; font-weight: 700; cursor: pointer;
   transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  text-decoration: none; white-space: nowrap; min-height: 42px; /* Tối ưu touch mobile */
+  text-decoration: none; white-space: nowrap; min-height: 42px;
 }
 .btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
 .btn-success { background: var(--grad-success); color: #fff; }
@@ -249,7 +249,7 @@ tr:hover td { background: #f8fafc; }
 .form-row input {
   flex: 1; min-width: 0; padding: 11px 12px; border: 2px solid var(--bd);
   border-radius: 10px; font-size: 15px; font-weight: 600;
-  min-height: 44px; /* Tránh iOS auto-zoom */
+  min-height: 44px;
 }
 .form-row input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 .modal-overlay {
@@ -337,7 +337,7 @@ tr:hover td { background: #f8fafc; }
 }
 .export-table td { 
   padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-size: 15px;
-  color: #1e3a8a !important; /* CHỮ XANH DƯƠNG ĐẬM */
+  color: #1e3a8a !important;
   font-weight: 600;
 }
 .export-table tr:last-child td { border-bottom: none; }
@@ -393,7 +393,6 @@ tr:hover td { background: #f8fafc; }
 
 <div id="toast"></div>
 
-<!-- HERO SECTION - PHONG CÁCH PICKLEBALL -->
 <header class="hero">
   <div class="hero-content">
     <div class="hero-logo">🎾 <span>PICKLEBALL</span> PRO</div>
@@ -491,7 +490,6 @@ tr:hover td { background: #f8fafc; }
 
 <div id="exportArea"></div>
 
-<!-- MODAL ĐĂNG NHẬP -->
 <div id="loginModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🔑 Đăng nhập</h2>
@@ -507,7 +505,6 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- MODAL ĐĂNG KÝ -->
 <div id="registerModal" class="modal-overlay">
   <div class="modal-box">
     <h2>📝 Đăng ký</h2>
@@ -520,7 +517,6 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- MODAL ĐỔI MẬT KHẨU -->
 <div id="changePwdModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🔑 Đổi mật khẩu</h2>
@@ -534,7 +530,6 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- MODAL TẠO GIẢI -->
 <div id="createTourModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🎉 Tạo giải mới</h2>
@@ -665,7 +660,6 @@ async function handleChangePassword() {
   document.getElementById('cp_confirm').value = '';
 }
 
-// ===== XÓA GIẢI (CẬP NHẬT DANH SÁCH NGAY) =====
 async function deleteTour(ma_giai, tourName) {
   if (!CURRENT_USER) return toast('Vui lòng đăng nhập', true);
   
@@ -678,7 +672,6 @@ async function deleteTour(ma_giai, tourName) {
   
   toast('🗑️ Đang xóa giải...');
   
-  // Hủy realtime để tránh conflict
   sb.removeAllChannels();
   if (CURRENT_TOUR && CURRENT_TOUR.ma_giai === ma_giai) {
     CURRENT_TOUR = null;
@@ -695,7 +688,7 @@ async function deleteTour(ma_giai, tourName) {
   if (e3) return toast('Lỗi xóa giải: ' + e3.message, true);
   
   toast('✅ Đã xóa giải: ' + tourName);
-  await loadTourList(); // Cập nhật danh sách ngay lập tức
+  await loadTourList();
 }
 
 async function deleteCurrentTour() {
@@ -703,25 +696,22 @@ async function deleteCurrentTour() {
   await deleteTour(CURRENT_TOUR.ma_giai, CURRENT_TOUR.ten_giai);
 }
 
-// ===== XÓA VĐV (CẬP NHẬT DANH SÁCH NGAY) =====
 async function deleteTeam(id, teamName) {
   if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
-  
   if (!confirm(`Xóa đội "${teamName}"?\n\nCác trận đấu liên quan cũng sẽ bị xóa.`)) return;
   
   toast('🗑️ Đang xóa đội...');
-  
   const { error } = await sb.from('robin_team').delete().eq('id', id);
+  
   if (error) {
     console.error('Lỗi xóa đội:', error);
     return toast('Lỗi: ' + error.message, true);
   }
   
   toast('✅ Đã xóa đội: ' + teamName);
-  await loadData(); // Cập nhật UI ngay lập tức
+  await loadData();
 }
 
-// ===== DANH SÁCH GIẢI =====
 async function loadTourList() {
   document.getElementById('tourListScreen').style.display = 'block';
   document.getElementById('tourDetailScreen').style.display = 'none';
@@ -762,7 +752,7 @@ async function loadTourList() {
       if (t.admin_id === CURRENT_USER.id) {
         badgeHtml = '<div class="badge-own">Của bạn</div>';
       } else {
-        badgeHtml = '<div class="badge-admin-manage">👑 Admin QL</div>'; // ĐÃ BỎ THÔNG TIN USER TẠO
+        badgeHtml = '<div class="badge-admin-manage">👑 Admin QL</div>';
       }
     } else if (isOwner) {
       badgeHtml = '<div class="badge-own">Của bạn</div>';
@@ -810,7 +800,6 @@ async function createNewTour() {
   loadTourList();
 }
 
-// ===== CHI TIẾT GIẢI =====
 async function openTour(mg) {
   const { data: tour } = await sb.from('robin_tour').select('*').eq('ma_giai', mg).single();
   if (!tour) return toast('Không tìm thấy giải', true);
@@ -834,7 +823,6 @@ async function openTour(mg) {
   
   await loadData();
   
-  // Hủy subscription cũ trước khi tạo mới
   sb.removeAllChannels();
   sb.channel('tour_' + mg)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'robin_team', filter: 'ma_giai=eq.' + mg }, loadData)
@@ -872,23 +860,40 @@ async function loadData() {
   renderTeams(); renderSchedule(); renderStandings();
 }
 
-// ===== HÀNH ĐỘNG =====
+// ===== ĐÃ SỬA LỖI: THÊM await loadData() ĐỂ CẬP NHẬT UI NGAY =====
 async function addTeam() {
-  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
+  if (!IS_TOUR_OWNER) return toast('Bạn không có quyền quản lý giải này', true);
   const name = document.getElementById('newTeamName').value.trim();
-  if (!name) return toast('Nhập tên đội', true);
-  const { error } = await sb.from('robin_team').insert({ ma_giai: CURRENT_TOUR.ma_giai, ten_doi: name });
-  if (error) return toast('Lỗi: ' + error.message, true);
+  if (!name) return toast('Vui lòng nhập tên đội', true);
+  
+  const { error } = await sb.from('robin_team').insert({ 
+    ma_giai: CURRENT_TOUR.ma_giai, 
+    ten_doi: name 
+  });
+  
+  if (error) {
+    console.error('Lỗi thêm đội:', error);
+    return toast('Lỗi: ' + error.message, true);
+  }
+  
   document.getElementById('newTeamName').value = '';
-  toast('✅ Đã thêm: ' + name);
+  toast('✅ Đã thêm đội: ' + name);
+  
+  // QUAN TRỌNG: Gọi loadData() ngay lập tức để danh sách đội cập nhật tức thì
+  await loadData(); 
 }
 
 function renderTeams() {
   document.getElementById('teamCountBadge').textContent = TEAMS.length;
   const c = document.getElementById('teamsList');
   if (!TEAMS.length) { c.innerHTML = '<span style="color:var(--ts);font-size:11px;font-style:italic">Chưa có đội.</span>'; return; }
-  // Truyền tên đội vào hàm deleteTeam để hiển thị confirm chính xác
-  c.innerHTML = TEAMS.map(t => `<div class="team-tag">🎾 ${t.ten_doi}<button class="btn-icon" style="padding:2px 5px;font-size:10px" onclick="deleteTeam('${t.id}', '${t.ten_doi.replace(/'/g, "\\'")}')">✕</button></div>`).join('');
+  
+  c.innerHTML = TEAMS.map(t => `
+    <div class="team-tag">
+      🎾 ${t.ten_doi}
+      <button class="btn-icon" style="padding:2px 5px;font-size:10px" onclick="deleteTeam('${t.id}', '${t.ten_doi.replace(/'/g, "\\'")}')">✕</button>
+    </div>
+  `).join('');
 }
 
 function roundRobin(teams) {
@@ -986,7 +991,6 @@ async function resetScore(id) {
   toast('Đã reset');
 }
 
-// ===== BẢNG XẾP HẠNG =====
 function getMedal(rank) {
   if (rank === 1) return '<span class="medal">🥇</span>';
   if (rank === 2) return '<span class="medal">🥈</span>';
@@ -1042,7 +1046,6 @@ function renderStandings() {
   }).join('');
 }
 
-// ===== XUẤT ẢNH =====
 async function exportStandings() {
   if (!TEAMS.length) return toast('Chưa có đội để xuất', true);
   toast('📸 Đang tạo ảnh...');
@@ -1114,7 +1117,6 @@ async function exportStandings() {
   }
 }
 
-// ===== KHỞI TẠO =====
 (async () => {
   const u = sessionStorage.getItem('pb_admin');
   if (u) CURRENT_USER = JSON.parse(u);
