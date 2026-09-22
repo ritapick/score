@@ -104,6 +104,15 @@ body {
 }
 .badge-admin-manage small { font-size: 9px; font-weight: 600; display: block; margin-top: 2px; opacity: 0.8; }
 
+/* Nút xóa trên tour card */
+.tour-delete-btn {
+  position: absolute; bottom: 10px; right: 10px;
+  background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;
+  padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 3px;
+}
+.tour-delete-btn:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+
 /* ===== TABS ===== */
 .tabs {
   display: flex; background: #f1f5f9; border-radius: 10px;
@@ -323,7 +332,10 @@ tr:hover td { background: #f8fafc; }
   </div>
 
   <div id="tourDetailScreen" style="display:none">
-    <button class="btn btn-ghost-dark btn-sm" style="margin-bottom:12px" onclick="backToList()">← Quay lại</button>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-ghost-dark btn-sm" onclick="backToList()">← Quay lại</button>
+      <button class="btn btn-danger btn-sm admin-only" onclick="deleteCurrentTour()" style="margin-left:auto">🗑️ Xóa giải này</button>
+    </div>
     <div class="card" style="background:var(--grad-primary);color:#fff;border:none">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <div style="flex:1;min-width:0">
@@ -427,7 +439,7 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- MODAL ĐỔI MẬT KHẨU (MỚI) -->
+<!-- MODAL ĐỔI MẬT KHẨU -->
 <div id="changePwdModal" class="modal-overlay">
   <div class="modal-box">
     <h2>🔑 Đổi mật khẩu</h2>
@@ -482,7 +494,7 @@ function switchTab(name, btn) {
   if (name === 'standings') renderStandings();
 }
 
-// ===== LOGIC PHÂN QUYỀN CỐT LÕI =====
+// ===== LOGIC PHÂN QUYỀN =====
 function isSuperAdmin() {
   return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin';
 }
@@ -563,11 +575,9 @@ async function handleChangePassword() {
   if (newPwd !== confirm) return toast('Mật khẩu mới không khớp', true);
   if (newPwd.length < 3) return toast('Mật khẩu mới quá ngắn (tối thiểu 3 ký tự)', true);
 
-  // 1. Xác thực mật khẩu hiện tại
   const { data, error: vErr } = await sb.from('admin_users').select('id').eq('id', CURRENT_USER.id).eq('password', current).single();
   if (vErr || !data) return toast('Mật khẩu hiện tại không đúng', true);
 
-  // 2. Cập nhật mật khẩu mới
   const { error: uErr } = await sb.from('admin_users').update({ password: newPwd }).eq('id', CURRENT_USER.id);
   if (uErr) return toast('Lỗi cập nhật: ' + uErr.message, true);
 
@@ -576,6 +586,47 @@ async function handleChangePassword() {
   document.getElementById('cp_current').value = '';
   document.getElementById('cp_new').value = '';
   document.getElementById('cp_confirm').value = '';
+}
+
+// ===== XÓA GIẢI (MỚI) =====
+async function deleteTour(ma_giai, tourName) {
+  if (!CURRENT_USER) return toast('Vui lòng đăng nhập', true);
+  
+  // Lấy thông tin giải để kiểm tra quyền
+  const { data: tour } = await sb.from('robin_tour').select('*').eq('ma_giai', ma_giai).single();
+  if (!tour) return toast('Không tìm thấy giải', true);
+  if (!canManageTour(tour)) return toast('Bạn không có quyền xóa giải này', true);
+  
+  // Confirm 2 lần để tránh xóa nhầm
+  if (!confirm(`⚠️ Bạn có chắc muốn xóa giải "${tourName}"?\n\nToàn bộ đội, lịch thi đấu và điểm số sẽ bị XÓA VĨNH VIỄN!`)) return;
+  if (!confirm(`🔴 XÁC NHẬN LẦN CUỐI: XÓA GIẢI "${tourName}"?\n\nHành động này KHÔNG THỂ HOÀN TÁC!`)) return;
+  
+  toast('🗑️ Đang xóa giải...');
+  
+  // Xóa theo thứ tự: trận đấu → đội → giải (do có FK)
+  const { error: e1 } = await sb.from('robin_tran_dau').delete().eq('ma_giai', ma_giai);
+  if (e1) return toast('Lỗi xóa trận đấu: ' + e1.message, true);
+  
+  const { error: e2 } = await sb.from('robin_team').delete().eq('ma_giai', ma_giai);
+  if (e2) return toast('Lỗi xóa đội: ' + e2.message, true);
+  
+  const { error: e3 } = await sb.from('robin_tour').delete().eq('ma_giai', ma_giai);
+  if (e3) return toast('Lỗi xóa giải: ' + e3.message, true);
+  
+  toast('✅ Đã xóa giải: ' + tourName);
+  
+  // Nếu đang ở màn hình chi tiết của giải vừa xóa → quay về danh sách
+  if (CURRENT_TOUR && CURRENT_TOUR.ma_giai === ma_giai) {
+    CURRENT_TOUR = null;
+    IS_TOUR_OWNER = false;
+    sb.removeAllChannels();
+  }
+  loadTourList();
+}
+
+async function deleteCurrentTour() {
+  if (!CURRENT_TOUR) return;
+  await deleteTour(CURRENT_TOUR.ma_giai, CURRENT_TOUR.ten_giai);
 }
 
 // ===== DANH SÁCH GIẢI =====
@@ -597,7 +648,6 @@ async function loadTourList() {
     return;
   }
   
-  // Lấy danh sách user để map tên người tạo
   const { data: users } = await sb.from('admin_users').select('id, username');
   const userMap = {};
   if (users) users.forEach(u => userMap[u.id] = u.username);
@@ -631,12 +681,18 @@ async function loadTourList() {
       badgeHtml = '<div class="badge-own">Của bạn</div>';
     }
 
+    // Nút xóa: chỉ hiện nếu user có quyền quản lý giải này
+    const deleteBtnHtml = isOwner 
+      ? `<button class="tour-delete-btn" onclick="event.stopPropagation(); deleteTour('${t.ma_giai}', '${t.ten_giai.replace(/'/g, "\\'")}')">🗑️ Xóa</button>` 
+      : '';
+
     return `<div class="tour-card" onclick="openTour('${t.ma_giai}')">
       ${badgeHtml}
       <h3>${t.ten_giai}</h3>
       <p>👤 Tạo bởi: <b>${creatorName}</b></p>
       <p>📍 ${t.dia_diem || 'Chưa cập nhật'}</p>
       <p>📅 ${ngayStr}</p>
+      ${deleteBtnHtml}
     </div>`;
   }).join('');
 }
