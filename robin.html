@@ -463,8 +463,8 @@ tr:hover td { background: #f8fafc; }
   <div class="modal-box">
     <h2>🔑 Đăng nhập</h2>
     <div class="form-row" style="flex-direction:column">
-      <input type="text" id="loginUser" placeholder="Tên đăng nhập">
-      <input type="password" id="loginPass" placeholder="Mật khẩu" onkeypress="if(event.key==='Enter')doLogin()">
+      <input type="text" id="loginUser" placeholder="Tên đăng nhập (VD: admin)">
+      <input type="password" id="loginPass" placeholder="Mật khẩu (VD: 123)" onkeypress="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="doLogin()">Đăng nhập</button>
     <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--ts)">
@@ -508,7 +508,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let CURRENT_USER = null;
 let CURRENT_TOUR = null;
-let IS_TOUR_OWNER = false; // Cờ kiểm tra quyền sở hữu giải hiện tại
+let IS_TOUR_OWNER = false;
 let TEAMS = [], MATCHES = [];
 
 // ===== TIỆN ÍCH =====
@@ -545,6 +545,7 @@ async function doRegister() {
   const pass = document.getElementById('regPass').value.trim();
   if (!user || !pass) return toast('Nhập đầy đủ thông tin', true);
   if (user.includes(' ')) return toast('Tên không được có khoảng trắng', true);
+  
   const { error } = await sb.from('admin_users').insert({ username: user, password: pass });
   if (error) {
     if (error.code === '23505') return toast('Tên đã tồn tại!', true);
@@ -559,8 +560,25 @@ async function doRegister() {
 async function doLogin() {
   const user = document.getElementById('loginUser').value.trim().toLowerCase();
   const pass = document.getElementById('loginPass').value.trim();
+  
+  if (!user || !pass) return toast('Vui lòng nhập tên và mật khẩu', true);
+
+  console.log('Đang thử đăng nhập:', { user, pass }); // Debug log
+  
   const { data, error } = await sb.from('admin_users').select('*').eq('username', user).eq('password', pass).single();
-  if (error || !data) return toast('Sai tên hoặc mật khẩu!', true);
+  
+  if (error) {
+    console.error('Lỗi Supabase khi đăng nhập:', error);
+    if (error.code === 'PGRST116') {
+      return toast('Sai tên đăng nhập hoặc mật khẩu!', true);
+    }
+    return toast('Lỗi kết nối: ' + error.message, true);
+  }
+  
+  if (!data) {
+    return toast('Sai tên đăng nhập hoặc mật khẩu!', true);
+  }
+
   CURRENT_USER = data;
   sessionStorage.setItem('pb_admin', JSON.stringify(data));
   closeModal('loginModal');
@@ -577,12 +595,11 @@ function doLogout() {
   toast('Đã đăng xuất');
 }
 
-// ===== DANH SÁCH GIẢI (Admin chỉ thấy giải của mình, sort theo ngày gần nhất) =====
+// ===== DANH SÁCH GIẢI =====
 async function loadTourList() {
   document.getElementById('tourListScreen').style.display = 'block';
   document.getElementById('tourDetailScreen').style.display = 'none';
   
-  // Sort theo ngày tổ chức giảm dần (gần nhất lên đầu)
   const { data: tours, error } = await sb.from('robin_tour')
     .select('*')
     .order('ngay_to_chuc', { ascending: false })
@@ -597,7 +614,6 @@ async function loadTourList() {
     return;
   }
   
-  // Lọc: Admin chỉ thấy giải của mình, khách xem tất cả
   const filtered = CURRENT_USER ? tours.filter(t => t.admin_id === CURRENT_USER.id) : tours;
   
   if (filtered.length === 0) {
@@ -631,6 +647,7 @@ async function createNewTour() {
   const dd = document.getElementById('c_dia_diem').value.trim();
   const ngay = document.getElementById('c_ngay').value;
   if (!ten || !ngay) return toast('Nhập tên giải và ngày', true);
+  
   const { data: last } = await sb.from('robin_tour').select('ma_giai').order('ma_giai', { ascending: false }).limit(1);
   let n = 1;
   if (last && last.length && last[0].ma_giai.startsWith('G')) {
@@ -638,8 +655,10 @@ async function createNewTour() {
     if (!isNaN(cur)) n = cur + 1;
   }
   const mg = 'G' + String(n).padStart(3, '0');
+  
   const { error } = await sb.from('robin_tour').insert({ ma_giai: mg, ten_giai: ten, dia_diem: dd, ngay_to_chuc: ngay, admin_id: CURRENT_USER.id });
   if (error) return toast('Lỗi: ' + error.message, true);
+  
   closeModal('createTourModal');
   toast('✅ Đã tạo giải!');
   loadTourList();
@@ -649,8 +668,8 @@ async function createNewTour() {
 async function openTour(mg) {
   const { data: tour } = await sb.from('robin_tour').select('*').eq('ma_giai', mg).single();
   if (!tour) return toast('Không tìm thấy giải', true);
+  
   CURRENT_TOUR = tour;
-  // Kiểm tra quyền sở hữu
   IS_TOUR_OWNER = CURRENT_USER && tour.admin_id === CURRENT_USER.id;
   
   document.getElementById('tourListScreen').style.display = 'none';
@@ -658,14 +677,13 @@ async function openTour(mg) {
   document.getElementById('tourNameText').textContent = tour.ten_giai;
   document.getElementById('detailTourInfo').textContent = `📍 ${tour.dia_diem || 'Chưa cập nhật'} · 📅 ${new Date(tour.ngay_to_chuc).toLocaleDateString('vi-VN')}`;
   
-  // Chỉ hiện nút admin nếu là chủ giải
   document.querySelectorAll('#tourDetailScreen .admin-only').forEach(el => {
     el.style.display = IS_TOUR_OWNER ? '' : 'none';
   });
   document.querySelectorAll('#tourDetailScreen .admin-block').forEach(el => {
     el.style.display = IS_TOUR_OWNER ? 'block' : 'none';
   });
-  // Override CSS class để đảm bảo quyền
+  
   if (IS_TOUR_OWNER) {
     document.getElementById('tourDetailScreen').classList.add('is-owner');
   } else {
@@ -683,8 +701,10 @@ async function editTourName() {
   if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
   const n = prompt('Tên giải mới:', CURRENT_TOUR.ten_giai);
   if (!n || !n.trim() || n === CURRENT_TOUR.ten_giai) return;
+  
   const { error } = await sb.from('robin_tour').update({ ten_giai: n.trim() }).eq('ma_giai', CURRENT_TOUR.ma_giai);
   if (error) return toast('Lỗi: ' + error.message, true);
+  
   CURRENT_TOUR.ten_giai = n.trim();
   document.getElementById('tourNameText').textContent = n.trim();
   toast('✅ Đã đổi tên');
@@ -707,13 +727,15 @@ async function loadData() {
   renderTeams(); renderSchedule(); renderStandings();
 }
 
-// ===== ĐỘI (chỉ owner mới thao tác được) =====
+// ===== ĐỘI =====
 async function addTeam() {
   if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
   const name = document.getElementById('newTeamName').value.trim();
   if (!name) return toast('Nhập tên đội', true);
+  
   const { error } = await sb.from('robin_team').insert({ ma_giai: CURRENT_TOUR.ma_giai, ten_doi: name });
   if (error) return toast('Lỗi: ' + error.message, true);
+  
   document.getElementById('newTeamName').value = '';
   toast('✅ Đã thêm: ' + name);
 }
@@ -752,10 +774,12 @@ async function generateSchedule() {
   if (!IS_TOUR_OWNER) return toast('Bạn không có quyền', true);
   if (TEAMS.length < 2) return toast('Cần ít nhất 2 đội', true);
   if (!confirm('Tạo lịch cho ' + TEAMS.length + ' đội?\nLịch cũ sẽ bị XÓA.')) return;
+  
   await sb.from('robin_tran_dau').delete().eq('ma_giai', CURRENT_TOUR.ma_giai);
   const matches = roundRobin(TEAMS).map(m => ({ ...m, ma_giai: CURRENT_TOUR.ma_giai }));
   const { error } = await sb.from('robin_tran_dau').insert(matches);
   if (error) return toast('Lỗi: ' + error.message, true);
+  
   toast('✅ Đã tạo ' + matches.length + ' trận');
 }
 
@@ -787,7 +811,7 @@ function renderSchedule() {
 
 function renderMatch(m) {
   const done = m.trang_thai === 'da_dau';
-  const canEdit = IS_TOUR_OWNER; // Chỉ owner mới nhập điểm được
+  const canEdit = IS_TOUR_OWNER;
   const aW = done && m.diem_a > m.diem_b;
   const bW = done && m.diem_b > m.diem_a;
   return `<div class="match-row ${done ? 'da-dau' : ''}">
@@ -816,6 +840,7 @@ async function saveScore(id) {
   if (isNaN(a) || isNaN(b)) return toast('Nhập đủ 2 tỷ số', true);
   if (a === b) return toast('Không có hòa!', true);
   if (a < 0 || b < 0) return toast('Tỷ số không âm', true);
+  
   const { error } = await sb.from('robin_tran_dau').update({ diem_a: a, diem_b: b, trang_thai: 'da_dau' }).eq('id', id);
   if (error) return toast('Lỗi: ' + error.message, true);
   toast('✅ Đã lưu');
@@ -828,7 +853,7 @@ async function resetScore(id) {
   toast('Đã reset');
 }
 
-// ===== BẢNG XẾP HẠNG (với huy chương) =====
+// ===== BẢNG XẾP HẠNG =====
 function getMedal(rank) {
   if (rank === 1) return '<span class="medal">🥇</span>';
   if (rank === 2) return '<span class="medal">🥈</span>';
@@ -893,7 +918,6 @@ async function exportStandings() {
   const { sorted, total } = computeStandings();
   const ngayStr = new Date(CURRENT_TOUR.ngay_to_chuc).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  // Render nội dung vào div ẩn
   const exportArea = document.getElementById('exportArea');
   exportArea.innerHTML = `
     <div class="export-card">
@@ -941,7 +965,6 @@ async function exportStandings() {
     </div>
   `;
   
-  // Đợi render xong
   await new Promise(r => setTimeout(r, 100));
   
   try {
@@ -953,7 +976,6 @@ async function exportStandings() {
       logging: false
     });
     
-    // Tải ảnh về
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
