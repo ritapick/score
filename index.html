@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Pickleball CUP - Trang chủ</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+<style>
+:root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171}
+*{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+button,input,select{font:inherit}.hidden{display:none!important}
+h1,h2,h3,h4,.logo,.event-chip{font-family:'Oswald',sans-serif}
+
+.topnav{position:sticky;top:0;z-index:50;background:rgba(10,16,29,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.brand-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.logo{color:var(--li);font-weight:700;font-size:18px;text-transform:uppercase;font-style:italic}
+.logo span{color:var(--tx)}
+.nav-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.user-chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--li);padding:5px 10px;border-radius:999px}
+.btn{border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;transition:.15s}
+.btn-primary{background:var(--li);color:#0b1220}
+.btn-primary:hover{background:#bef264}
+.btn-blue{background:rgba(34,211,238,.15);color:var(--cy);border:1px solid rgba(34,211,238,.4)}
+.btn-light{background:rgba(148,163,184,.15);color:var(--mu)}
+.btn-sm{padding:4px 9px;font-size:11px}
+
+.hero{padding:40px 20px;text-align:center;background:linear-gradient(120deg,#14532d,#3f6212 60%,#166534);border-bottom:1px solid rgba(163,230,53,.35);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
+.hero h1{margin:0 0 8px;font-size:34px;text-transform:uppercase;position:relative;z-index:1;letter-spacing:.02em}
+.hero p{margin:0;opacity:.9;position:relative;z-index:1;font-size:14px}
+.hero .subtitle{font-size:13px;opacity:.75;margin-top:4px}
+
+main{max-width:1200px;margin:0 auto;padding:20px 12px 40px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin:0 0 16px;flex-wrap:wrap;gap:8px}
+.section-header h2{margin:0;color:var(--li);text-transform:uppercase;font-size:18px;letter-spacing:.5px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.tournament-card{
+  background:var(--sf);
+  border:1px solid var(--ln);
+  border-radius:16px;
+  padding:22px;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+  text-decoration:none;
+  color:inherit;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.tournament-card::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:4px;
+  background:var(--li);
+  transform:scaleY(0);
+  transition:transform .2s;
+  transform-origin:top;
+}
+.tournament-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--li);
+  box-shadow:0 8px 24px rgba(163,230,53,.15);
+}
+.tournament-card:hover::before{transform:scaleY(1)}
+
+.tournament-card h3{
+  margin:0;
+  font-size:22px;
+  color:var(--li);
+  text-transform:uppercase;
+  line-height:1.2;
+  letter-spacing:.02em;
+}
+
+.info-row{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-size:13px;
+  color:var(--mu);
+  line-height:1.5;
+}
+.info-row .icon{
+  font-size:16px;
+  flex-shrink:0;
+  margin-top:1px;
+}
+.info-row .text{
+  flex:1;
+  word-break:break-word;
+}
+
+.card-sponsors{
+  padding-top:12px;
+  border-top:1px dashed var(--ln);
+}
+.card-sponsors-label{
+  font-size:10px;
+  color:var(--mu);
+  text-transform:uppercase;
+  font-weight:700;
+  letter-spacing:.8px;
+  margin-bottom:8px;
+  font-family:'Oswald',sans-serif;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.card-sponsors-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  min-height:48px;
+}
+.card-sponsor-item{
+  flex:0 0 58px;
+  width:58px;
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  transition:all .2s ease;
+  text-decoration:none;
+  pointer-events:auto;
+}
+.card-sponsor-item:hover{transform:scale(1.08);filter:brightness(1.15)}
+.card-sponsor-item img{
+  max-width:100%;
+  max-height:100%;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  display:block;
+}
+.card-sponsors-grid .loading{
+  color:var(--mu);
+  font-size:11px;
+  font-style:italic;
+}
+
+.events-section{
+  padding-top:14px;
+  border-top:1px solid var(--ln);
+}
+.events-label{
+  font-size:11px;
+  color:var(--mu);
+  text-transform:uppercase;
+  font-weight:700;
+  letter-spacing:.8px;
+  margin-bottom:8px;
+  font-family:'Oswald',sans-serif;
+}
+.events-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  min-height:28px;
+}
+.event-chip{
+  display:inline-block;
+  padding:5px 11px;
+  background:rgba(34,211,238,.1);
+  color:var(--cy);
+  border:1px solid rgba(34,211,238,.25);
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.3px;
+  transition:all .15s;
+}
+.tournament-card:hover .event-chip{
+  background:rgba(34,211,238,.18);
+  border-color:rgba(34,211,238,.4);
+}
+.events-list .loading,
+.events-list .empty{
+  color:var(--mu);
+  font-size:12px;
+  font-style:italic;
+  padding:5px 0;
+}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(4,8,16,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+.modal-backdrop.show{display:flex}
+.modal{width:min(460px,100%);background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:22px}
+.modal h3{margin:0 0 4px;text-transform:uppercase;color:var(--li)}
+.modal .sub{color:var(--mu);font-size:12px;margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--mu);text-transform:uppercase}
+.field input{width:100%;background:#0d1626;border:1px solid var(--ln);border-radius:10px;padding:11px;color:var(--tx);font:inherit}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.msg{padding:10px;border-radius:10px;font-size:13px;margin-top:12px;display:none;white-space:pre-wrap}
+.msg.show{display:block}
+.msg-error{background:rgba(248,113,113,.15);color:var(--rd)}
+.msg-info{background:rgba(34,211,238,.15);color:var(--cy)}
+
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.b-gray{background:rgba(148,163,184,.15);color:var(--mu)}
+.b-blue{background:rgba(34,211,238,.15);color:var(--cy)}
+
+.empty{
+  text-align:center;
+  padding:60px 20px;
+  color:var(--mu);
+  background:var(--sf);
+  border:1px dashed var(--ln);
+  border-radius:16px;
+}
+.empty h2{color:var(--li);margin:0 0 8px;text-transform:uppercase;font-size:20px}
+.empty p{margin:0 0 16px;font-size:14px}
+
+footer{
+  text-align:center;
+  padding:24px 16px;
+  color:var(--mu);
+  font-size:12px;
+  border-top:1px solid var(--ln);
+  margin-top:40px;
+}
+footer .heart{color:var(--rd)}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:10px 18px;border-radius:999px;font-weight:800;font-size:12px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+
+@media(max-width:760px){
+  .hero{padding:28px 16px}
+  .hero h1{font-size:26px}
+  .hero p{font-size:13px}
+  main{padding:16px 10px 32px}
+  .grid{grid-template-columns:1fr}
+  .tournament-card{padding:18px}
+  .tournament-card h3{font-size:20px}
+  .card-sponsor-item{flex:0 0 52px;width:52px;height:52px}
+}
+
+@media(max-width:400px){
+  .hero h1{font-size:22px}
+  .hero p{font-size:12px}
+  .tournament-card h3{font-size:18px}
+  .event-chip{font-size:10px;padding:4px 9px}
+  .card-sponsor-item{flex:0 0 46px;width:46px;height:46px}
+  .section-header h2{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+<div class="brand-row">
+  <span class="logo">⚡ Pickle<span>ball CUP</span></span>
+</div>
+<div class="nav-right">
+  <span id="user-chip" class="user-chip hidden"></span>
+  <!-- 🌟 Link tới admin.html, sẽ hoạt động nhờ SSO qua sessionStorage -->
+  <button id="admin-btn" class="btn btn-blue hidden" onclick="location.href='admin.html'">⚙ Quản trị</button>
+  <button id="login-btn" class="btn btn-primary" onclick="openLogin()">Đăng nhập</button>
+  <button id="logout-btn" class="btn btn-light hidden" onclick="doLogout()">Đăng xuất</button>
+</div>
+</nav>
+
+<div class="hero">
+  <h1>🏓 Pickleball CUP</h1>
+  <p>Hệ thống quản lý giải đấu</p>
+  <p class="subtitle">Theo dõi lịch thi đấu & kết quả</p>
+</div>
+
+<main>
+  <div class="section-header">
+    <h2>🏆 Các giải đấu</h2>
+    <span id="tournament-count" class="badge b-gray">Đang tải...</span>
+  </div>
+  
+  <div id="tournaments-grid" class="grid"></div>
+  
+  <div id="empty-state" class="empty hidden">
+    <h2>🎾 Chưa có giải đấu nào</h2>
+    <p>Liên hệ admin để tạo giải đấu mới hoặc quay lại sau.</p>
+    <button class="btn btn-primary hidden" id="create-btn" onclick="location.href='admin.html'">
+      ➕ Tạo giải đấu đầu tiên
+    </button>
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 Pickleball CUP <span class="heart">❤</span> KARAOKE RITA</p>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<!-- 🌟 MODAL ĐĂNG NHẬP ĐÃ ĐƯỢC CẬP NHẬT ĐỂ DÙNG admin_users -->
+<div id="login-modal" class="modal-backdrop">
+  <div class="modal">
+    <h3>🔐 Đăng nhập</h3>
+    <div class="sub">Nhập tên đăng nhập và mật khẩu tài khoản quản trị.</div>
+    <div class="field">
+      <label>Tên đăng nhập</label>
+      <input id="login-username" placeholder="VD: admin" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Mật khẩu</label>
+      <input id="login-password" type="password" placeholder="Mật khẩu" autocomplete="current-password"/>
+    </div>
+    <div class="actions">
+      <button class="btn btn-light" onclick="closeLogin()">Đóng</button>
+      <button class="btn btn-primary" onclick="doLogin()">Đăng nhập</button>
+    </div>
+    <div id="login-message" class="msg"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://mvefkcaqvjflrgmaybev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12ZWZrY2FxdmpmbHJnbWF5YmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDAzOTksImV4cCI6MjEwMjE3NjM5OX0.vCY4_JlSBqi6QRh7DYWAe42Ot-pChKaVSHn7DY2C34Q";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 🌟 STATE DÙNG CHUNG VỚI CÁC FILE KHÁC
+let CURRENT_USER = null;
+let tournaments = [];
+
+function el(id) { return document.getElementById(id); }
+
+// 🌟 Chỉ có username === 'admin' mới được coi là admin (đồng bộ với các file trước)
+function isAdmin() {
+  return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin';
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function showToast(msg, type) {
+  const t = el("toast");
+  t.textContent = msg;
+  t.className = "toast show";
+  t.style.background = type === "err" ? "var(--rd)" : "var(--li)";
+  t.style.color = type === "err" ? "#fff" : "#0b1220";
+  clearTimeout(window._tTO);
+  window._tTO = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+async function loadSponsorsForCard(tid) {
+  const box = el("sponsors-" + tid);
+  if (!box) return;
+  const section = box.closest(".card-sponsors");
+  
+  try {
+    const { data, error } = await sb.from("sponsors").select("*")
+      .eq("tournament_id", tid)
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    
+    if (error) throw error;
+    const list = data || [];
+    
+    if (list.length === 0) {
+      if (section) section.remove();
+      return;
+    }
+    
+    const items = list.map(s => {
+      if (!s.logo_url) return '';
+      let href = s.website_url || '';
+      if (href && href.indexOf('http') !== 0) href = 'https://' + href;
+      return `<a class="card-sponsor-item" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.name || href)}" onclick="event.stopPropagation()">
+        <img src="${escapeHtml(s.logo_url)}" alt="${escapeHtml(s.name || 'Nhà tài trợ')}" loading="lazy" onerror="this.parentElement.style.display='none';checkEmptySponsors('${tid}')">
+      </a>`;
+    }).filter(Boolean).join("");
+    
+    box.innerHTML = items;
+    
+    if (!box.innerHTML.trim()) {
+      if (section) section.remove();
+    }
+  } catch (e) {
+    console.error("loadSponsorsForCard:", e);
+    if (section) section.remove();
+  }
+}
+
+function checkEmptySponsors(tid) {
+  const box = el("sponsors-" + tid);
+  if (!box) return;
+  const section = box.closest(".card-sponsors");
+  if (!section) return;
+  
+  const visible = Array.from(box.querySelectorAll(".card-sponsor-item"))
+    .filter(item => item.style.display !== "none" && item.offsetHeight > 0);
+  
+  if (visible.length === 0) {
+    section.remove();
+  }
+}
+
+async function loadTournaments() {
+  const { data, error } = await sb.from("tournaments")
+    .select("id,name,start_date,location_name,status")
+    .order("start_date", { ascending: false });
+  
+  if (error) {
+    console.error("Lỗi tải giải đấu:", error);
+    showToast("⚠️ Không tải được giải đấu", "err");
+    return;
+  }
+  
+  tournaments = data || [];
+  el("tournament-count").textContent = tournaments.length + " giải";
+  el("tournament-count").className = "badge b-blue";
+  
+  await renderTournaments();
+}
+
+async function loadEventsForTournament(tid) {
+  try {
+    const { data, error } = await sb.from("events")
+      .select("name")
+      .eq("tournament_id", tid)
+      .order("created_at", { ascending: true });
+    
+    if (error) throw error;
+    return (data || []).map(e => e.name).filter(Boolean);
+  } catch (e) {
+    console.error("Lỗi tải events:", e);
+    return [];
+  }
+}
+
+async function renderTournaments() {
+  const grid = el("tournaments-grid");
+  const emptyState = el("empty-state");
+  const createBtn = el("create-btn");
+  
+  if (!tournaments.length) {
+    grid.innerHTML = "";
+    emptyState.classList.remove("hidden");
+    if (isAdmin()) createBtn.classList.remove("hidden");
+    return;
+  }
+  
+  emptyState.classList.add("hidden");
+  
+  grid.innerHTML = tournaments.map(t => {
+    const dateText = t.start_date || "Chưa có ngày";
+    const locationText = t.location_name || "Chưa có địa điểm";
+    
+    return `<a class="tournament-card" href="tournament.html?id=${t.id}">
+      <h3>${escapeHtml(t.name || "Giải đấu")}</h3>
+      
+      <div class="info-row">
+        <span class="icon">📅</span>
+        <span class="text">${escapeHtml(dateText)}</span>
+      </div>
+      
+      <div class="info-row">
+        <span class="icon">📍</span>
+        <span class="text">${escapeHtml(locationText)}</span>
+      </div>
+      
+      <div class="events-section">
+        <div class="events-label">🎾 Nội dung thi đấu</div>
+        <div class="events-list" id="events-${t.id}">
+          <span class="loading">Đang tải...</span>
+        </div>
+      </div>
+      
+      <div class="card-sponsors">
+        <div class="card-sponsors-label">🤝 Nhà tài trợ</div>
+        <div class="card-sponsors-grid" id="sponsors-${t.id}">
+          <span class="loading">Đang tải...</span>
+        </div>
+      </div>
+    </a>`;
+  }).join("");
+  
+  for (const t of tournaments) {
+    loadEventsForTournament(t.id).then(eventNames => {
+      const box = el("events-" + t.id);
+      if (!box) return;
+      
+      if (eventNames.length === 0) {
+        box.innerHTML = '<span class="empty">Chưa có nội dung</span>';
+        return;
+      }
+      
+      box.innerHTML = eventNames.map(name =>
+        `<span class="event-chip">${escapeHtml(name)}</span>`
+      ).join("");
+    });
+    
+    loadSponsorsForCard(t.id);
+  }
+}
+
+function openLogin() {
+  el("login-modal").classList.add("show");
+  el("login-message").className = "msg";
+  el("login-username").value = "";
+  el("login-password").value = "";
+  setTimeout(() => el("login-username").focus(), 100);
+}
+
+function closeLogin() {
+  el("login-modal").classList.remove("show");
+}
+
+function loginMsg(t, m) {
+  const b = el("login-message");
+  b.className = "msg show msg-" + t;
+  b.textContent = m;
+}
+
+// 🌟 LOGIC ĐĂNG NHẬP MỚI: DÙNG BẢNG admin_users
+async function doLogin() {
+  const user = el("login-username").value.trim().toLowerCase();
+  const pass = el("login-password").value;
+  
+  if (!user || !pass) {
+    loginMsg("error", "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
+    return;
+  }
+  
+  loginMsg("info", "Đang đăng nhập...");
+  
+  try {
+    const { data, error } = await sb.from('admin_users')
+      .select('*')
+      .eq('username', user)
+      .eq('password', pass)
+      .maybeSingle();
+      
+    if (error) throw error;
+    
+    if (!data) {
+      loginMsg("error", "❌ Sai tên đăng nhập hoặc mật khẩu!");
+      return;
+    }
+    
+    // 🌟 LƯU SESSION VÀO sessionStorage ĐỂ SHARE SANG admin.html
+    CURRENT_USER = data;
+    sessionStorage.setItem('pb_admin', JSON.stringify(CURRENT_USER));
+    
+    closeLogin();
+    applyAuthUI();
+    showToast("✅ Xin chào " + CURRENT_USER.username);
+    
+  } catch (e) {
+    loginMsg("error", "Lỗi kết nối: " + e.message);
+  }
+}
+
+// 🌟 LOGIC ĐĂNG XUẤT MỚI
+function doLogout() {
+  CURRENT_USER = null;
+  sessionStorage.removeItem('pb_admin');
+  applyAuthUI();
+  showToast("👋 Đã đăng xuất");
+}
+
+function applyAuthUI() {
+  const logged = !!CURRENT_USER;
+  el("login-btn").classList.toggle("hidden", logged);
+  el("logout-btn").classList.toggle("hidden", !logged);
+  el("user-chip").classList.toggle("hidden", !logged);
+  
+  // 🌟 Chỉ admin mới thấy nút Quản trị
+  el("admin-btn").classList.toggle("hidden", !isAdmin());
+  
+  if (logged) {
+    const roleText = isAdmin() ? " • ADMIN" : "";
+    el("user-chip").textContent = "👤 " + CURRENT_USER.username + roleText;
+  }
+  
+  const createBtn = el("create-btn");
+  if (createBtn && !tournaments.length && isAdmin()) {
+    createBtn.classList.remove("hidden");
+  }
+}
+
+// Event Listeners cho Modal
+document.addEventListener("DOMContentLoaded", () => {
+  const pwd = el("login-password");
+  if (pwd) pwd.addEventListener("keydown", e => {
+    if (e.key === "Enter") doLogin();
+  });
+  const usr = el("login-username");
+  if (usr) usr.addEventListener("keydown", e => {
+    if (e.key === "Enter") el("login-password").focus();
+  });
+});
+
+el("login-modal").addEventListener("click", e => {
+  if (e.target.id === "login-modal") closeLogin();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && el("login-modal").classList.contains("show")) {
+    closeLogin();
+  }
+});
+
+// 🌟 KHỞI TẠO: KHÔI PHỤC SESSION TỪ sessionStorage (SSO)
+(async () => {
+  const u = sessionStorage.getItem('pb_admin');
+  if (u) {
+    try { CURRENT_USER = JSON.parse(u); } catch (e) { sessionStorage.removeItem('pb_admin'); }
+  }
+  applyAuthUI();
+  await loadTournaments();
+})();
+</script>
+</body>
+</html>
