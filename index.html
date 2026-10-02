@@ -73,35 +73,36 @@ td.diff.pos{color:var(--li)}
 td.diff.neg{color:var(--rd)}
 td.pf{font-family:monospace;color:var(--cy)}
 
-/* 🌟 GIAO DIỆN LỊCH THI ĐẤU 1 DÒNG + SUB-ROW (ĐÃ SỬA LỖI HIỂN THỊ) */
+/* 🌟 GIAO DIỆN LỊCH THI ĐẤU - ĐÃ SỬA LỖI */
 .match-list{display:flex;flex-direction:column;gap:6px}
-.match-item{background:var(--sf2);border:1px solid var(--ln);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;transition:.2s}
+.match-item{background:var(--sf2);border:1px solid var(--ln);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;transition:.2s;min-width:0}
 .match-item.live{border-left:3px solid var(--rd);background:rgba(248,113,113,.08);animation:pulseLive 2s infinite}
 .match-item.finished{border-left:3px solid var(--li);opacity:.95}
 .match-item.ko{border-left:3px solid var(--or)}
 .match-item.ck{border-left:3px solid var(--li);background:rgba(163,230,53,.05)}
 @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 4px rgba(248,113,113,0)}}
 
-.match-main-row{display:flex;align-items:center;gap:6px;width:100%}
-.match-main-row .m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:11px;min-width:32px;text-align:center;flex-shrink:0}
+.match-main-row{display:grid;grid-template-columns:32px 1fr auto 1fr auto;gap:4px;align-items:center;width:100%;min-width:0}
+.match-main-row .m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:11px;text-align:center}
 .match-item.ko .m-code{color:var(--or)}
 .match-item.ck .m-code{color:var(--li);font-size:12px}
 
-.match-main-row .m-team{flex:1;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-main-row .m-team{font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .match-main-row .m-team.home{color:var(--li);text-align:right}
 .match-main-row .m-team.away{color:var(--cy);text-align:left}
 .match-main-row .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
 
-/* 🌟 SỬA LỖI: flex-shrink: 0 và min-width để ô tỷ số không bị nén */
+/*  SỬA LỖI TỶ SỐ: Dùng grid để cố định vị trí */
 .match-main-row .m-score{
     font-family:monospace;font-weight:800;font-size:13px;color:var(--tx);
-    min-width:45px; text-align:center;
+    min-width:48px; text-align:center;
     background:#0d1626; padding:3px 6px; border-radius:6px;
-    flex-shrink:0; border:1px solid var(--ln);
+    border:1px solid var(--ln);
+    white-space:nowrap;
 }
 .match-main-row .m-score.done{color:var(--li);border-color:rgba(163,230,53,.3);background:rgba(163,230,53,.05)}
 
-.status-tag{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:800;white-space:nowrap;flex-shrink:0}
+.status-tag{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:800;white-space:nowrap}
 .status-tag.live{background:var(--rd);color:#fff;animation:blink 1s infinite}
 .status-tag.finished, .status-tag.completed{background:rgba(163,230,53,.2);color:var(--li)}
 .status-tag.scheduled{background:rgba(148,163,184,.2);color:var(--mu)}
@@ -146,10 +147,11 @@ td.pf{font-family:monospace;color:var(--cy)}
   .t-card .t-name{font-size:14px}
   table{font-size:10px}
   th,td{padding:4px 3px}
-  td.team-name{max-width:90px;font-size:10px}
+  td.team-name{max-width:80px;font-size:10px}
+  .match-main-row{grid-template-columns:28px 1fr auto 1fr auto;gap:3px}
   .match-main-row .m-team{font-size:10px}
-  .match-main-row .m-score{font-size:12px;min-width:40px;padding:2px 4px}
-  .match-main-row .m-code{font-size:10px;min-width:28px}
+  .match-main-row .m-score{font-size:12px;min-width:42px;padding:2px 4px}
+  .match-main-row .m-code{font-size:10px}
   .section-title{font-size:13px}
   .match-serve-info{font-size:9px;padding-left:32px}
 }
@@ -220,14 +222,14 @@ function toast(msg) {
   if (window._tt) clearTimeout(window._tt);
   window._tt = setTimeout(function(){ t.className = "toast"; }, 2000);
 }
-function findTeam(id) { for(var i=0;i<DATA.teams.length;i++) if(DATA.teams[i].id===id) return DATA.teams[i]; return null; }
-function tName(id) { var t=findTeam(id); return t?sn(t.name):null; }
+function findTeam(id) { if(!id) return null; for(var i=0;i<DATA.teams.length;i++) if(DATA.teams[i].id===id) return DATA.teams[i]; return null; }
+function tName(id) { if(!id) return null; var t=findTeam(id); return t?sn(t.name):null; }
 function isAdmin() { return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin'; }
 
 function getPlayerName(playerId) {
   if (!playerId) return null;
-  var p = DATA.players.find(p => p.id === playerId);
-  return p ? p.full_name : null;
+  var p = DATA.players.find(function(x) { return x.id === playerId; });
+  return p ? p.full_name : 'VĐV';
 }
 
 function isOwnerOfTournament(t) {
@@ -270,41 +272,48 @@ function applyUI() {
   el("user-chip").classList.toggle("hidden", !logged);
   if (logged) {
     var role = isAdmin() ? "ADMIN" : "ORG";
-    el("user-chip").textContent = "👤 " + CURRENT_USER.username + " • " + role;
+    el("user-chip").textContent = " " + CURRENT_USER.username + " • " + role;
   }
 }
 
-/* === 🌟 SUPABASE REALTIME (CẬP NHẬT NGAY LẬP TỨC) === */
+/* === 🌟 SUPABASE REALTIME - ĐÃ SỬA LỖI === */
 function startRealtime() {
   stopRealtime();
   if (!DATA.eid) return;
   
-  // Đăng ký kênh real-time cho bảng matches của event hiện tại
-  realtimeChannel = sb.channel('public:matches')
-    .on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'matches', filter: `event_id=eq.${DATA.eid}` }, 
-      payload => {
-        const newMatch = payload.new;
-        const oldMatch = payload.old;
-        
-        // Cập nhật vào mảng DATA.matches
-        const idx = DATA.matches.findIndex(m => m.id === newMatch.id);
-        if (idx !== -1) {
-          DATA.matches[idx] = newMatch;
-        } else {
-          DATA.matches.push(newMatch);
+  try {
+    realtimeChannel = sb.channel('matches:' + DATA.eid)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'matches', filter: 'event_id=eq.' + DATA.eid }, 
+        function(payload) {
+          try {
+            var eventType = payload.eventType;
+            var newMatch = payload.new;
+            var oldMatch = payload.old;
+            
+            if (eventType === 'INSERT') {
+              DATA.matches.push(newMatch);
+            } else if (eventType === 'UPDATE') {
+              var idx = DATA.matches.findIndex(function(m) { return m.id === newMatch.id; });
+              if (idx !== -1) DATA.matches[idx] = newMatch;
+            } else if (eventType === 'DELETE') {
+              DATA.matches = DATA.matches.filter(function(m) { return m.id !== oldMatch.id; });
+            }
+            
+            // Cập nhật DOM ngay lập tức
+            updateMatchRowsDOM();
+          } catch(e) { console.error('Realtime handler error:', e); }
         }
-        
-        // Render lại ngay lập tức để hiển thị thay đổi
-        updateMatchRowsDOM();
-      }
-    )
-    .subscribe();
+      )
+      .subscribe(function(status) {
+        console.log('Realtime status:', status);
+      });
+  } catch(e) { console.error('Start realtime error:', e); }
 }
 
 function stopRealtime() {
   if (realtimeChannel) {
-    sb.removeChannel(realtimeChannel);
+    try { sb.removeChannel(realtimeChannel); } catch(e) {}
     realtimeChannel = null;
   }
 }
@@ -314,7 +323,7 @@ function updateMatchRowsDOM() {
     var row = document.querySelector('.match-item[data-match-id="' + m.id + '"]');
     if (!row) return;
     
-    // 🌟 LOGIC TRẠNG THÁI CHUẨN
+    // 🌟 LOGIC TRẠNG THÁI CHUẨN TỪ DB
     var status = m.match_status;
     if (!status) {
       status = (Number(m.home_score)>0 || Number(m.away_score)>0) ? "finished" : "scheduled";
@@ -335,7 +344,7 @@ function updateMatchRowsDOM() {
       var statusText = "⏳ Chưa đấu";
       var statusClass = "scheduled";
       if (status === 'live') {
-        statusText = "🔴 LIVE";
+        statusText = " LIVE";
         statusClass = "live";
       } else if (status === 'finished' || status === 'completed') {
         statusText = "✅ FIN";
@@ -345,7 +354,7 @@ function updateMatchRowsDOM() {
       statusEl.textContent = statusText;
     }
 
-    // 3. Update Row Classes (for border/animation)
+    // 3. Update Row Classes
     row.classList.remove('live', 'finished');
     if (status === 'live') row.classList.add('live');
     else if (status === 'finished' || status === 'completed') row.classList.add('finished');
@@ -353,7 +362,7 @@ function updateMatchRowsDOM() {
     // 4. Update Serve Info Sub-row
     var serveInfoEl = row.querySelector('.match-serve-info');
     if (status === 'live' && m.serving_player_id) {
-      var pName = getPlayerName(m.serving_player_id) || 'VĐV';
+      var pName = getPlayerName(m.serving_player_id);
       var turn = m.serving_turn || 1;
       var newText = '🏓 ' + pName + ' đang giao (L' + turn + ')';
       if (!serveInfoEl) {
@@ -426,10 +435,11 @@ async function loadEventDetail(eid) {
       return Object.assign({}, x, { members: m });
     });
     
+    // 🌟 Flatten players
     DATA.players = [];
     DATA.teams.forEach(function(tm) {
       tm.members.forEach(function(m) {
-        if (m.players && !DATA.players.find(p => p.id === m.players.id)) {
+        if (m.players && !DATA.players.find(function(p) { return p.id === m.players.id; })) {
           DATA.players.push(m.players);
         }
       });
@@ -450,7 +460,7 @@ async function loadEventDetail(eid) {
     DATA.matches = m.data || [];
     
     render();
-    startRealtime(); // 🌟 Kích hoạt real-time ngay khi load xong
+    startRealtime();
   } catch(e) { console.error("Load event detail error:", e); }
 }
 
@@ -548,7 +558,7 @@ function renderTournamentList() {
     H += '<span>🏷️ Mã: ' + esc(t.code) + '</span>';
     H += '</div>';
     if (canManage) {
-      H += '<a class="manage-btn" href="admin.html?tournament=' + encodeURIComponent(t.id) + '" onclick="event.stopPropagation()">⚙ Quản lý</a>';
+      H += '<a class="manage-btn" href="admin.html?tournament=' + encodeURIComponent(t.id) + '" onclick="event.stopPropagation()"> Quản lý</a>';
     }
     H += '</div>';
   });
@@ -561,8 +571,8 @@ function renderTournamentDetail() {
   if (!t) return '';
   var statusCls = t.display_status || "not_started";
   var statusText = "";
-  if (statusCls === "not_started") statusText = "⏳ Chưa diễn ra";
-  else if (statusCls === "in_progress") statusText = "🔴 Đang diễn ra";
+  if (statusCls === "not_started") statusText = " Chưa diễn ra";
+  else if (statusCls === "in_progress") statusText = " Đang diễn ra";
   else statusText = "✅ Đã kết thúc";
   
   var canManage = isOwnerOfTournament(t);
@@ -594,11 +604,11 @@ function renderTournamentDetail() {
     
     if (DATA.eid) H += renderEventDetail();
   } else {
-    H += '<div class="empty-state"><div class="icon">📝</div><p>Chưa có nội dung thi đấu</p></div>';
+    H += '<div class="empty-state"><div class="icon"></div><p>Chưa có nội dung thi đấu</p></div>';
   }
   
   if (DATA.sponsors.length) {
-    H += '<div class="sponsor-section"><h4>🤝 NHÀ TÀI TRỢ</h4><div class="sponsor-list">';
+    H += '<div class="sponsor-section"><h4> NHÀ TÀI TRỢ</h4><div class="sponsor-list">';
     DATA.sponsors.forEach(function(sp) {
       var href = sp.website_url || "#";
       H += '<a class="sponsor-item" href="' + esc(href) + '" target="_blank" rel="noopener">';
@@ -683,7 +693,7 @@ function renderEventDetail() {
     
     if (r16.length) H += renderKOGroup("🎯 VÒNG 1/8", "r16", r16);
     if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
-    if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
+    if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
     if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
     H += '</div>';
   }
@@ -694,7 +704,7 @@ function renderEventDetail() {
 function renderMatchItem(m, isKO) {
   var hn = tName(m.home_team_id), an = tName(m.away_team_id);
   
-  // 🌟 LOGIC TRẠNG THÁI CHUẨN TỪ DATABASE
+  //  LOGIC TRẠNG THÁI CHUẨN
   var status = m.match_status;
   if (!status) {
     status = (Number(m.home_score)>0 || Number(m.away_score)>0) ? "finished" : "scheduled";
@@ -725,9 +735,9 @@ function renderMatchItem(m, isKO) {
   H += '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
   H += '</div>';
   
-  // 🌟 Hiển thị dòng phụ VĐV đang giao banh nếu trạng thái là LIVE
+  // 🌟 Hiển thị dòng phụ VĐV đang giao banh
   if (status === 'live' && m.serving_player_id) {
-    var pName = getPlayerName(m.serving_player_id) || 'VĐV';
+    var pName = getPlayerName(m.serving_player_id);
     var turn = m.serving_turn || 1;
     H += '<div class="match-serve-info">🏓 ' + esc(pName) + ' đang giao (L' + turn + ')</div>';
   }
