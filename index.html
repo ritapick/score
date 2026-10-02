@@ -72,25 +72,38 @@ td.diff{font-family:monospace;font-weight:700}
 td.diff.pos{color:var(--li)}
 td.diff.neg{color:var(--rd)}
 td.pf{font-family:monospace;color:var(--cy)}
+
+/* 🌟 GIAO DIỆN LỊCH THI ĐẤU 1 DÒNG + SUB-ROW */
 .match-list{display:flex;flex-direction:column;gap:6px}
-.match-item{background:var(--sf2);border:1px solid var(--ln);border-radius:8px;padding:8px;display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;font-size:11px}
-.match-item .m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:12px;min-width:36px}
-.match-item .m-teams{display:flex;flex-direction:column;gap:2px;min-width:0}
-.match-item .m-team-row{display:flex;justify-content:space-between;align-items:center;gap:4px}
-.match-item .m-team-name{font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.match-item .m-team-name.home{color:var(--li);text-align:left}
-.match-item .m-team-name.away{color:var(--cy);text-align:left}
-.match-item .m-team-name.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
-.match-item .m-score{font-family:monospace;font-weight:800;font-size:13px;color:var(--tx);min-width:40px;text-align:center}
-.match-item .m-score.done{color:var(--li)}
-.match-item .m-meta{display:flex;flex-direction:column;gap:2px;align-items:flex-end;font-size:10px;color:var(--mu)}
+.match-item{background:var(--sf2);border:1px solid var(--ln);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;transition:.2s}
+.match-item.live{border-left:3px solid var(--rd);background:rgba(248,113,113,.06);animation:pulseLive 2s infinite}
+.match-item.finished{border-left:3px solid var(--li);opacity:.9}
 .match-item.ko{border-left:3px solid var(--or)}
 .match-item.ck{border-left:3px solid var(--li);background:rgba(163,230,53,.05)}
+@keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 4px rgba(248,113,113,0)}}
+
+.match-main-row{display:flex;align-items:center;gap:4px;width:100%}
+.match-main-row .m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:11px;min-width:32px;text-align:center}
 .match-item.ko .m-code{color:var(--or)}
-.match-item.ck .m-code{color:var(--li);font-size:13px}
-.status-tag{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:800;white-space:nowrap;display:inline-block}
+.match-item.ck .m-code{color:var(--li);font-size:12px}
+
+.match-main-row .m-team{flex:1;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-main-row .m-team.home{color:var(--li);text-align:right}
+.match-main-row .m-team.away{color:var(--cy);text-align:left}
+.match-main-row .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
+
+.match-main-row .m-score{font-family:monospace;font-weight:800;font-size:13px;color:var(--tx);min-width:40px;text-align:center;background:#0d1626;padding:2px 4px;border-radius:4px}
+.match-main-row .m-score.done{color:var(--li)}
+
+.status-tag{padding:2px 5px;border-radius:4px;font-size:9px;font-weight:800;white-space:nowrap;flex-shrink:0}
+.status-tag.live{background:var(--rd);color:#fff;animation:blink 1s infinite}
+.status-tag.finished, .status-tag.completed{background:rgba(163,230,53,.2);color:var(--li)}
 .status-tag.scheduled{background:rgba(148,163,184,.2);color:var(--mu)}
-.status-tag.completed{background:rgba(163,230,53,.2);color:var(--li)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Dòng phụ hiển thị VĐV đang giao banh */
+.match-serve-info{font-size:10px;color:var(--or);font-weight:700;padding-left:36px;display:flex;align-items:center;gap:4px;animation:blink 1.5s infinite}
+
 .ko-section{background:rgba(251,146,60,.05);border:2px solid var(--or);border-radius:12px;padding:12px;margin-top:14px}
 .ko-section>h3{margin:0 0 10px;color:var(--or);font-size:15px}
 .ko-group{margin-bottom:10px;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
@@ -100,6 +113,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .ko-group-header.ck{background:rgba(163,230,53,.15);color:var(--li)}
 .ko-group-header.r16{background:rgba(34,211,238,.1);color:var(--cy)}
 .ko-group .match-list{padding:6px}
+
 .sponsor-section{margin-top:14px;padding:12px;background:var(--sf2);border:1px solid var(--ln);border-radius:10px}
 .sponsor-section h4{margin:0 0 10px;color:var(--cy);font-size:13px}
 .sponsor-list{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
@@ -120,6 +134,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .modal .hint{font-size:10px;color:var(--mu);margin:-4px 0 8px;font-style:italic}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end}
 .modal .msg{font-size:12px;margin-top:8px;color:var(--rd);min-height:16px}
+
 @media(max-width:480px){
   main{padding:8px}
   .hero{padding:14px}
@@ -132,13 +147,14 @@ td.pf{font-family:monospace;color:var(--cy)}
   table{font-size:10px}
   th,td{padding:4px 3px}
   td.team-name{max-width:110px;font-size:10px}
-  .match-item{grid-template-columns:auto 1fr auto;padding:6px;font-size:10px}
-  .match-item .m-code{font-size:11px;min-width:32px}
-  .match-item .m-score{font-size:12px;min-width:36px}
+  .match-main-row .m-team{font-size:10px;max-width:80px}
+  .match-main-row .m-score{font-size:12px;min-width:36px;padding:2px}
+  .match-main-row .m-code{font-size:10px;min-width:28px}
   .section-title{font-size:13px}
   .ko-section{padding:10px}
   .ko-section>h3{font-size:14px}
   .group-card h4{font-size:12px}
+  .match-serve-info{font-size:9px;padding-left:32px}
 }
 @media(min-width:481px) and (max-width:768px){
   .tournament-grid{grid-template-columns:repeat(2,1fr)}
@@ -193,9 +209,10 @@ try { sb = window.supabase.createClient(CFG.URL, CFG.KEY); } catch(e) { console.
 var CURRENT_USER = null;
 var DATA = {
   tournaments: [], tournament: null, events: [], eid: null,
-  teams: [], stages: [], groups: [], groupTeams: [], matches: [],
+  teams: [], players: [], stages: [], groups: [], groupTeams: [], matches: [],
   gStage: null, kStage: null, sponsors: []
 };
+var realtimeInterval = null;
 
 /* === HELPERS === */
 function el(id) { return document.getElementById(id); }
@@ -209,6 +226,12 @@ function toast(msg) {
 function findTeam(id) { for(var i=0;i<DATA.teams.length;i++) if(DATA.teams[i].id===id) return DATA.teams[i]; return null; }
 function tName(id) { var t=findTeam(id); return t?sn(t.name):null; }
 function isAdmin() { return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin'; }
+
+function getPlayerName(playerId) {
+  if (!playerId) return null;
+  var p = DATA.players.find(p => p.id === playerId);
+  return p ? p.full_name : null;
+}
 
 /* 🌟 Kiểm tra quyền sở hữu giải */
 function isOwnerOfTournament(t) {
@@ -239,6 +262,7 @@ async function doLogin() {
 function doLogout() {
   CURRENT_USER = null;
   sessionStorage.removeItem('pb_admin');
+  stopRealtime();
   applyUI(); render();
   toast("👋 Đã đăng xuất");
 }
@@ -254,6 +278,85 @@ function applyUI() {
   }
 }
 
+/* === 🌟 REALTIME POLLING === */
+function startRealtime() {
+  stopRealtime();
+  realtimeInterval = setInterval(async () => {
+    if (!DATA.eid) return;
+    try {
+      var m = await sb.from("matches").select("*, serving_player_id, serving_turn, match_status").eq("event_id", DATA.eid).order("match_seq");
+      if (m.data && m.data.length) {
+        var changed = false;
+        for (var i = 0; i < m.data.length; i++) {
+          var old = DATA.matches.find(x => x.id === m.data[i].id);
+          if (!old || old.home_score !== m.data[i].home_score || old.away_score !== m.data[i].away_score || 
+              old.match_status !== m.data[i].match_status || old.serving_player_id !== m.data[i].serving_player_id ||
+              old.serving_turn !== m.data[i].serving_turn) {
+            changed = true; break;
+          }
+        }
+        if (changed) {
+          DATA.matches = m.data;
+          updateMatchRowsDOM();
+        }
+      }
+    } catch(e) { console.warn("Realtime poll error:", e); }
+  }, 3000); // Cập nhật mỗi 3 giây
+}
+
+function stopRealtime() {
+  if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; }
+}
+
+function updateMatchRowsDOM() {
+  DATA.matches.forEach(function(m) {
+    var row = document.querySelector('.match-item[data-match-id="' + m.id + '"]');
+    if (!row) return;
+    
+    var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
+    
+    // 1. Update Score
+    var scoreEl = row.querySelector('.m-score');
+    if (scoreEl) {
+      var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
+      var scoreText = (status === "completed" || status === "finished") ? (h + " - " + a) : "vs";
+      scoreEl.textContent = scoreText;
+      scoreEl.className = 'm-score ' + ((status === "completed" || status === "finished") ? "done" : "");
+    }
+
+    // 2. Update Status Tag
+    var statusEl = row.querySelector('.status-tag');
+    if (statusEl) {
+      var statusText = status === 'live' ? '🔴 LIVE' : ((status === 'finished' || status === 'completed') ? '✅ FIN' : '⏳');
+      statusEl.className = 'status-tag ' + status;
+      statusEl.textContent = statusText;
+    }
+
+    // 3. Update Row Classes (for border/animation)
+    row.classList.remove('live', 'finished');
+    if (status === 'live') row.classList.add('live');
+    else if (status === 'finished' || status === 'completed') row.classList.add('finished');
+
+    // 4. Update Serve Info Sub-row
+    var serveInfoEl = row.querySelector('.match-serve-info');
+    if (status === 'live' && m.serving_player_id) {
+      var pName = getPlayerName(m.serving_player_id) || 'VĐV';
+      var turn = m.serving_turn || 1;
+      var newText = '🏓 ' + pName + ' đang giao (L' + turn + ')';
+      if (!serveInfoEl) {
+        var newDiv = document.createElement('div');
+        newDiv.className = 'match-serve-info';
+        newDiv.textContent = newText;
+        row.appendChild(newDiv);
+      } else {
+        serveInfoEl.textContent = newText;
+      }
+    } else {
+      if (serveInfoEl) serveInfoEl.remove();
+    }
+  });
+}
+
 /* === DATA LOADING === */
 async function loadTournaments() {
   try {
@@ -263,7 +366,8 @@ async function loadTournaments() {
     var er = await sb.from("events").select("id, tournament_id");
     var allEvents = er.data || [];
     
-    var mr = await sb.from("matches").select("id, event_id, round, home_score, away_score");
+    // 🌟 Lấy thêm match_status để tính trạng thái giải chính xác hơn
+    var mr = await sb.from("matches").select("id, event_id, round, home_score, away_score, match_status");
     var allMatches = mr.data || [];
     
     DATA.tournaments.forEach(function(t) {
@@ -271,15 +375,14 @@ async function loadTournaments() {
       var eids = tEvents.map(function(e){ return e.id; });
       var tMatches = allMatches.filter(function(m){ return eids.indexOf(m.event_id) >= 0; });
       
-      var hasAnyScore = tMatches.some(function(m){ 
-        return (Number(m.home_score) > 0 || Number(m.away_score) > 0); 
-      });
+      var hasLive = tMatches.some(function(m){ return m.match_status === 'live'; });
+      var hasAnyScore = tMatches.some(function(m){ return (Number(m.home_score) > 0 || Number(m.away_score) > 0); });
       var ckMatch = tMatches.find(function(m){ return Number(m.round) === 4; });
-      var ckHasScore = ckMatch && (Number(ckMatch.home_score) > 0 || Number(ckMatch.away_score) > 0);
+      var ckFinished = ckMatch && (ckMatch.match_status === 'finished' || ckMatch.match_status === 'completed');
       
       if (!hasAnyScore) {
         t.display_status = "not_started";
-      } else if (!ckHasScore) {
+      } else if (hasLive || !ckFinished) {
         t.display_status = "in_progress";
       } else {
         t.display_status = "completed";
@@ -297,7 +400,7 @@ async function loadTournamentDetail(tid) {
     var sp = await sb.from('sponsors').select('*').eq('tournament_id', tid).order('display_order');
     DATA.sponsors = sp.data || [];
     if (DATA.events.length) await loadEventDetail(DATA.events[0].id);
-    else { DATA.eid = null; DATA.teams = []; DATA.matches = []; render(); }
+    else { DATA.eid = null; DATA.teams = []; DATA.players = []; DATA.matches = []; render(); }
   } catch(e) { console.error(e); }
 }
 
@@ -310,18 +413,34 @@ async function loadEventDetail(eid) {
       var m = x.team_members || [];
       return Object.assign({}, x, { members: m });
     });
+    
+    // 🌟 Flatten players array for easy lookup
+    DATA.players = [];
+    DATA.teams.forEach(function(tm) {
+      tm.members.forEach(function(m) {
+        if (m.players && !DATA.players.find(p => p.id === m.players.id)) {
+          DATA.players.push(m.players);
+        }
+      });
+    });
+
     var st = await sb.from("stages").select("*").eq("event_id", eid);
     DATA.stages = st.data || [];
     DATA.gStage = null; DATA.kStage = null;
     DATA.stages.forEach(function(s) { if(s.stage_type==="group_stage") DATA.gStage=s; if(s.stage_type==="knockout") DATA.kStage=s; });
+    
     var ids = DATA.stages.map(function(s){ return s.id; });
     if (ids.length) {
       var g = await sb.from("groups").select("*").in("stage_id", ids); DATA.groups = g.data || [];
       var gt = await sb.from("group_teams").select("*").in("stage_id", ids); DATA.groupTeams = gt.data || [];
     } else { DATA.groups = []; DATA.groupTeams = []; }
-    var m = await sb.from("matches").select("*").eq("event_id", eid).order("match_seq");
+    
+    // 🌟 Fetch serving info
+    var m = await sb.from("matches").select("*, serving_player_id, serving_turn, match_status").eq("event_id", eid).order("match_seq");
     DATA.matches = m.data || [];
+    
     render();
+    startRealtime(); // 🌟 Start realtime updates
   } catch(e) { console.error(e); }
 }
 
@@ -330,7 +449,6 @@ function teamsInG(gid) {
   var tids = DATA.groupTeams.filter(function(x){ return x.group_id===gid; }).map(function(x){ return x.team_id; });
   return DATA.teams.filter(function(t){ return tids.indexOf(t.id)>=0; });
 }
-function autoStatus(m) { var h=Number(m.home_score)||0, a=Number(m.away_score)||0; return (h>0||a>0)?"completed":"scheduled"; }
 function expectedMatchesInGroup(gid) {
   var t = teamsInG(gid);
   return t.length * (t.length - 1) / 2;
@@ -338,13 +456,19 @@ function expectedMatchesInGroup(gid) {
 function isGroupComplete(gid) {
   var t = teamsInG(gid);
   var exp = t.length * (t.length - 1) / 2;
-  return t.length >= 2 && DATA.matches.filter(function(m){ return m.group_id===gid && autoStatus(m)==="completed"; }).length >= exp;
+  return t.length >= 2 && DATA.matches.filter(function(m){ 
+    var st = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
+    return m.group_id===gid && (st==="completed" || st==="finished"); 
+  }).length >= exp;
 }
 function standings(g) {
   var t = teamsInG(g);
   var st = {};
   t.forEach(function(x){ st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0}; });
-  DATA.matches.filter(function(m){ return m.group_id===g && autoStatus(m)==="completed"; }).forEach(function(m){
+  DATA.matches.filter(function(m){ 
+    var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
+    return m.group_id===g && (status==="completed" || status==="finished"); 
+  }).forEach(function(m){
     var h = st[m.home_team_id], a = st[m.away_team_id];
     if (!h || !a) return;
     h.pf += Number(m.home_score)||0; h.pa += Number(m.away_score)||0; h.played++;
@@ -386,13 +510,11 @@ function timeFromISO(iso) {
 
 /* 🌟 Logic xác định số đội được check cho TỪNG BẢNG */
 function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
-  // Trường hợp đặc biệt: 3 bảng → A=3, B=2, C=3
   if (numGroups === 3) {
     if (groupCode === "A" || groupIndex === 0) return 3;
     if (groupCode === "B" || groupIndex === 1) return 2;
     if (groupCode === "C" || groupIndex === 2) return 3;
   }
-  // Các trường hợp khác
   if (numGroups === 2) return 2;
   if (numGroups === 4) return 2;
   return 2; // 5+ bảng
@@ -501,7 +623,10 @@ function renderEventDetail() {
   groups.forEach(function(g, idx) {
     var st = standings(g.id);
     var mb = teamsInG(g.id);
-    var completed = DATA.matches.filter(function(m){ return m.group_id===g.id && autoStatus(m)==="completed"; }).length;
+    var completed = DATA.matches.filter(function(m){ 
+      var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
+      return m.group_id===g.id && (status==="completed" || status==="finished"); 
+    }).length;
     var expected = expectedMatchesInGroup(g.id);
     var isComplete = isGroupComplete(g.id);
     var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
@@ -569,29 +694,30 @@ function renderEventDetail() {
 
 function renderMatchItem(m, isKO) {
   var hn = tName(m.home_team_id), an = tName(m.away_team_id);
-  var homeText = hn || "TBD", awayText = an || "TBD";
-  var homeClass = hn ? "home" : "home tbd", awayClass = an ? "away" : "away tbd";
-  var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
-  var st = autoStatus(m);
-  var scoreClass = st === "completed" ? "done" : "";
-  var scoreText = st === "completed" ? (h + " - " + a) : "vs";
-  var time = timeFromISO(m.scheduled_at) || "";
-  var itemClass = "match-item";
-  if (isKO) {
-    if (Number(m.round) === 4) itemClass += " ck";
-    else itemClass += " ko";
+  var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
+  var scoreText = (status === "completed" || status === "finished") ? (Number(m.home_score)||0 + " - " + (Number(m.away_score)||0)) : "vs";
+  var scoreClass = (status === "completed" || status === "finished") ? "done" : "";
+  
+  var H = '<div class="match-item ' + (isKO ? (Number(m.round)===4?'ck':'ko') : '') + '" data-match-id="' + m.id + '">';
+  
+  // Main Row: Code - Team A - Score - Team B - Status
+  H += '<div class="match-main-row">';
+  H += '<div class="m-code">' + esc(displayCode(m)) + '</div>';
+  H += '<div class="m-team home">' + esc(hn || 'TBD') + '</div>';
+  H += '<div class="m-score ' + scoreClass + '">' + scoreText + '</div>';
+  H += '<div class="m-team away">' + esc(an || 'TBD') + '</div>';
+  
+  var statusText = status === 'live' ? '🔴 LIVE' : ((status === 'finished' || status === 'completed') ? '✅ FIN' : '⏳');
+  H += '<span class="status-tag ' + status + '">' + statusText + '</span>';
+  H += '</div>';
+  
+  // Sub Row: Serving Info (Only for LIVE matches)
+  if (status === 'live' && m.serving_player_id) {
+    var pName = getPlayerName(m.serving_player_id) || 'VĐV';
+    var turn = m.serving_turn || 1;
+    H += '<div class="match-serve-info">🏓 ' + esc(pName) + ' đang giao (L' + turn + ')</div>';
   }
   
-  var H = '<div class="' + itemClass + '">';
-  H += '<div class="m-code">' + esc(displayCode(m)) + '</div>';
-  H += '<div class="m-teams">';
-  H += '<div class="m-team-row"><span class="m-team-name ' + homeClass + '">' + esc(homeText) + '</span><span class="m-score ' + scoreClass + '">' + scoreText + '</span></div>';
-  H += '<div class="m-team-row"><span class="m-team-name ' + awayClass + '">' + esc(awayText) + '</span></div>';
-  H += '</div>';
-  H += '<div class="m-meta">';
-  if (time) H += '<span>⏰ ' + esc(time) + '</span>';
-  H += '<span class="status-tag ' + st + '">' + (st==="completed"?"✅":"⏳") + '</span>';
-  H += '</div>';
   H += '</div>';
   return H;
 }
@@ -618,18 +744,22 @@ function render() {
 
 /* === NAVIGATION === */
 window.viewTournament = async function(tid) {
+  stopRealtime();
   await loadTournamentDetail(tid);
   window.scrollTo(0, 0);
 };
 window.viewEvent = async function(eid) {
+  stopRealtime();
   await loadEventDetail(eid);
   window.scrollTo(0, 0);
 };
 window.backToList = function() {
+  stopRealtime();
   DATA.tournament = null;
   DATA.events = [];
   DATA.eid = null;
   DATA.teams = [];
+  DATA.players = [];
   DATA.matches = [];
   DATA.groups = [];
   DATA.groupTeams = [];
