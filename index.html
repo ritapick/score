@@ -21,6 +21,7 @@ button,input,select{font:inherit}
 .btn-p{background:var(--li);color:#0b1220}
 .btn-b{background:rgba(34,211,238,.15);color:var(--cy);border:1px solid rgba(34,211,238,.4)}
 .btn-l{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln)}
+.btn-w{background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.4)}
 main{max-width:1200px;margin:0 auto;padding:12px}
 .hero{background:linear-gradient(135deg,rgba(163,230,53,.1),rgba(34,211,238,.1));border:1px solid var(--ln);border-radius:14px;padding:18px;margin-bottom:16px;text-align:center}
 .hero h1{margin:0 0 6px;font-size:22px;color:var(--li);letter-spacing:.5px}
@@ -39,11 +40,15 @@ main{max-width:1200px;margin:0 auto;padding:12px}
 .t-status.in-progress{background:rgba(34,211,238,.2);color:var(--cy);animation:pulse 2s infinite}
 .t-status.completed{background:rgba(163,230,53,.2);color:var(--li)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.manage-btn{position:absolute;bottom:10px;right:10px;background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.4);padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:4px;z-index:2}
+.manage-btn:hover{background:rgba(251,146,60,.25)}
+.manage-btn:active{transform:scale(.95)}
 .t-detail{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;margin-bottom:14px}
 .t-detail-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--ln)}
 .t-detail-header h2{margin:0 0 6px;color:var(--li);font-size:18px;word-break:break-word}
-.t-detail-header .meta{font-size:11px;color:var(--mu);display:flex;flex-wrap:wrap;gap:10px}
+.t-detail-header .meta{font-size:11px;color:var(--mu);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .t-detail-header .meta span{display:inline-flex;align-items:center;gap:3px}
+.manage-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .back-btn{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:10px}
 .back-btn:active{transform:scale(.97)}
 .event-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;overflow-x:auto;padding-bottom:4px}
@@ -115,7 +120,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .modal .hint{font-size:10px;color:var(--mu);margin:-4px 0 8px;font-style:italic}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end}
 .modal .msg{font-size:12px;margin-top:8px;color:var(--rd);min-height:16px}
-.tw{overflow-x:auto;margin:6px 0;-webkit-overflow-scrolling:touch}
 @media(max-width:480px){
   main{padding:8px}
   .hero{padding:14px}
@@ -206,6 +210,14 @@ function findTeam(id) { for(var i=0;i<DATA.teams.length;i++) if(DATA.teams[i].id
 function tName(id) { var t=findTeam(id); return t?sn(t.name):null; }
 function isAdmin() { return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin'; }
 
+/* 🌟 Kiểm tra quyền sở hữu giải */
+function isOwnerOfTournament(t) {
+  if (!t) return false;
+  if (isAdmin()) return true;
+  if (!CURRENT_USER) return false;
+  return t.admin_id === CURRENT_USER.id;
+}
+
 /* === AUTH === */
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
 function closeLogin() { el("login-modal").classList.remove("show"); }
@@ -220,14 +232,14 @@ async function doLogin() {
     if (!data) { el("lmsg").textContent="❌ Sai thông tin!"; return; }
     CURRENT_USER = data;
     sessionStorage.setItem('pb_admin', JSON.stringify(CURRENT_USER));
-    closeLogin(); applyUI();
+    closeLogin(); applyUI(); render();
     toast("✅ Xin chào " + CURRENT_USER.username);
   } catch(e) { el("lmsg").textContent="❌ " + e.message; }
 }
 function doLogout() {
   CURRENT_USER = null;
   sessionStorage.removeItem('pb_admin');
-  applyUI();
+  applyUI(); render();
   toast("👋 Đã đăng xuất");
 }
 function applyUI() {
@@ -245,18 +257,15 @@ function applyUI() {
 /* === DATA LOADING === */
 async function loadTournaments() {
   try {
-    // Load tournaments
     var tr = await sb.from("tournaments").select("*").order("created_at", {ascending:false});
     DATA.tournaments = tr.data || [];
     
-    // Load all events và matches để tính trạng thái
     var er = await sb.from("events").select("id, tournament_id");
     var allEvents = er.data || [];
     
     var mr = await sb.from("matches").select("id, event_id, round, home_score, away_score");
     var allMatches = mr.data || [];
     
-    // Tính trạng thái cho từng giải
     DATA.tournaments.forEach(function(t) {
       var tEvents = allEvents.filter(function(e){ return e.tournament_id === t.id; });
       var eids = tEvents.map(function(e){ return e.id; });
@@ -375,10 +384,16 @@ function timeFromISO(iso) {
   } catch(e) { return ""; }
 }
 
-/* 🌟 Logic xác định số đội được check (đủ điều kiện vào KO) */
-function getQualifyCountPerGroup(numGroups) {
+/* 🌟 Logic xác định số đội được check cho TỪNG BẢNG */
+function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
+  // Trường hợp đặc biệt: 3 bảng → A=3, B=2, C=3
+  if (numGroups === 3) {
+    if (groupCode === "A" || groupIndex === 0) return 3;
+    if (groupCode === "B" || groupIndex === 1) return 2;
+    if (groupCode === "C" || groupIndex === 2) return 3;
+  }
+  // Các trường hợp khác
   if (numGroups === 2) return 2;
-  if (numGroups === 3) return 3; // Theo yêu cầu: 3 bảng thì check 3 đội
   if (numGroups === 4) return 2;
   return 2; // 5+ bảng
 }
@@ -398,6 +413,8 @@ function renderTournamentList() {
     else if (statusCls === "in_progress") statusText = "🔴 Đang diễn ra";
     else statusText = "✅ Đã kết thúc";
     
+    var canManage = isOwnerOfTournament(t);
+    
     H += '<div class="t-card" onclick="viewTournament(\'' + t.id + '\')">';
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
@@ -405,7 +422,11 @@ function renderTournamentList() {
     H += '<span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
     if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
     H += '<span>🏷️ Mã: ' + esc(t.code) + '</span>';
-    H += '</div></div>';
+    H += '</div>';
+    if (canManage) {
+      H += '<a class="manage-btn" href="admin.html?tournament=' + encodeURIComponent(t.id) + '" onclick="event.stopPropagation()">⚙ Quản lý</a>';
+    }
+    H += '</div>';
   });
   H += '</div>';
   return H;
@@ -420,6 +441,8 @@ function renderTournamentDetail() {
   else if (statusCls === "in_progress") statusText = "🔴 Đang diễn ra";
   else statusText = "✅ Đã kết thúc";
   
+  var canManage = isOwnerOfTournament(t);
+  
   var H = '<button class="back-btn" onclick="backToList()">← Quay lại</button>';
   H += '<div class="t-detail">';
   H += '<div class="t-detail-header">';
@@ -428,7 +451,13 @@ function renderTournamentDetail() {
   H += '<span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span>';
-  H += '</div></div>';
+  H += '</div>';
+  if (canManage) {
+    H += '<div class="manage-bar">';
+    H += '<a class="btn btn-w" href="admin.html?tournament=' + encodeURIComponent(t.id) + '">⚙ Quản lý & ghi điểm</a>';
+    H += '</div>';
+  }
+  H += '</div>';
   
   if (DATA.events.length) {
     H += '<div class="event-tabs">';
@@ -465,20 +494,20 @@ function renderEventDetail() {
   var H = '';
   var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; }).sort(function(a,b){ return a.code.localeCompare(b.code); });
   var numGroups = groups.length;
-  var qualifyCount = getQualifyCountPerGroup(numGroups);
   
-  // 🌟 1. BẢNG XẾP HẠNG (trước tiên)
-  H += '<div class="section-title">📊 BẢNG XẾP HẠNG <span class="count">' + numGroups + ' bảng · Check top ' + qualifyCount + '</span></div>';
+  // 🌟 1. BẢNG XẾP HẠNG
+  H += '<div class="section-title">📊 BẢNG XẾP HẠNG <span class="count">' + numGroups + ' bảng</span></div>';
   H += '<div class="bxh-grid">';
-  groups.forEach(function(g) {
+  groups.forEach(function(g, idx) {
     var st = standings(g.id);
     var mb = teamsInG(g.id);
     var completed = DATA.matches.filter(function(m){ return m.group_id===g.id && autoStatus(m)==="completed"; }).length;
     var expected = expectedMatchesInGroup(g.id);
     var isComplete = isGroupComplete(g.id);
+    var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
     
     H += '<div class="group-card">';
-    H += '<h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + '</span></h4>';
+    H += '<h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
     
     if (st.length) {
       H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>HS</th><th>GF</th></tr></thead><tbody>';
@@ -501,7 +530,6 @@ function renderEventDetail() {
   // 🌟 2. LỊCH VÒNG BẢNG (phân theo từng bảng)
   H += '<div class="section-title">📅 LỊCH VÒNG BẢNG</div>';
   groups.forEach(function(g) {
-    var mb = teamsInG(g.id);
     var groupMatches = DATA.matches.filter(function(m){ return m.group_id === g.id; })
       .sort(function(a,b){ return Number(a.bracket_slot) - Number(b.bracket_slot); });
     
