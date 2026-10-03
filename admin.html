@@ -109,7 +109,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 .modal .msg{font-size:12px;margin-top:8px;min-height:16px;text-align:center}
 
-/* 🌟 MODAL TRỌNG TÀI - LAYOUT BẢNG MỚI */
+/* 🌟 MODAL TRỌNG TÀI - LAYOUT BẢNG */
 .ref-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--ln)}
 .ref-header .match-code{font-size:13px;font-weight:800;color:var(--cy)}
 .ref-header .match-status{font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px}
@@ -263,7 +263,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
-  <button id="login-btn" class="btn btn-p" onclick="openLogin()"> Đăng nhập</button>
+  <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
   <button id="logout-btn" class="btn btn-l hidden" onclick="doLogout()">Thoát</button>
 </div>
 </nav>
@@ -283,7 +283,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 </div>
 
-<!-- 🌟 MODAL TRỌNG TÀI - LAYOUT BẢNG MỚI -->
+<!-- 🌟 MODAL TRỌNG TÀI -->
 <div id="ref-modal" class="modal-bg">
 <div class="modal">
   <div class="ref-header">
@@ -293,7 +293,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   
   <div class="ref-grid">
     <div class="ref-grid-header ref-header-a" id="ref-team-a-name">TEAM A</div>
-    <div class="ref-grid-header ref-header-score">T SỐ</div>
+    <div class="ref-grid-header ref-header-score">TỶ SỐ</div>
     <div class="ref-grid-header ref-header-b" id="ref-team-b-name">TEAM B</div>
     
     <div class="ref-grid-label">Ô 1</div>
@@ -461,7 +461,7 @@ async function loadAll() {
     DATA.players = (pl.data || []).filter(p => isOwnerOfPlayer(p));
     if (DATA.tournaments.length) await selT(DATA.tournaments[0].id);
     else { DATA.tournament = null; DATA.events = []; DATA.eid = null; DATA.teams = []; DATA.matches = []; DATA.groups = []; render(); }
-  } catch(e) { console.error(e); el("content").innerHTML = '<div style="padding:20px;color:var(--rd)">❌ Lỗi tải: '+esc(e.message)+'</div>'; }
+  } catch(e) { console.error(e); el("content").innerHTML = '<div style="padding:20px;color:var(--rd)"> Lỗi tải: '+esc(e.message)+'</div>'; }
 }
 
 async function selT(tid) {
@@ -527,7 +527,7 @@ function startRealtime() {
               var statusEl = el("ref-match-status");
               var st = cm.match_status || 'scheduled';
               statusEl.className = 'match-status ' + st;
-              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '');
+              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '⏳');
               updateServeRadios(cm);
             }
           }
@@ -561,7 +561,7 @@ function updateMatchRowsDOM() {
       statusBadge.className = 'm-status-badge ' + status;
       if (status === 'live') statusBadge.textContent = '🔴 LIVE';
       else if (status === 'finished') statusBadge.textContent = '✅ FIN';
-      else statusBadge.textContent = '';
+      else statusBadge.textContent = '⏳';
     }
     
     if (servingInfo) {
@@ -586,7 +586,7 @@ async function savePlayer(pid, name, rating) {
     var pl = await sb.from("players").select("*");
     DATA.players = (pl.data || []).filter(p => isOwnerOfPlayer(p));
     toast("✅ Đã lưu VĐV"); render();
-  } catch(e) { alert("❌ " + e.message); }
+  } catch(e) { alert(" " + e.message); }
 }
 async function deletePlayer(pid) {
   if (!confirm("Xóa VĐV này?")) return;
@@ -924,7 +924,7 @@ function openRefModal(matchId) {
   var status = m.match_status || 'scheduled';
   var statusEl = el("ref-match-status");
   statusEl.className = 'match-status ' + status;
-  statusEl.textContent = status === 'live' ? ' LIVE' : (status === 'finished' ? '✅ FIN' : '');
+  statusEl.textContent = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : '⏳');
   
   var homePlayers = getTeamPlayers(m.home_team_id);
   var awayPlayers = getTeamPlayers(m.away_team_id);
@@ -972,7 +972,7 @@ function closeRefModal() {
   currentRefMatchId = null;
 }
 
-/* 🌟 TĂNG/GIẢM ĐIỂM - LƯU NGAY LẬP TỨC */
+/*  TĂNG/GIẢM ĐIỂM - LƯU NGAY LẬP TỨC */
 async function changeScore(team, delta) {
   if (!currentRefMatchId) return;
   
@@ -1012,11 +1012,11 @@ async function changeScore(team, delta) {
     el("ref-msg").textContent = "✅ Đã lưu: " + h + " - " + a;
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = " Lỗi: " + e.message;
+    el("ref-msg").textContent = "❌ Lỗi: " + e.message;
   }
 }
 
-/* 🌟 THAY ĐỔI SLOT */
+/*  THAY ĐỔI SLOT */
 async function onSlotChange(teamSide, slotNum) {
   if (!currentRefMatchId) return;
   
@@ -1024,7 +1024,7 @@ async function onSlotChange(teamSide, slotNum) {
   var slot2 = el("ref-" + teamSide + "-slot2").value;
   
   if (slot1 && slot2 && slot1 === slot2) {
-    alert("⚠️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
+    alert("️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
     el("ref-" + teamSide + "-slot" + slotNum).value = "";
     return;
   }
@@ -1072,18 +1072,24 @@ async function onServeCheck(teamSide, turn) {
   }
 }
 
-/* 🌟 KẾT THÚC TRẬN → FIN (LUÔN HOẠT ĐỘNG) */
+/* 🌟 KẾT THÚC TRẬN → FIN (ĐÃ SỬA LỖI) */
 async function finishMatch() {
   if (!currentRefMatchId) return;
   
   var m = DATA.matches.find(x => x.id === currentRefMatchId);
+  if (!m) {
+    alert("❌ Không tìm thấy trận đấu!");
+    return;
+  }
+  
   var h = parseInt(m.home_score) || 0;
   var a = parseInt(m.away_score) || 0;
   
-  if (!confirm("🏁 Kết thúc trận đấu?\n\nTỷ số cuối: " + h + " - " + a)) return;
+  if (!confirm(" Kết thúc trận đấu?\n\nTỷ số cuối: " + h + " - " + a + "\n\nTrạng thái sẽ chuyển sang FIN.")) return;
   
   try {
-    await sb.from("matches").update({
+    // Cập nhật DB với match_status = 'finished'
+    var { error } = await sb.from("matches").update({
       home_score: h,
       away_score: a,
       match_status: 'finished',
@@ -1092,6 +1098,13 @@ async function finishMatch() {
       serving_turn: null
     }).eq("id", currentRefMatchId);
     
+    if (error) {
+      el("ref-msg").style.color = "var(--rd)";
+      el("ref-msg").textContent = "❌ Lỗi: " + error.message;
+      return;
+    }
+    
+    // Cập nhật local data
     m.home_score = h;
     m.away_score = a;
     m.match_status = 'finished';
@@ -1099,17 +1112,29 @@ async function finishMatch() {
     m.serving_team = null;
     m.serving_turn = null;
     
-    await syncKO();
-    
+    // Cập nhật UI modal
     var statusEl = el("ref-match-status");
     statusEl.className = 'match-status finished';
     statusEl.textContent = '✅ FIN';
     
-    closeRefModal();
-    toast("🏁 Đã kết thúc trận đấu");
-    render();
+    // Clear serve radios
+    document.querySelectorAll('.serve-radio').forEach(r => r.checked = false);
+    
+    el("ref-msg").style.color = "var(--li)";
+    el("ref-msg").textContent = "✅ Trận đấu đã kết thúc!";
+    
+    await syncKO();
+    
+    // Đóng modal sau 1 giây
+    setTimeout(function() {
+      closeRefModal();
+      toast("🏁 Đã kết thúc trận đấu");
+      render();
+    }, 1000);
+    
   } catch(e) {
-    alert("❌ " + e.message);
+    el("ref-msg").style.color = "var(--rd)";
+    el("ref-msg").textContent = "❌ Lỗi: " + e.message;
   }
 }
 
@@ -1129,7 +1154,7 @@ function updateTimeoutDisplay() {
   el("timeout-display").textContent = pad(m, 2) + ':' + pad(s, 2);
   var btn = el("timeout-start-btn");
   if (timeoutRunning) {
-    btn.textContent = ' Tạm dừng';
+    btn.textContent = '⏸ Tạm dừng';
     btn.className = 'btn btn-w';
     el("timeout-display").classList.add('running');
   } else {
@@ -1203,8 +1228,8 @@ function render() {
   } else {
     H += `<div class="fg"><select onchange="selT(this.value)">`;
     DATA.tournaments.forEach(t => { H += `<option value="${t.id}" ${t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; });
-    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')"> Xóa giải</button></div>`;
-    H += `<div class="section-title"> Nội dung thi đấu</div>`;
+    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')">🗑 Xóa giải</button></div>`;
+    H += `<div class="section-title">📋 Nội dung thi đấu</div>`;
     H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
     DATA.events.forEach(e => {
       var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
@@ -1288,7 +1313,7 @@ function render() {
           var teamOpts = mb.map(t => `<option value="${t.id}">${esc(sn(t.name))}</option>`).join("");
           d.forEach((m, i) => {
             var ri = DATA.draft.indexOf(m);
-            H += `<div class="mrow"><span class="n">${g.code}${i+1}</span><select onchange="upDraft(${ri},'h',this.value)"><option value="">--</option>${teamOpts}</select><span style="color:var(--mu)">vs</span><select onchange="upDraft(${ri},'a',this.value)"><option value="">--</option>${teamOpts}</select><button class="btn btn-d btn-xs" onclick="rmDraft(${ri})"></button></div>`;
+            H += `<div class="mrow"><span class="n">${g.code}${i+1}</span><select onchange="upDraft(${ri},'h',this.value)"><option value="">--</option>${teamOpts}</select><span style="color:var(--mu)">vs</span><select onchange="upDraft(${ri},'a',this.value)"><option value="">--</option>${teamOpts}</select><button class="btn btn-d btn-xs" onclick="rmDraft(${ri})">✕</button></div>`;
           });
           H += `<div style="display:flex;gap:6px;margin-top:6px">`;
           if (d.length < mb.length * (mb.length - 1) / 2) H += `<button class="btn btn-l btn-s" onclick="addDraft('${g.id}')">➕ Trận</button>`;
@@ -1363,7 +1388,7 @@ function renderMatchRow(m, isKO) {
   }
   H += `<div class="m-serving-info" title="${esc(servingText)}">${esc(servingText)}</div>`;
   
-  var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : '⏳');
+  var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : '');
   H += `<span class="m-status-badge ${status}">${statusText}</span>`;
   
   // 🌟 NÚT TRỌNG TÀI LUÔN HIỂN THỊ - KHÔNG PHỤ THUỘC TRẠNG THÁI
@@ -1421,7 +1446,7 @@ async function upMatchScoreDirect(id, field, val) {
       el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập để quản trị.</div>';
     }
   } catch(e) {
-    el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--rd)">❌ Lỗi: ' + esc(e.message) + '</div>';
+    el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--rd)"> Lỗi: ' + esc(e.message) + '</div>';
   }
 })();
 </script>
