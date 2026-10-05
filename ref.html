@@ -1,0 +1,88 @@
+-- Thêm cột vào bảng matches
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS current_set INTEGER DEFAULT 1;
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS home_position TEXT DEFAULT '1-2';
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS away_position TEXT DEFAULT '1-2';
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS rally_count INTEGER DEFAULT 0;
+
+-- Tạo bảng match_rallies
+CREATE TABLE IF NOT EXISTS match_rallies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
+  rally_number INTEGER NOT NULL,
+  
+  -- Score snapshot
+  home_score INTEGER NOT NULL,
+  away_score INTEGER NOT NULL,
+  serve_turn INTEGER NOT NULL,
+  
+  -- Event type
+  event_type TEXT NOT NULL,
+  
+  -- Server info
+  server_player_id UUID,
+  server_team TEXT,
+  server_slot INTEGER,
+  
+  -- Receiver info
+  receiver_player_id UUID,
+  receiver_team TEXT,
+  receiver_slot INTEGER,
+  
+  -- Position after rally
+  home_position TEXT,
+  away_position TEXT,
+  
+  -- Description
+  description TEXT,
+  
+  created_at TIMESTAMP DEFAULT NOW(),
+  created_by UUID REFERENCES admin_users(id)
+);
+
+CREATE INDEX idx_rallies_match ON match_rallies(match_id, rally_number);
+
+-- Function tự động tạo rally entry
+CREATE OR REPLACE FUNCTION auto_create_rally(
+  p_match_id UUID,
+  p_home_score INTEGER,
+  p_away_score INTEGER,
+  p_serve_turn INTEGER,
+  p_event_type TEXT,
+  p_server_player_id UUID,
+  p_server_team TEXT,
+  p_server_slot INTEGER,
+  p_receiver_player_id UUID,
+  p_receiver_team TEXT,
+  p_receiver_slot INTEGER,
+  p_home_position TEXT,
+  p_away_position TEXT,
+  p_created_by UUID
+) RETURNS VOID AS $$
+DECLARE
+  v_rally_number INTEGER;
+  v_description TEXT;
+BEGIN
+  -- Lấy rally_number tiếp theo
+  SELECT COALESCE(MAX(rally_number), 0) + 1 INTO v_rally_number
+  FROM match_rallies WHERE match_id = p_match_id;
+  
+  -- Tạo mô tả tự động
+  v_description := 'Rally #' || v_rally_number || ': ' || p_event_type;
+  
+  -- Insert rally
+  INSERT INTO match_rallies (
+    match_id, rally_number, home_score, away_score, serve_turn,
+    event_type, server_player_id, server_team, server_slot,
+    receiver_player_id, receiver_team, receiver_slot,
+    home_position, away_position, description, created_by
+  ) VALUES (
+    p_match_id, v_rally_number, p_home_score, p_away_score, p_serve_turn,
+    p_event_type, p_server_player_id, p_server_team, p_server_slot,
+    p_receiver_player_id, p_receiver_team, p_receiver_slot,
+    p_home_position, p_away_position, v_description, p_created_by
+  );
+  
+  -- Cập nhật rally_count trong matches
+  UPDATE matches SET rally_count = v_rally_number WHERE id = p_match_id;
+END;
+$$ LANGUAGE plpgsql;
