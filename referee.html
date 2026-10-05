@@ -20,11 +20,21 @@ button,input,select{font:inherit}
 .btn-p{background:var(--pk);color:#fff}
 .btn-b{background:rgba(34,211,238,.15);color:var(--cy);border:1px solid rgba(34,211,238,.4)}
 .btn-l{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln)}
-main{max-width:800px;margin:0 auto;padding:16px}
-.section-title{font-size:16px;font-weight:800;color:var(--cy);margin:16px 0 12px;letter-spacing:.5px}
+main{max-width:900px;margin:0 auto;padding:16px}
+.section-title{font-size:16px;font-weight:800;color:var(--cy);margin:16px 0 12px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.section-title .badge{background:var(--pk);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px}
 .filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .filter-bar select{flex:1;min-width:150px;background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:8px;color:var(--tx);font-size:13px}
 
+/* Group sections */
+.round-section{margin-bottom:20px}
+.round-header{background:var(--sf2);padding:10px 14px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;color:var(--cy)}
+.round-header.group{background:rgba(163,230,53,.1);color:var(--li)}
+.round-header.tk{background:rgba(34,211,238,.1);color:var(--cy)}
+.round-header.bk{background:rgba(251,146,60,.1);color:var(--or)}
+.round-header.ck{background:rgba(163,230,53,.15);color:var(--li)}
+
+/* Match card */
 .match-card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:.2s;position:relative}
 .match-card:active{transform:scale(.98)}
 .match-card:hover{border-color:var(--pk)}
@@ -37,8 +47,6 @@ main{max-width:800px;margin:0 auto;padding:16px}
 .match-status.live{background:var(--rd);color:#fff}
 .match-status.finished{background:var(--li);color:#0b1220}
 .match-status.scheduled{background:rgba(148,163,184,.2);color:var(--mu)}
-.match-info{font-size:11px;color:var(--mu);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap}
-.match-info span{display:inline-flex;align-items:center;gap:3px}
 .match-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 .team-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-name.home{color:var(--li);text-align:right}
@@ -46,44 +54,54 @@ main{max-width:800px;margin:0 auto;padding:16px}
 .match-score{font-family:monospace;font-weight:800;font-size:20px;color:var(--tx);text-align:center;min-width:60px}
 .match-score.done{color:var(--li)}
 
+/* Modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-bg.show{display:flex}
-.modal{width:100%;max-width:500px;background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:20px;max-height:90vh;overflow-y:auto}
+.modal{width:100%;max-width:600px;background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:20px;max-height:95vh;overflow-y:auto}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--ln)}
 .modal-header h3{margin:0;color:var(--pk);font-size:18px}
 .modal-close{background:none;border:none;color:var(--mu);font-size:24px;cursor:pointer;padding:0 8px}
 
-.score-display{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin:20px 0;padding:20px;background:var(--bg);border-radius:12px}
+/* Score display */
+.score-section{background:var(--bg);border-radius:12px;padding:16px;margin-bottom:16px}
+.score-display{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:12px}
 .score-team{text-align:center}
 .score-team-name{font-size:14px;font-weight:700;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .score-team-name.home{color:var(--li)}
 .score-team-name.away{color:var(--cy)}
 .score-value{font-size:48px;font-weight:900;font-family:monospace;color:var(--tx)}
 .score-sep{font-size:36px;font-weight:800;color:var(--mu)}
-.score-controls{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.score-controls{display:flex;gap:8px;justify-content:center}
 .score-btn{width:50px;height:50px;border-radius:12px;border:2px solid var(--ln);background:var(--sf2);color:var(--tx);font-size:24px;font-weight:800;cursor:pointer;transition:.15s}
 .score-btn:active{transform:scale(.9);background:var(--pk);border-color:var(--pk)}
 
-.serve-section{margin:16px 0;padding:16px;background:var(--bg);border-radius:12px}
-.serve-title{font-size:12px;font-weight:800;color:var(--or);margin-bottom:12px;text-transform:uppercase}
-.serve-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.serve-btn{padding:12px;border-radius:8px;border:2px solid var(--ln);background:var(--sf);color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;text-align:center}
+/* Player slots */
+.slots-section{background:var(--bg);border-radius:12px;padding:16px;margin-bottom:16px}
+.slots-title{font-size:12px;font-weight:800;color:var(--mu);margin-bottom:12px;text-transform:uppercase}
+.slots-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.slot-group{background:var(--sf2);border-radius:8px;padding:12px}
+.slot-group-title{font-size:11px;font-weight:700;margin-bottom:8px;color:var(--cy)}
+.slot-group.home .slot-group-title{color:var(--li)}
+.slot-group.away .slot-group-title{color:var(--cy)}
+.slot-select{width:100%;margin-bottom:8px;background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:6px;color:var(--tx);font-size:12px}
+.serve-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.serve-btn{padding:8px;border-radius:6px;border:2px solid var(--ln);background:var(--sf);color:var(--tx);font-size:11px;font-weight:700;cursor:pointer;transition:.15s;text-align:center}
 .serve-btn:active{transform:scale(.97)}
 .serve-btn.active{background:var(--or);border-color:var(--or);color:#0b1220}
 
+/* Action buttons */
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
 .modal-actions .btn{padding:14px;font-size:14px;justify-content:center}
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:10px 16px;border-radius:99px;font-weight:800;font-size:12px;z-index:99;opacity:0;transition:.3s;pointer-events:none}
 .toast.show{opacity:1}
 
-.debug-box{background:rgba(248,113,113,.1);border:1px solid var(--rd);border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:var(--rd);font-family:monospace;max-height:120px;overflow-y:auto}
-
 @media(max-width:480px){
   main{padding:12px}
   .score-value{font-size:40px}
   .score-btn{width:45px;height:45px;font-size:20px}
   .modal-actions{grid-template-columns:1fr}
+  .slots-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -99,30 +117,19 @@ main{max-width:800px;margin:0 auto;padding:16px}
 </div>
 </nav>
 <main>
-  <div id="debug-info" class="debug-box hidden"></div>
-  
   <div class="filter-bar">
     <select id="tournament-filter" onchange="onTournamentChange()">
       <option value="">-- Chọn giải --</option>
     </select>
     <select id="event-filter" onchange="onEventChange()">
-      <option value="">-- Tất cả nội dung --</option>
-    </select>
-    <select id="round-filter" onchange="filterMatches()">
-      <option value="">-- Tất cả vòng --</option>
-      <option value="group">Vòng bảng</option>
-      <option value="1.5">Vòng 1/8</option>
-      <option value="2">Tứ kết</option>
-      <option value="3">Bán kết</option>
-      <option value="4">Chung kết</option>
+      <option value="">-- Chọn nội dung --</option>
     </select>
   </div>
   
-  <div class="section-title" id="match-section-title">📋 Danh sách trận đấu</div>
-  <div id="match-list">
+  <div id="matches-container">
     <div style="text-align:center;padding:40px;color:var(--mu)">
-      <div style="font-size:48px;margin-bottom:10px">⏳</div>
-      <p>Đang tải...</p>
+      <div style="font-size:48px;margin-bottom:10px">📋</div>
+      <p>Chọn giải và nội dung để xem lịch thi đấu</p>
     </div>
   </div>
 </main>
@@ -149,35 +156,61 @@ main{max-width:800px;margin:0 auto;padding:16px}
     <button class="modal-close" onclick="closeScoreModal()">×</button>
   </div>
   
-  <div class="match-info" id="modal-match-info"></div>
-  
-  <div class="score-display">
-    <div class="score-team">
-      <div class="score-team-name home" id="modal-home-name">Team A</div>
-      <div class="score-value" id="modal-home-score">0</div>
-      <div class="score-controls">
-        <button class="score-btn" onclick="changeScore('home', -1)">−</button>
-        <button class="score-btn" onclick="changeScore('home', 1)">+</button>
+  <div class="score-section">
+    <div class="score-display">
+      <div class="score-team">
+        <div class="score-team-name home" id="modal-home-name">Team A</div>
+        <div class="score-value" id="modal-home-score">0</div>
+        <div class="score-controls">
+          <button class="score-btn" onclick="changeScore('home', -1)">−</button>
+          <button class="score-btn" onclick="changeScore('home', 1)">+</button>
+        </div>
       </div>
-    </div>
-    <div class="score-sep">:</div>
-    <div class="score-team">
-      <div class="score-team-name away" id="modal-away-name">Team B</div>
-      <div class="score-value" id="modal-away-score">0</div>
-      <div class="score-controls">
-        <button class="score-btn" onclick="changeScore('away', -1)">−</button>
-        <button class="score-btn" onclick="changeScore('away', 1)">+</button>
+      <div class="score-sep">:</div>
+      <div class="score-team">
+        <div class="score-team-name away" id="modal-away-name">Team B</div>
+        <div class="score-value" id="modal-away-score">0</div>
+        <div class="score-controls">
+          <button class="score-btn" onclick="changeScore('away', -1)">−</button>
+          <button class="score-btn" onclick="changeScore('away', 1)">+</button>
+        </div>
       </div>
     </div>
   </div>
   
-  <div class="serve-section">
-    <div class="serve-title">🏓 Lượt giao banh</div>
-    <div class="serve-options">
-      <button class="serve-btn" id="serve-l1" onclick="setServeTurn(1)">L1 - Ô 1</button>
-      <button class="serve-btn" id="serve-l2" onclick="setServeTurn(2)">L2 - Ô 2</button>
+  <div class="slots-section">
+    <div class="slots-title">👥 Chọn VĐV và Lượt giao banh</div>
+    <div class="slots-grid">
+      <div class="slot-group home">
+        <div class="slot-group-title">ĐỘI A</div>
+        <select id="slot-home-1" class="slot-select" onchange="onSlotChange('home',1)">
+          <option value="">-- Ô 1 --</option>
+        </select>
+        <select id="slot-home-2" class="slot-select" onchange="onSlotChange('home',2)">
+          <option value="">-- Ô 2 --</option>
+        </select>
+        <div class="serve-buttons">
+          <button class="serve-btn" id="serve-home-l1" onclick="setServe('home',1)">L1</button>
+          <button class="serve-btn" id="serve-home-l2" onclick="setServe('home',2)">L2</button>
+        </div>
+      </div>
+      <div class="slot-group away">
+        <div class="slot-group-title">ĐỘI B</div>
+        <select id="slot-away-1" class="slot-select" onchange="onSlotChange('away',1)">
+          <option value="">-- Ô 1 --</option>
+        </select>
+        <select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)">
+          <option value="">-- Ô 2 --</option>
+        </select>
+        <div class="serve-buttons">
+          <button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)">L1</button>
+          <button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)">L2</button>
+        </div>
+      </div>
     </div>
   </div>
+  
+  <div id="rally-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--mu);min-height:40px"></div>
   
   <div class="modal-actions">
     <button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button>
@@ -202,6 +235,7 @@ var DATA = {
   tournaments: [], events: [], matches: [], teams: [], players: [], groups: [], stages: []
 };
 var currentMatchId = null;
+var currentMatchData = null;
 var realtimeInterval = null;
 
 /* === HELPERS === */
@@ -211,16 +245,6 @@ function toast(msg) {
   var t = el("toast"); t.textContent = msg; t.className = "toast show";
   if (window._tt) clearTimeout(window._tt);
   window._tt = setTimeout(function(){ t.className = "toast"; }, 2000);
-}
-function isAdmin() { return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin'; }
-function showDebug(msg) {
-  var box = el("debug-info");
-  box.textContent = msg;
-  box.classList.remove("hidden");
-  console.log("[DEBUG]", msg);
-}
-function hideDebug() {
-  el("debug-info").classList.add("hidden");
 }
 
 /* === AUTH === */
@@ -245,7 +269,7 @@ function doLogout() {
   sessionStorage.removeItem('pb_admin');
   stopRealtime();
   applyUI();
-  el("match-list").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập</div>';
+  el("matches-container").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập</div>';
   toast("👋 Đã đăng xuất");
 }
 function applyUI() {
@@ -258,267 +282,330 @@ function applyUI() {
   }
 }
 
-/* === 🌟 DATA LOADING - ĐÃ SỬA LỖI === */
+/* === DATA LOADING === */
 async function loadData() {
   if (!CURRENT_USER) return;
   try {
-    showDebug("Loading tournaments for user: " + CURRENT_USER.id + " (" + CURRENT_USER.username + ")");
-    
-    // 🌟 SỬA: Load TẤT CẢ tournaments, không filter theo admin_id
-    // Vì trọng tài cần xem tất cả giải để ghi điểm
-    var tr = await sb.from("tournaments").select("*").order("created_at", {ascending:false});
-    
-    if (tr.error) {
-      showDebug("Error loading tournaments: " + tr.error.message);
-      return;
-    }
-    
+    // Load tournaments - CHỈ CỦA ADMIN HIỆN TẠI
+    var tr = await sb.from("tournaments").select("*").eq('admin_id', CURRENT_USER.id).order("created_at", {ascending:false});
     DATA.tournaments = tr.data || [];
-    showDebug("Found " + DATA.tournaments.length + " tournaments");
     
-    // Populate tournament filter
     var tSelect = el("tournament-filter");
     tSelect.innerHTML = '<option value="">-- Chọn giải --</option>';
     DATA.tournaments.forEach(t => {
-      var ownerMark = (t.admin_id === CURRENT_USER.id) ? " ⭐" : "";
-      tSelect.innerHTML += `<option value="${t.id}">${esc(t.name)}${ownerMark}</option>`;
+      tSelect.innerHTML += `<option value="${t.id}">${esc(t.name)}</option>`;
     });
     
-    // Auto-select first tournament if only one
     if (DATA.tournaments.length === 1) {
       tSelect.value = DATA.tournaments[0].id;
       await onTournamentChange();
-    } else if (DATA.tournaments.length === 0) {
-      el("match-list").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><div style="font-size:48px;margin-bottom:10px">📭</div><p>Chưa có giải đấu nào</p></div>';
     }
-    
-    startRealtime();
-  } catch(e) { 
-    showDebug("Load data error: " + e.message);
-    console.error(e); 
-  }
+  } catch(e) { console.error(e); }
 }
 
 async function onTournamentChange() {
   var tid = el("tournament-filter").value;
   if (!tid) {
-    el("event-filter").innerHTML = '<option value="">-- Tất cả nội dung --</option>';
-    el("match-list").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Chọn giải để xem trận</div>';
+    el("event-filter").innerHTML = '<option value="">-- Chọn nội dung --</option>';
+    el("matches-container").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><p>Chọn giải để xem nội dung</p></div>';
     return;
   }
   
-  await loadEventsAndMatches(tid);
-}
-
-async function onEventChange() {
-  filterMatches();
-}
-
-async function loadEventsAndMatches(tid) {
   try {
-    showDebug("Loading events for tournament: " + tid);
-    
     // Load events
     var ev = await sb.from("events").select("*").eq("tournament_id", tid);
     DATA.events = ev.data || [];
-    showDebug("Found " + DATA.events.length + " events");
     
     var eSelect = el("event-filter");
-    eSelect.innerHTML = '<option value="">-- Tất cả nội dung --</option>';
+    eSelect.innerHTML = '<option value="">-- Chọn nội dung --</option>';
     DATA.events.forEach(e => {
       eSelect.innerHTML += `<option value="${e.id}">${esc(e.name)}</option>`;
     });
     
-    await loadMatches(tid);
-  } catch(e) {
-    showDebug("Load events error: " + e.message);
-  }
+    if (DATA.events.length === 1) {
+      eSelect.value = DATA.events[0].id;
+      await loadMatches();
+    }
+  } catch(e) { console.error(e); }
 }
 
-async function loadMatches(tid) {
-  if (!tid) return;
-  
-  try {
-    var eid = el("event-filter").value;
-    showDebug("Loading matches for tournament: " + tid + ", event: " + (eid || "all"));
-    
-    // Load matches
-    var query = sb.from("matches").select("*").eq("tournament_id", tid);
-    if (eid) query = query.eq("event_id", eid);
-    var m = await query.order("match_seq");
-    
-    if (m.error) {
-      showDebug("Error loading matches: " + m.error.message);
-      return;
-    }
-    
-    DATA.matches = m.data || [];
-    showDebug("Found " + DATA.matches.length + " matches");
-    
-    // Load teams & players
-    var eventIds = DATA.events.map(e => e.id);
-    if (eventIds.length) {
-      var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name))").in("event_id", eventIds);
-      DATA.teams = t.data || [];
-      DATA.players = [];
-      DATA.teams.forEach(tm => {
-        tm.members.forEach(m => {
-          if (m.players && !DATA.players.find(p => p.id === m.players.id)) {
-            DATA.players.push(m.players);
-          }
-        });
-      });
-    }
-    
-    // Load groups for display
-    if (eventIds.length) {
-      var st = await sb.from("stages").select("*").in("event_id", eventIds);
-      DATA.stages = st.data || [];
-      var g = await sb.from("groups").select("*").in("stage_id", DATA.stages.map(s=>s.id));
-      DATA.groups = g.data || [];
-    }
-    
-    filterMatches();
-  } catch(e) {
-    showDebug("Load matches error: " + e.message);
-  }
+async function onEventChange() {
+  await loadMatches();
 }
 
-function filterMatches() {
+async function loadMatches() {
   var tid = el("tournament-filter").value;
   var eid = el("event-filter").value;
-  var roundFilter = el("round-filter").value;
   
-  var filtered = DATA.matches.filter(m => {
-    if (eid && m.event_id !== eid) return false;
-    if (roundFilter) {
-      if (roundFilter === 'group' && m.group_id) return true;
-      if (roundFilter === 'group' && !m.group_id) return false;
-      if (roundFilter !== 'group' && String(m.round) !== roundFilter) return false;
-    }
-    return true;
-  });
+  if (!tid || !eid) {
+    el("matches-container").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><p>Chọn giải và nội dung</p></div>';
+    return;
+  }
   
-  renderMatchList(filtered);
+  try {
+    // Load matches
+    var m = await sb.from("matches").select("*").eq("tournament_id", tid).eq("event_id", eid).order("match_seq");
+    DATA.matches = m.data || [];
+    
+    // Load teams & players
+    var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name))").eq("event_id", eid);
+    DATA.teams = t.data || [];
+    DATA.players = [];
+    DATA.teams.forEach(tm => {
+      tm.members.forEach(m => {
+        if (m.players && !DATA.players.find(p => p.id === m.players.id)) {
+          DATA.players.push(m.players);
+        }
+      });
+    });
+    
+    // Load groups & stages
+    var st = await sb.from("stages").select("*").eq("event_id", eid);
+    DATA.stages = st.data || [];
+    var g = await sb.from("groups").select("*").in("stage_id", DATA.stages.map(s=>s.id));
+    DATA.groups = g.data || [];
+    
+    renderMatchesByRound();
+    startRealtime();
+  } catch(e) { console.error(e); }
 }
 
 function getTeamName(teamId) {
-  if (!teamId) return 'TBD';
   var t = DATA.teams.find(x => x.id === teamId);
   return t ? t.name : 'TBD';
 }
 
-function getMatchInfo(match) {
-  var parts = [];
-  
-  // Vòng đấu
-  if (match.group_id) {
-    var g = DATA.groups.find(x => x.id === match.group_id);
-    if (g) parts.push("📋 Bảng " + g.code);
-  } else {
-    if (match.round === 1.5) parts.push(" Vòng 1/8");
-    else if (match.round === 2) parts.push(" Tứ kết");
-    else if (match.round === 3) parts.push("🏅 Bán kết");
-    else if (match.round === 4) parts.push("🏆 Chung kết");
-  }
-  
-  // Giờ
-  if (match.scheduled_at) {
-    try {
-      var d = new Date(match.scheduled_at);
-      var time = d.toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"});
-      parts.push("⏰ " + time);
-    } catch(e) {}
-  }
-  
-  // Sân
-  if (match.court_id) {
-    parts.push("️ Sân " + match.court_id);
-  }
-  
-  return parts.join(" · ");
+function getTeamPlayers(teamId) {
+  var team = DATA.teams.find(x => x.id === teamId);
+  if (!team || !team.members) return [];
+  return team.members.map(m => ({
+    id: m.player_id,
+    name: m.players ? m.players.full_name : 'VĐV',
+    position: m.position
+  }));
 }
 
-function renderMatchList(matches) {
-  if (!matches || !matches.length) {
-    el("match-list").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><div style="font-size:48px;margin-bottom:10px">📭</div><p>Chưa có trận đấu</p></div>';
+function getRoundInfo(match) {
+  if (match.group_id) {
+    var g = DATA.groups.find(x => x.id === match.group_id);
+    return { type: 'group', name: 'Bảng ' + (g ? g.code : '?'), class: 'group' };
+  }
+  if (match.round === 1.5) return { type: 'r16', name: 'Vòng 1/8', class: 'tk' };
+  if (match.round === 2) return { type: 'tk', name: 'Tứ kết', class: 'tk' };
+  if (match.round === 3) return { type: 'bk', name: 'Bán kết', class: 'bk' };
+  if (match.round === 4) return { type: 'ck', name: 'Chung kết', class: 'ck' };
+  return { type: 'other', name: 'Khác', class: '' };
+}
+
+function renderMatchesByRound() {
+  if (!DATA.matches.length) {
+    el("matches-container").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><p>Chưa có trận đấu</p></div>';
     return;
   }
   
-  // Update section title
-  var tid = el("tournament-filter").value;
-  var t = DATA.tournaments.find(x => x.id === tid);
-  if (t) {
-    el("match-section-title").textContent = " " + t.name + " (" + matches.length + " trận)";
-  }
+  // Group matches by round
+  var rounds = {
+    'group': [],
+    'r16': [],
+    'tk': [],
+    'bk': [],
+    'ck': []
+  };
   
-  var H = '';
-  matches.forEach(m => {
-    var status = m.match_status || 'scheduled';
-    var hn = getTeamName(m.home_team_id);
-    var an = getTeamName(m.away_team_id);
-    var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
-    var scoreText = (status === 'finished' || status === 'completed') ? (h + " - " + a) : "vs";
-    var scoreClass = (status === 'finished' || status === 'completed') ? 'done' : '';
-    var info = getMatchInfo(m);
-    
-    H += `<div class="match-card ${status}" onclick="openScoreModal('${m.id}')">`;
-    H += `<div class="match-header">`;
-    H += `<div class="match-code">${esc(m.match_code||'')}</div>`;
-    H += `<span class="match-status ${status}">${status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'')}</span>`;
-    H += `</div>`;
-    if (info) H += `<div class="match-info">${info}</div>`;
-    H += `<div class="match-teams">`;
-    H += `<div class="team-name home">${esc(hn)}</div>`;
-    H += `<div class="match-score ${scoreClass}">${scoreText}</div>`;
-    H += `<div class="team-name away">${esc(an)}</div>`;
-    H += `</div>`;
-    H += `</div>`;
+  DATA.matches.forEach(m => {
+    var round = getRoundInfo(m);
+    if (rounds[round.type]) rounds[round.type].push(m);
   });
   
-  el("match-list").innerHTML = H;
+  var H = '';
+  
+  // Render each round
+  var roundOrder = ['group', 'r16', 'tk', 'bk', 'ck'];
+  var roundTitles = {
+    'group': '📋 Vòng bảng',
+    'r16': ' Vòng 1/8',
+    'tk': '🎯 Tứ kết',
+    'bk': '🏅 Bán kết',
+    'ck': '🏆 Chung kết'
+  };
+  
+  roundOrder.forEach(roundType => {
+    if (rounds[roundType].length) {
+      var roundInfo = getRoundInfo(rounds[roundType][0]);
+      H += `<div class="round-section">`;
+      H += `<div class="round-header ${roundInfo.class}">${roundTitles[roundType]} (${rounds[roundType].length} trận)</div>`;
+      
+      rounds[roundType].forEach(m => {
+        H += renderMatchCard(m);
+      });
+      
+      H += `</div>`;
+    }
+  });
+  
+  el("matches-container").innerHTML = H;
+}
+
+function renderMatchCard(m) {
+  var status = m.match_status || 'scheduled';
+  var hn = getTeamName(m.home_team_id);
+  var an = getTeamName(m.away_team_id);
+  var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
+  var scoreText = (status === 'finished' || status === 'completed') ? (h + " - " + a) : "vs";
+  var scoreClass = (status === 'finished' || status === 'completed') ? 'done' : '';
+  
+  var H = `<div class="match-card ${status}" onclick="openScoreModal('${m.id}')">`;
+  H += `<div class="match-header">`;
+  H += `<div class="match-code">${esc(m.match_code||'')}</div>`;
+  H += `<span class="match-status ${status}">${status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'')}</span>`;
+  H += `</div>`;
+  H += `<div class="match-teams">`;
+  H += `<div class="team-name home">${esc(hn)}</div>`;
+  H += `<div class="match-score ${scoreClass}">${scoreText}</div>`;
+  H += `<div class="team-name away">${esc(an)}</div>`;
+  H += `</div>`;
+  H += `</div>`;
+  
+  return H;
 }
 
 /* === SCORE MODAL === */
-function openScoreModal(matchId) {
+async function openScoreModal(matchId) {
   currentMatchId = matchId;
-  var m = DATA.matches.find(x => x.id === matchId);
-  if (!m) return;
+  currentMatchData = DATA.matches.find(x => x.id === matchId);
+  if (!currentMatchData) return;
   
-  var hn = getTeamName(m.home_team_id);
-  var an = getTeamName(m.away_team_id);
-  var info = getMatchInfo(m);
+  var hn = getTeamName(currentMatchData.home_team_id);
+  var an = getTeamName(currentMatchData.away_team_id);
   
-  el("modal-match-code").textContent = " " + (m.match_code||'');
-  el("modal-match-info").textContent = info;
+  el("modal-match-code").textContent = "🎯 " + (currentMatchData.match_code||'');
   el("modal-home-name").textContent = hn;
   el("modal-away-name").textContent = an;
-  el("modal-home-score").textContent = m.home_score || 0;
-  el("modal-away-score").textContent = m.away_score || 0;
+  el("modal-home-score").textContent = currentMatchData.home_score || 0;
+  el("modal-away-score").textContent = currentMatchData.away_score || 0;
   
-  updateServeButtons(m.serving_turn || 1);
+  // Populate player slots
+  var homePlayers = getTeamPlayers(currentMatchData.home_team_id);
+  var awayPlayers = getTeamPlayers(currentMatchData.away_team_id);
+  
+  populateSlotSelect('slot-home-1', homePlayers, 1);
+  populateSlotSelect('slot-home-2', homePlayers, 2);
+  populateSlotSelect('slot-away-1', awayPlayers, 1);
+  populateSlotSelect('slot-away-2', awayPlayers, 2);
+  
+  // Set current slots
+  if (currentMatchData.home_player_slot1) el("slot-home-1").value = currentMatchData.home_player_slot1;
+  if (currentMatchData.home_player_slot2) el("slot-home-2").value = currentMatchData.home_player_slot2;
+  if (currentMatchData.away_player_slot1) el("slot-away-1").value = currentMatchData.away_player_slot1;
+  if (currentMatchData.away_player_slot2) el("slot-away-2").value = currentMatchData.away_player_slot2;
+  
+  // Set serve buttons
+  updateServeButtons();
+  
+  // Show rally info
+  updateRallyInfo();
   
   el("score-modal").classList.add("show");
+}
+
+function populateSlotSelect(selectId, players, position) {
+  var sel = el(selectId);
+  sel.innerHTML = '<option value="">-- Ô ' + position + ' --</option>';
+  players.forEach(p => {
+    if (p.position === position) {
+      sel.innerHTML += `<option value="${p.id}">${esc(p.name)}</option>`;
+    }
+  });
+}
+
+function updateServeButtons() {
+  var serveTeam = currentMatchData.serving_team || 'home';
+  var serveTurn = currentMatchData.serving_turn || 1;
+  
+  el("serve-home-l1").classList.toggle('active', serveTeam === 'home' && serveTurn === 1);
+  el("serve-home-l2").classList.toggle('active', serveTeam === 'home' && serveTurn === 2);
+  el("serve-away-l1").classList.toggle('active', serveTeam === 'away' && serveTurn === 1);
+  el("serve-away-l2").classList.toggle('active', serveTeam === 'away' && serveTurn === 2);
+}
+
+function updateRallyInfo() {
+  var h = currentMatchData.home_score || 0;
+  var a = currentMatchData.away_score || 0;
+  var serveTeam = currentMatchData.serving_team || 'home';
+  var serveTurn = currentMatchData.serving_turn || 1;
+  
+  var serveTeamName = serveTeam === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent;
+  var receiveTeamName = serveTeam === 'home' ? el("modal-away-name").textContent : el("modal-home-name").textContent;
+  
+  var info = `📊 Tỷ số: ${h} - ${a} | `;
+  info += `🏓 ${serveTeamName} đang giao (L${serveTurn}) | `;
+  info += `👈 ${receiveTeamName} đang nhận`;
+  
+  el("rally-info").textContent = info;
 }
 
 function closeScoreModal() {
   el("score-modal").classList.remove("show");
   currentMatchId = null;
+  currentMatchData = null;
 }
 
-function updateServeButtons(turn) {
-  el("serve-l1").classList.toggle('active', turn === 1);
-  el("serve-l2").classList.toggle('active', turn === 2);
+async function onSlotChange(team, slotNum) {
+  if (!currentMatchId) return;
+  
+  var slot1 = el("slot-" + team + "-1").value;
+  var slot2 = el("slot-" + team + "-2").value;
+  
+  if (slot1 && slot2 && slot1 === slot2) {
+    alert("⚠️ 2 VĐV phải khác nhau!");
+    el("slot-" + team + "-" + slotNum).value = "";
+    return;
+  }
+  
+  var update = {};
+  update[team + '_player_slot1'] = el("slot-" + team + "-1").value || null;
+  update[team + '_player_slot2'] = el("slot-" + team + "-2").value || null;
+  
+  try {
+    await sb.from("matches").update(update).eq("id", currentMatchId);
+    Object.assign(currentMatchData, update);
+  } catch(e) {
+    toast("❌ Lỗi: " + e.message);
+  }
+}
+
+async function setServe(team, turn) {
+  if (!currentMatchId) return;
+  
+  try {
+    await sb.from("matches").update({
+      serving_team: team,
+      serving_turn: turn,
+      match_status: 'live'
+    }).eq("id", currentMatchId);
+    
+    currentMatchData.serving_team = team;
+    currentMatchData.serving_turn = turn;
+    currentMatchData.match_status = 'live';
+    
+    updateServeButtons();
+    updateRallyInfo();
+    
+    // Create rally entry
+    await createRally('SERVE_CHANGE');
+    
+    var teamName = team === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent;
+    toast("✅ " + teamName + " giao L" + turn);
+  } catch(e) {
+    toast("❌ Lỗi: " + e.message);
+  }
 }
 
 async function changeScore(team, delta) {
   if (!currentMatchId) return;
   
-  var m = DATA.matches.find(x => x.id === currentMatchId);
-  if (!m) return;
-  
-  var h = parseInt(m.home_score) || 0;
-  var a = parseInt(m.away_score) || 0;
+  var h = parseInt(currentMatchData.home_score) || 0;
+  var a = parseInt(currentMatchData.away_score) || 0;
   
   if (team === 'home') h = Math.max(0, h + delta);
   else a = Math.max(0, a + delta);
@@ -533,49 +620,88 @@ async function changeScore(team, delta) {
       match_status: 'live'
     }).eq("id", currentMatchId);
     
-    m.home_score = h;
-    m.away_score = a;
-    m.match_status = 'live';
+    var oldH = currentMatchData.home_score;
+    var oldA = currentMatchData.away_score;
     
+    currentMatchData.home_score = h;
+    currentMatchData.away_score = a;
+    currentMatchData.match_status = 'live';
+    
+    // Determine event type
+    var eventType;
+    if (team === 'home') {
+      eventType = 'HOME_SCORE';
+    } else {
+      eventType = 'AWAY_SCORE';
+    }
+    
+    // Create rally
+    await createRally(eventType);
+    
+    updateRallyInfo();
     toast("✅ Đã lưu: " + h + " - " + a);
     
     // Refresh list
-    var tid = el("tournament-filter").value;
-    await loadMatches(tid);
+    await loadMatches();
   } catch(e) {
     toast("❌ Lỗi: " + e.message);
   }
 }
 
-async function setServeTurn(turn) {
-  if (!currentMatchId) return;
+async function createRally(eventType) {
+  if (!currentMatchId || !CURRENT_USER) return;
   
-  var m = DATA.matches.find(x => x.id === currentMatchId);
-  if (!m) return;
+  var m = currentMatchData;
+  var serveTeam = m.serving_team || 'home';
+  var serveTurn = m.serving_turn || 1;
   
-  updateServeButtons(turn);
+  // Get server and receiver info
+  var serverSlot = serveTurn;
+  var receiverSlot = serveTurn;
+  
+  var serverPlayerId = serveTeam === 'home' ? 
+    (serveTurn === 1 ? m.home_player_slot1 : m.home_player_slot2) :
+    (serveTurn === 1 ? m.away_player_slot1 : m.away_player_slot2);
+  
+  var receiverPlayerId = serveTeam === 'home' ?
+    (serveTurn === 1 ? m.away_player_slot1 : m.away_player_slot2) :
+    (serveTurn === 1 ? m.home_player_slot1 : m.home_player_slot2);
+  
+  // Generate description
+  var serverName = serverPlayerId ? (DATA.players.find(p => p.id === serverPlayerId)?.full_name || 'VĐV') : 'VĐV';
+  var receiverName = receiverPlayerId ? (DATA.players.find(p => p.id === receiverPlayerId)?.full_name || 'VĐV') : 'VĐV';
+  var serverTeamName = serveTeam === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent;
+  var receiverTeamName = serveTeam === 'home' ? el("modal-away-name").textContent : el("modal-home-name").textContent;
+  
+  var description = `${serverName} (đội: ${serverTeamName}) giao từ Ô ${serverSlot} → ${receiverName} (đội: ${receiverTeamName}) đỡ ở Ô ${receiverSlot} - Lượt Giao ${serveTurn}`;
   
   try {
-    await sb.from("matches").update({
-      serving_turn: turn,
-      match_status: 'live'
-    }).eq("id", currentMatchId);
-    
-    m.serving_turn = turn;
-    m.match_status = 'live';
-    
-    toast("✅ Đã chuyển L" + turn);
+    await sb.rpc('auto_create_rally', {
+      p_match_id: currentMatchId,
+      p_home_score: m.home_score || 0,
+      p_away_score: m.away_score || 0,
+      p_serve_turn: serveTurn,
+      p_event_type: eventType,
+      p_server_player_id: serverPlayerId,
+      p_server_team: serveTeam,
+      p_server_slot: serverSlot,
+      p_receiver_player_id: receiverPlayerId,
+      p_receiver_team: serveTeam === 'home' ? 'away' : 'home',
+      p_receiver_slot: receiverSlot,
+      p_home_position: m.home_position || '1-2',
+      p_away_position: m.away_position || '1-2',
+      p_created_by: CURRENT_USER.id
+    });
   } catch(e) {
-    toast("❌ Lỗi: " + e.message);
+    console.error("Create rally error:", e);
   }
 }
 
 async function finishMatch() {
   if (!currentMatchId) return;
   
-  var m = DATA.matches.find(x => x.id === currentMatchId);
-  var h = parseInt(m.home_score) || 0;
-  var a = parseInt(m.away_score) || 0;
+  var h = parseInt(currentMatchData.home_score) || 0;
+  var a = parseInt(currentMatchData.away_score) || 0;
   
   if (!confirm("🏁 Kết thúc trận?\n\nTỷ số: " + h + " - " + a)) return;
   
@@ -586,13 +712,11 @@ async function finishMatch() {
       match_status: 'finished'
     }).eq("id", currentMatchId);
     
-    m.match_status = 'finished';
+    currentMatchData.match_status = 'finished';
     
     closeScoreModal();
     toast("🏁 Đã kết thúc");
-    
-    var tid = el("tournament-filter").value;
-    await loadMatches(tid);
+    await loadMatches();
   } catch(e) {
     toast("❌ Lỗi: " + e.message);
   }
@@ -603,10 +727,11 @@ function startRealtime() {
   stopRealtime();
   realtimeInterval = setInterval(async () => {
     var tid = el("tournament-filter").value;
-    if (!tid) return;
+    var eid = el("event-filter").value;
+    if (!tid || !eid) return;
     
     try {
-      var m = await sb.from("matches").select("*").eq("tournament_id", tid).order("match_seq");
+      var m = await sb.from("matches").select("*").eq("tournament_id", tid).eq("event_id", eid).order("match_seq");
       if (m.data) {
         var changed = false;
         for (var i = 0; i < m.data.length; i++) {
@@ -619,14 +744,17 @@ function startRealtime() {
         }
         if (changed) {
           DATA.matches = m.data;
-          filterMatches();
+          renderMatchesByRound();
           
           // Update modal if open
           if (currentMatchId) {
             var cm = DATA.matches.find(x => x.id === currentMatchId);
             if (cm) {
+              currentMatchData = cm;
               el("modal-home-score").textContent = cm.home_score || 0;
               el("modal-away-score").textContent = cm.away_score || 0;
+              updateServeButtons();
+              updateRallyInfo();
             }
           }
         }
@@ -650,10 +778,10 @@ function stopRealtime() {
     if (CURRENT_USER) {
       await loadData();
     } else {
-      el("match-list").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><div style="font-size:48px;margin-bottom:10px">🔐</div><p>Vui lòng đăng nhập</p></div>';
+      el("matches-container").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><div style="font-size:48px;margin-bottom:10px"></div><p>Vui lòng đăng nhập</p></div>';
     }
   } catch(e) {
-    showDebug("Init error: " + e.message);
+    console.error("Init error:", e);
   }
 })();
 </script>
