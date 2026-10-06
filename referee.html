@@ -24,8 +24,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 
 .filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
 .filter-bar select{flex:1;min-width:0;background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:6px 8px;color:var(--tx);font-size:12px}
-.filter-bar label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mu);cursor:pointer;padding:5px 8px;background:var(--sf);border-radius:6px;border:1px solid var(--ln);white-space:nowrap}
-.filter-bar input[type="checkbox"]{width:14px;height:14px;accent-color:var(--pk)}
 
 .debug-box{background:rgba(248,113,113,.1);border:1px solid var(--rd);border-radius:6px;padding:8px;margin-bottom:10px;font-size:10px;color:var(--rd);font-family:monospace;max-height:120px;overflow-y:auto;white-space:pre-wrap}
 .debug-box.ok{background:rgba(163,230,53,.1);border-color:var(--li);color:var(--li)}
@@ -110,7 +108,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   .logo{font-size:12px}
   .btn{padding:5px 8px;font-size:10px}
   .filter-bar select{padding:5px 6px;font-size:11px}
-  .filter-bar label{font-size:10px;padding:4px 6px}
   .match-card{padding:6px;margin:4px 6px}
   .match-code{font-size:10px}
   .team-name{font-size:10px}
@@ -166,10 +163,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     <select id="event-filter" onchange="onEventChange()">
       <option value="">-- Chọn nội dung --</option>
     </select>
-    <label>
-      <input type="checkbox" id="my-tournaments-only" onchange="onFilterChange()" checked/>
-      Của tôi
-    </label>
   </div>
   
   <div id="matches-container">
@@ -252,13 +245,13 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
       <div class="slot-group away">
         <div class="slot-group-title">ĐỘI B</div>
         <div class="player-select-wrap">
-          <label> Ô 1</label>
+          <label>🎯 Ô 1</label>
           <select id="slot-away-1" class="slot-select" onchange="onSlotChange('away',1)">
             <option value="">-- Chọn --</option>
           </select>
         </div>
         <div class="player-select-wrap">
-          <label> Ô 2</label>
+          <label>🎯 Ô 2</label>
           <select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)">
             <option value="">-- Chọn --</option>
           </select>
@@ -358,19 +351,23 @@ function applyUI() {
   if (logged) el("user-chip").textContent = "👤 " + CURRENT_USER.username;
 }
 
-/* === DATA LOADING === */
+/* === 🌟 DATA LOADING - CHỈ LẤY GIẢI CỦA CHÍNH MÌNH === */
 async function loadData() {
   if (!CURRENT_USER) return;
   debug("🔄 Đang tải...\nUser: " + CURRENT_USER.username + "\nID: " + CURRENT_USER.id);
   
   try {
-    var tr = await sb.from("tournaments").select("*").order("created_at", {ascending:false});
-    if (tr.error) { debug("❌ Lỗi tournaments: " + tr.error.message); return; }
+    // 🌟 CHỈ QUERY CÁC GIẢI CÓ admin_id TRÙNG VỚI USER ĐANG ĐĂNG NHẬP
+    var tr = await sb.from("tournaments").select("*").eq('admin_id', CURRENT_USER.id).order("created_at", {ascending:false});
+    
+    if (tr.error) { 
+      debug("❌ Lỗi tournaments: " + tr.error.message); 
+      return; 
+    }
     
     DATA.tournaments = (tr.data || []).slice();
-    var myTournaments = DATA.tournaments.filter(t => t && t.admin_id === CURRENT_USER.id);
     
-    debug("✅ " + DATA.tournaments.length + " giải (" + myTournaments.length + " của bạn)", true);
+    debug("✅ " + DATA.tournaments.length + " giải của bạn", true);
     
     var tSelect = el("tournament-filter");
     tSelect.innerHTML = '<option value="">-- Chọn giải --</option>';
@@ -378,20 +375,15 @@ async function loadData() {
     if (DATA.tournaments && DATA.tournaments.length > 0) {
       DATA.tournaments.forEach(function(t) {
         if (!t || !t.id) return;
-        var isMine = t.admin_id === CURRENT_USER.id;
-        var marker = isMine ? " ⭐" : "";
-        tSelect.innerHTML += '<option value="' + t.id + '">' + esc(t.name || 'Unknown') + marker + '</option>';
+        tSelect.innerHTML += '<option value="' + t.id + '">' + esc(t.name || 'Unknown') + '</option>';
       });
     }
     
-    if (myTournaments.length === 1) {
-      tSelect.value = myTournaments[0].id;
-      await onTournamentChange();
-    } else if (DATA.tournaments.length === 1) {
+    if (DATA.tournaments.length === 1) {
       tSelect.value = DATA.tournaments[0].id;
       await onTournamentChange();
     } else if (DATA.tournaments.length === 0) {
-      el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có giải đấu</p></div>';
+      el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Bạn chưa tạo giải đấu nào</p></div>';
     }
     
     startRealtime();
@@ -436,27 +428,6 @@ async function onTournamentChange() {
 
 async function onEventChange() { await loadMatches(); }
 
-function onFilterChange() {
-  var showOnlyMine = el("my-tournaments-only").checked;
-  var tSelect = el("tournament-filter");
-  var currentValue = tSelect.value;
-  
-  tSelect.innerHTML = '<option value="">-- Chọn giải --</option>';
-  
-  if (DATA.tournaments && DATA.tournaments.length > 0) {
-    DATA.tournaments.forEach(function(t) {
-      if (!t || !t.id) return;
-      var isMine = t.admin_id === CURRENT_USER.id;
-      if (showOnlyMine && !isMine) return;
-      var marker = isMine ? " ⭐" : "";
-      tSelect.innerHTML += '<option value="' + t.id + '">' + esc(t.name || 'Unknown') + marker + '</option>';
-    });
-  }
-  
-  tSelect.value = currentValue;
-  if (currentValue) onTournamentChange();
-}
-
 async function loadMatches() {
   var tid = el("tournament-filter").value;
   var eid = el("event-filter").value;
@@ -479,7 +450,7 @@ async function loadMatches() {
     debug("✅ " + DATA.matches.length + " matches", true);
     
     if (DATA.matches.length === 0) {
-      el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px"></div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
+      el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
       return;
     }
     
@@ -578,13 +549,13 @@ function getRoundInfo(match) {
   if (match.round === 1.5) return { type: 'r16', name: '🎯 Vòng 1/8', class: 'ko-header' };
   if (match.round === 2) return { type: 'tk', name: '🎯 Tứ kết', class: 'ko-header' };
   if (match.round === 3) return { type: 'bk', name: '🏅 Bán kết', class: 'ko-header' };
-  if (match.round === 4) return { type: 'ck', name: ' Chung kết', class: 'ko-header' };
+  if (match.round === 4) return { type: 'ck', name: '🏆 Chung kết', class: 'ko-header' };
   return { type: 'other', name: 'Khác', class: 'ko-header' };
 }
 
 function renderMatchesByRound() {
   if (!DATA.matches || DATA.matches.length === 0) {
-    el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px"></div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
+    el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
     return;
   }
   
@@ -616,7 +587,7 @@ function renderMatchesByRound() {
     var colorClass = groupColors[code] || 'group-a';
     
     H += '<div class="group-section">';
-    H += '<div class="group-header ' + colorClass + '"><span> Bảng ' + code + '</span><span class="count">' + matches.length + ' trận</span></div>';
+    H += '<div class="group-header ' + colorClass + '"><span>📋 Bảng ' + code + '</span><span class="count">' + matches.length + ' trận</span></div>';
     
     matches.forEach(function(m) {
       H += renderMatchCard(m);
@@ -689,9 +660,6 @@ async function openScoreModal(matchId) {
   var homePlayers = getTeamPlayers(currentMatchData.home_team_id);
   var awayPlayers = getTeamPlayers(currentMatchData.away_team_id);
   
-  console.log("Home players:", homePlayers);
-  console.log("Away players:", awayPlayers);
-  
   populateSlotSelect('slot-home-1', homePlayers, 1);
   populateSlotSelect('slot-home-2', homePlayers, 2);
   populateSlotSelect('slot-away-1', awayPlayers, 1);
@@ -722,8 +690,6 @@ function populateSlotSelect(selectId, players, position) {
       var optClass = position === 1 ? 'opt-slot1' : 'opt-slot2';
       sel.innerHTML += '<option class="' + optClass + '" value="' + p.id + '">' + esc(p.name || 'VĐV') + ' ' + slotLabel + '</option>';
     });
-  } else {
-    console.warn("No players for select:", selectId);
   }
 }
 
@@ -852,7 +818,6 @@ async function changeScore(team, delta) {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
-/* === 🌟 INSERT RALLY - DIRECT INSERT (KHÔNG DÙNG RPC) === */
 async function createRally(eventType) {
   if (!currentMatchId || !CURRENT_USER || !currentMatchData) {
     console.warn("Cannot create rally: missing data");
@@ -863,7 +828,6 @@ async function createRally(eventType) {
   var serveTeam = localServeState.team;
   var serveTurn = localServeState.turn;
   
-  // Chống ghi trùng
   var rallyKey = m.id + '|' + (m.home_score||0) + '|' + (m.away_score||0) + '|' + serveTurn + '|' + eventType;
   if (lastRallyKey === rallyKey) {
     console.log("Skip duplicate rally:", rallyKey);
@@ -891,7 +855,6 @@ async function createRally(eventType) {
   
   logRally("Creating: " + eventType + " - " + description);
   
-  // 🌟 DIRECT INSERT - KHÔNG DÙNG RPC
   await insertRallyDirect({
     match_id: currentMatchId,
     home_score: m.home_score || 0,
@@ -916,7 +879,6 @@ async function insertRallyDirect(rallyData) {
     console.log("[RALLY] Inserting:", rallyData);
     debug("🔄 Đang ghi rally: " + rallyData.event_type);
     
-    // Lấy rally_number tiếp theo
     var { data: lastRally, error: countError } = await sb
       .from("match_rallies")
       .select("rally_number")
@@ -931,9 +893,7 @@ async function insertRallyDirect(rallyData) {
     }
     
     var nextRallyNumber = (lastRally && lastRally.rally_number ? lastRally.rally_number : 0) + 1;
-    console.log("[RALLY] Next number:", nextRallyNumber);
     
-    // Insert với đầy đủ fields
     var insertData = {
       match_id: rallyData.match_id,
       rally_number: nextRallyNumber,
@@ -952,8 +912,6 @@ async function insertRallyDirect(rallyData) {
       description: rallyData.description,
       created_by: rallyData.created_by
     };
-    
-    console.log("[RALLY] Final insert data:", insertData);
     
     var { data: inserted, error: insertError } = await sb
       .from("match_rallies")
@@ -1038,7 +996,6 @@ function startRealtime() {
               el("modal-home-score").textContent = cm.home_score || 0;
               el("modal-away-score").textContent = cm.away_score || 0;
               
-              // KHÔNG update serve state từ DB
               updateRallyInfo();
             }
           }
