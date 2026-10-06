@@ -93,6 +93,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-main-row .m-team.away{color:var(--cy);text-align:left}
 .match-main-row .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
 .match-main-row .m-team.leading { color: var(--rd) !important; font-weight: 800; }
+.match-main-row .m-team .serve-icon{color:var(--or);font-size:12px;margin:0 2px;animation:blink 1s infinite}
 
 .match-main-row .m-score{
     font-family:monospace;font-weight:800;font-size:13px;
@@ -167,12 +168,16 @@ td.pf{font-family:monospace;color:var(--cy)}
 .rally-badge.score{background:rgba(34,211,238,.2);color:var(--cy);border:1px solid var(--cy)}
 .rally-badge.second{background:rgba(251,146,60,.2);color:var(--or);border:1px solid var(--or)}
 
-.rally-score{display:flex;justify-content:center;align-items:center;gap:8px;margin:12px 0}
+/* 🌟 LAYOUT MỚI: Tên đội trên tỷ số */
+.rally-score{display:flex;justify-content:center;align-items:flex-start;gap:10px;margin:12px 0}
+.rally-score-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.rally-score-label{font-size:10px;font-weight:700;color:var(--mu);text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rally-score-label.server-label{color:var(--rd);font-weight:800}
 .rally-score-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:monospace}
 .rally-score-circle.server{background:var(--rd);color:#fff;border:2px solid var(--rd);box-shadow:0 0 10px rgba(248,113,113,.3)}
 .rally-score-circle.receiver{background:#1a1a2e;color:var(--tx);border:1px solid var(--ln)}
 .rally-score-circle.turn{background:var(--or);color:#0b1220;font-size:16px;width:38px;height:38px}
-.rally-score-sep{font-size:18px;font-weight:800;color:var(--mu)}
+.rally-score-sep{font-size:18px;font-weight:800;color:var(--mu);align-self:center;margin-top:14px}
 
 .rally-desc{font-size:12px;color:var(--mu);line-height:1.5;margin-top:10px;padding-top:10px;border-top:1px solid rgba(148,163,184,.1);text-align:center}
 .rally-desc .player-name{color:var(--tx);font-weight:700}
@@ -198,6 +203,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   .timeline-btn{padding:3px 6px;font-size:9px}
   .rally-score-circle{width:38px;height:38px;font-size:18px}
   .rally-score-circle.turn{width:34px;height:34px;font-size:14px}
+  .rally-score-label{font-size:9px;max-width:70px}
 }
 @media(min-width:481px) and (max-width:768px){
   .tournament-grid{grid-template-columns:repeat(2,1fr)}
@@ -212,7 +218,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
-  <button id="login-btn" class="btn btn-p" onclick="openLogin()"> Đăng nhập</button>
+  <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
   <a id="admin-link" class="btn btn-b hidden" href="admin.html">⚙ Quản trị</a>
   <button id="logout-btn" class="btn btn-l hidden" onclick="doLogout()">Thoát</button>
 </div>
@@ -247,12 +253,12 @@ td.pf{font-family:monospace;color:var(--cy)}
     <button class="close-btn" onclick="closeTimelineModal()">×</button>
   </div>
   <div class="timeline-subheader">
-    <span class="icon"></span>
+    <span class="icon">📈</span>
     <h4 id="timeline-title">Đang tải...</h4>
   </div>
   <div class="timeline-body" id="timeline-body">
     <div class="timeline-empty">
-      <div class="icon"></div>
+      <div class="icon">⏳</div>
       <p>Đang tải diễn biến...</p>
     </div>
   </div>
@@ -334,7 +340,7 @@ function applyUI() {
   el("user-chip").classList.toggle("hidden", !logged);
   if (logged) {
     var role = isAdmin() ? "ADMIN" : "ORG";
-    el("user-chip").textContent = " " + CURRENT_USER.username + " • " + role;
+    el("user-chip").textContent = "👤 " + CURRENT_USER.username + " • " + role;
   }
 }
 
@@ -371,6 +377,7 @@ function stopRealtime() {
   if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; }
 }
 
+// 🌟 CẬP NHẬT DOM REALTIME - BAO GỒM ICON GIAO BANH
 function updateMatchRowsDOM() {
   DATA.matches.forEach(function(m) {
     var row = document.querySelector('.match-item[data-match-id="' + m.id + '"]');
@@ -378,8 +385,10 @@ function updateMatchRowsDOM() {
     
     var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
     var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
+    var hn = tName(m.home_team_id) || 'TBD';
+    var an = tName(m.away_team_id) || 'TBD';
     
-    // ✅ SỬA: Hiển thị tỷ số cả khi LIVE
+    // 1. Cập nhật tỷ số
     var scoreEl = row.querySelector('.m-score');
     if (scoreEl) {
       if (status === "completed" || status === "finished" || status === "live") {
@@ -391,11 +400,23 @@ function updateMatchRowsDOM() {
       }
     }
 
+    // 2. Cập nhật tên đội + ICON GIAO BANH realtime
     var homeTeamEl = row.querySelector('.m-team.home');
     var awayTeamEl = row.querySelector('.m-team.away');
-    if (homeTeamEl) homeTeamEl.classList.toggle('leading', h > a);
-    if (awayTeamEl) awayTeamEl.classList.toggle('leading', a > h);
+    
+    if (homeTeamEl && awayTeamEl) {
+      //  Thêm icon 🏓 bên cạnh đội đang giao banh
+      var homeIcon = (status === 'live' && m.serving_team === 'home') ? ' <span class="serve-icon"></span>' : '';
+      var awayIcon = (status === 'live' && m.serving_team === 'away') ? ' <span class="serve-icon">🏓</span>' : '';
+      
+      homeTeamEl.innerHTML = esc(hn) + homeIcon;
+      awayTeamEl.innerHTML = esc(an) + awayIcon;
+      
+      homeTeamEl.classList.toggle('leading', h > a);
+      awayTeamEl.classList.toggle('leading', a > h);
+    }
 
+    // 3. Cập nhật trạng thái
     var statusEl = row.querySelector('.status-tag');
     if (statusEl) {
       var statusText = status === 'live' ? '🔴 LIVE' : ((status === 'finished' || status === 'completed') ? '✅ FIN' : '⏳');
@@ -407,6 +428,7 @@ function updateMatchRowsDOM() {
     if (status === 'live') row.classList.add('live');
     else if (status === 'finished' || status === 'completed') row.classList.add('finished');
 
+    // 4. Cập nhật thông tin giao banh (giữ nguyên dòng phụ)
     var serveInfoEl = row.querySelector('.match-serve-info');
     if (status === 'live' && m.serving_player_id) {
       var pName = getPlayerName(m.serving_player_id) || 'VĐV';
@@ -534,7 +556,7 @@ function getEventTypeBadge(eventType) {
   return map[eventType] || {text: eventType, cls: 'start'};
 }
 
-// ✅ SỬA: Format mô tả theo yêu cầu mới
+// 🌟 RENDER TIMELINE VỚI TÊN ĐỘI TRÊN TỶ SỐ
 function renderTimeline() {
   var body = el("timeline-body");
   
@@ -558,7 +580,6 @@ function renderTimeline() {
     var serverScore = isHomeServing ? r.home_score : r.away_score;
     var receiverScore = isHomeServing ? r.away_score : r.home_score;
     
-    // ✅ SỬA: Format mô tả mới
     var desc = '<span class="team-name">' + esc(serverName) + '</span> đang giao banh lượt ' + r.serve_turn + ', <span class="team-name">' + esc(receiverName) + '</span> đang nhận giao banh';
     
     H += '<div class="rally-card">';
@@ -567,12 +588,31 @@ function renderTimeline() {
     H += '<span class="rally-badge ' + badge.cls + '">' + badge.text + '</span>';
     H += '</div>';
     
+    // 🌟 LAYOUT MỚI: Tên đội trên tỷ số, hoán đổi theo lượt giao
     H += '<div class="rally-score">';
-    H += '<div class="rally-score-circle server" title="Đội giao banh">' + serverScore + '</div>';
+    
+    // Cột 1: Đội đang giao (server)
+    H += '<div class="rally-score-col">';
+    H += '<div class="rally-score-label server-label">🏓 ' + esc(serverName) + '</div>';
+    H += '<div class="rally-score-circle server">' + serverScore + '</div>';
+    H += '</div>';
+    
     H += '<span class="rally-score-sep">-</span>';
-    H += '<div class="rally-score-circle receiver" title="Đội nhận banh">' + receiverScore + '</div>';
+    
+    // Cột 2: Đội nhận (receiver)
+    H += '<div class="rally-score-col">';
+    H += '<div class="rally-score-label">' + esc(receiverName) + '</div>';
+    H += '<div class="rally-score-circle receiver">' + receiverScore + '</div>';
+    H += '</div>';
+    
     H += '<span class="rally-score-sep">-</span>';
-    H += '<div class="rally-score-circle turn" title="Lượt giao">' + r.serve_turn + '</div>';
+    
+    // Cột 3: Lượt giao
+    H += '<div class="rally-score-col">';
+    H += '<div class="rally-score-label">Lượt</div>';
+    H += '<div class="rally-score-circle turn">' + r.serve_turn + '</div>';
+    H += '</div>';
+    
     H += '</div>';
     
     H += '<div class="rally-desc">' + desc + '</div>';
@@ -688,8 +728,8 @@ function renderTournamentDetail() {
   if (!t) return '';
   var statusCls = t.display_status || "not_started";
   var statusText = "";
-  if (statusCls === "not_started") statusText = "⏳ Chưa diễn ra";
-  else if (statusCls === "in_progress") statusText = "🔴 Đang diễn ra";
+  if (statusCls === "not_started") statusText = " Chưa diễn ra";
+  else if (statusCls === "in_progress") statusText = " Đang diễn ra";
   else statusText = "✅ Đã kết thúc";
   
   var canManage = isOwnerOfTournament(t);
@@ -740,13 +780,13 @@ function renderTournamentDetail() {
 }
 
 function renderEventDetail() {
-  if (!DATA.gStage) return '<div class="empty-state"><div class="icon">️</div><p>Chưa có bảng đấu</p></div>';
+  if (!DATA.gStage) return '<div class="empty-state"><div class="icon">🏗️</div><p>Chưa có bảng đấu</p></div>';
   
   var H = '';
   var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; }).sort(function(a,b){ return a.code.localeCompare(b.code); });
   var numGroups = groups.length;
   
-  H += '<div class="section-title"> BẢNG XẾP HẠNG <span class="count">' + numGroups + ' bảng</span></div>';
+  H += '<div class="section-title">📊 BẢNG XẾP HẠNG <span class="count">' + numGroups + ' bảng</span></div>';
   H += '<div class="bxh-grid">';
   groups.forEach(function(g, idx) {
     var st = standings(g.id);
@@ -760,7 +800,7 @@ function renderEventDetail() {
     var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
     
     H += '<div class="group-card">';
-    H += '<h4> Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
+    H += '<h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
     
     if (st.length) {
       H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>HS</th><th>GF</th></tr></thead><tbody>';
@@ -818,13 +858,13 @@ function renderEventDetail() {
   return H;
 }
 
-// ✅ SỬA: Hiển thị tỷ số cả khi LIVE
+// 🌟 RENDER MATCH ITEM VỚI ICON GIAO BANH
 function renderMatchItem(m, isKO) {
   var hn = tName(m.home_team_id), an = tName(m.away_team_id);
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   
   var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
-  var statusText = " Chưa đấu";
+  var statusText = "⏳ Chưa đấu";
   var statusClass = "scheduled";
   if (status === 'live') {
     statusText = "🔴 LIVE";
@@ -837,7 +877,10 @@ function renderMatchItem(m, isKO) {
   var homeLeadingClass = h > a ? "leading" : "";
   var awayLeadingClass = a > h ? "leading" : "";
   
-  // ✅ SỬA: Hiển thị tỷ số cả khi LIVE
+  // 🌟 Thêm icon 🏓 bên cạnh tên đội đang giao banh
+  var homeIcon = (status === 'live' && m.serving_team === 'home') ? ' <span class="serve-icon"></span>' : '';
+  var awayIcon = (status === 'live' && m.serving_team === 'away') ? ' <span class="serve-icon">🏓</span>' : '';
+  
   var scoreHtml = "vs";
   if (status === "completed" || status === "finished" || status === "live") {
     var hScoreClass = h > a ? "score-leading" : "score-normal";
@@ -849,9 +892,9 @@ function renderMatchItem(m, isKO) {
   
   H += '<div class="match-main-row">';
   H += '<div class="m-code">' + esc(displayCode(m)) + '</div>';
-  H += '<div class="m-team home ' + homeLeadingClass + '">' + esc(hn || 'TBD') + '</div>';
+  H += '<div class="m-team home ' + homeLeadingClass + '">' + esc(hn || 'TBD') + homeIcon + '</div>';
   H += '<div class="m-score">' + scoreHtml + '</div>';
-  H += '<div class="m-team away ' + awayLeadingClass + '">' + esc(an || 'TBD') + '</div>';
+  H += '<div class="m-team away ' + awayLeadingClass + '">' + esc(an || 'TBD') + awayIcon + '</div>';
   H += '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
   H += '<button class="timeline-btn" onclick="event.stopPropagation();openTimelineModal(\'' + m.id + '\')">📈</button>';
   H += '</div>';
@@ -859,7 +902,7 @@ function renderMatchItem(m, isKO) {
   if (status === 'live' && m.serving_player_id) {
     var pName = getPlayerName(m.serving_player_id) || 'VĐV';
     var turn = m.serving_turn || 1;
-    H += '<div class="match-serve-info"> ' + esc(pName) + ' đang giao (L' + turn + ')</div>';
+    H += '<div class="match-serve-info">🏓 ' + esc(pName) + ' đang giao (L' + turn + ')</div>';
   }
   
   H += '</div>';
@@ -943,7 +986,7 @@ window.backToList = function() {
     await loadTournaments();
     render();
   } catch(e) {
-    el("content").innerHTML = '<div class="empty-state"><div class="icon"></div><p>Lỗi tải dữ liệu: ' + esc(e.message) + '</p></div>';
+    el("content").innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Lỗi tải dữ liệu: ' + esc(e.message) + '</p></div>';
   }
 })();
 </script>
