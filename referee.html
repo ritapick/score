@@ -9,7 +9,7 @@
 :root{--bg:#1a1a2e;--sf:#16213e;--sf2:#0f3460;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171;--pk:#e94560}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 html,body{margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
-button,input,select{font:inherit}
+button,input,select,a{font:inherit}
 .hidden{display:none!important}
 
 .topnav{position:sticky;top:0;z-index:50;background:rgba(26,26,46,.98);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln);padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px}
@@ -159,6 +159,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <body>
 <nav class="topnav">
 <div class="brand-row">
+  <!-- 🌟 NÚT TRANG CHỦ MỚI -->
+  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
   <span class="logo">⚖️ Trọng Tài</span>
 </div>
 <div>
@@ -316,7 +318,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   <div class="timeout-display" id="timeout-display">00:00</div>
   <div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;">
     <button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button>
-    
   </div>
 </div>
 </div>
@@ -767,7 +768,6 @@ function updateTopScoreDisplay() {
   el("top-serve-turn").textContent = serveTurn;
 }
 
-// 🌟 LOGIC MỚI: Ẩn/Hiện nút +/- theo đội đang giao banh
 function updateScoreControlsVisibility() {
   var homeControls = el("home-score-controls");
   var awayControls = el("away-score-controls");
@@ -838,7 +838,7 @@ async function setServe(team, turn) {
     
     updateServeButtons();
     updateTopScoreDisplay();
-    updateScoreControlsVisibility(); // Cập nhật lại nút +/-
+    updateScoreControlsVisibility();
     
     await createRally('SERVE_CHANGE');
     
@@ -1006,11 +1006,10 @@ async function finishMatch() {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
-// 🌟 LOGIC TIMEOUT MỚI
 function openTimeoutModal() {
-  timeoutElapsed = 0; // Reset về 0
+  timeoutElapsed = 0;
   el("timeout-modal").classList.add("show");
-  startTimeout(); // Chạy ngay lập tức
+  startTimeout();
 }
 
 function closeTimeoutModal() {
