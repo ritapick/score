@@ -26,9 +26,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
 .filter-bar select{flex:1;min-width:0;background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:6px 8px;color:var(--tx);font-size:12px}
 
-.debug-box{background:rgba(248,113,113,.1);border:1px solid var(--rd);border-radius:6px;padding:8px;margin-bottom:10px;font-size:10px;color:var(--rd);font-family:monospace;max-height:120px;overflow-y:auto;white-space:pre-wrap}
-.debug-box.ok{background:rgba(163,230,53,.1);border-color:var(--li);color:var(--li)}
-
 .group-section{margin-bottom:14px;background:var(--sf);border:1px solid var(--ln);border-radius:8px;overflow:hidden}
 .group-header{padding:8px 10px;font-weight:800;font-size:12px;display:flex;justify-content:space-between;align-items:center}
 .group-header.group-a{background:rgba(163,230,53,.15);color:var(--li)}
@@ -109,7 +106,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .timeout-display{font-size:56px;font-weight:900;font-family:monospace;color:var(--or);text-align:center;margin:20px 0;letter-spacing:2px}
 .timeout-display.running{animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
-.timeout-controls{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
 
 .toast{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:8px 14px;border-radius:99px;font-weight:800;font-size:11px;z-index:99;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
@@ -172,8 +168,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 </div>
 </nav>
 <main>
-  <div id="debug-box" class="debug-box hidden"></div>
-  
   <div class="filter-bar">
     <select id="tournament-filter" onchange="onTournamentChange()">
       <option value="">-- Chọn giải --</option>
@@ -235,7 +229,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
       <div class="score-team">
         <div class="score-team-name home" id="modal-home-name">Team A</div>
         <div class="score-value" id="modal-home-score">0</div>
-        <div class="score-controls">
+        <div class="score-controls" id="home-score-controls">
           <button class="score-btn" onclick="changeScore('home', -1)">−</button>
           <button class="score-btn" onclick="changeScore('home', 1)">+</button>
         </div>
@@ -244,7 +238,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
       <div class="score-team">
         <div class="score-team-name away" id="modal-away-name">Team B</div>
         <div class="score-value" id="modal-away-score">0</div>
-        <div class="score-controls">
+        <div class="score-controls" id="away-score-controls">
           <button class="score-btn" onclick="changeScore('away', -1)">−</button>
           <button class="score-btn" onclick="changeScore('away', 1)">+</button>
         </div>
@@ -320,12 +314,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     <button class="modal-close" onclick="closeTimeoutModal()">×</button>
   </div>
   <div class="timeout-display" id="timeout-display">00:00</div>
-  <div class="timeout-controls">
-    <button class="btn btn-p" id="timeout-toggle-btn" onclick="toggleTimeout()" style="min-width:120px">▶ Bắt đầu</button>
-  </div>
-  <div class="modal-actions" style="margin-top:0">
+  <div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;">
     <button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button>
-    <button class="btn btn-l" onclick="resetTimeout()">↺ Reset</button>
   </div>
 </div>
 </div>
@@ -362,17 +352,6 @@ function toast(msg) {
   if (window._tt) clearTimeout(window._tt);
   window._tt = setTimeout(function(){ t.className = "toast"; }, 2500);
 }
-function debug(msg, isOk) {
-  var box = el("debug-box");
-  box.textContent = msg;
-  box.classList.toggle("hidden", !msg);
-  box.classList.toggle("ok", isOk);
-  console.log("[DEBUG]", msg);
-}
-function logRally(msg) {
-  console.log("[RALLY]", msg);
-  debug("🏓 " + msg, true);
-}
 
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
 function closeLogin() { el("login-modal").classList.remove("show"); }
@@ -408,14 +387,11 @@ function applyUI() {
 
 async function loadData() {
   if (!CURRENT_USER) return;
-  debug("🔄 Đang tải...\nUser: " + CURRENT_USER.username + "\nID: " + CURRENT_USER.id);
-  
   try {
     var tr = await sb.from("tournaments").select("*").eq('admin_id', CURRENT_USER.id).order("created_at", {ascending:false});
-    if (tr.error) { debug("❌ Lỗi tournaments: " + tr.error.message); return; }
+    if (tr.error) { return; }
     
     DATA.tournaments = (tr.data || []).slice();
-    debug("✅ " + DATA.tournaments.length + " giải của bạn", true);
     
     var tSelect = el("tournament-filter");
     tSelect.innerHTML = '<option value="">-- Chọn giải --</option>';
@@ -435,7 +411,7 @@ async function loadData() {
     }
     
     startRealtime();
-  } catch(e) { debug("❌ Lỗi: " + e.message); console.error(e); }
+  } catch(e) { console.error(e); }
 }
 
 async function onTournamentChange() {
@@ -446,12 +422,10 @@ async function onTournamentChange() {
     return;
   }
   try {
-    debug("🔄 Loading events: " + tid);
     var ev = await sb.from("events").select("*").eq("tournament_id", tid);
-    if (ev.error) { debug("❌ Lỗi events: " + ev.error.message); return; }
+    if (ev.error) { return; }
     
     DATA.events = (ev.data || []).slice();
-    debug("✅ " + DATA.events.length + " events", true);
     
     var eSelect = el("event-filter");
     eSelect.innerHTML = '<option value="">-- Chọn nội dung --</option>';
@@ -471,7 +445,7 @@ async function onTournamentChange() {
     } else {
       el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p style="font-size:12px;margin:0">Chưa có nội dung</p></div>';
     }
-  } catch(e) { debug("❌ Lỗi: " + e.message); }
+  } catch(e) { console.error(e); }
 }
 
 async function onEventChange() { await loadMatches(); }
@@ -486,16 +460,13 @@ async function loadMatches() {
   }
   
   try {
-    debug("🔄 Loading matches: " + tid + (eid ? ", event: " + eid : ""));
-    
     var query = sb.from("matches").select("*").eq("tournament_id", tid);
     if (eid) query = query.eq("event_id", eid);
     var m = await query.order("match_seq");
     
-    if (m.error) { debug("❌ Lỗi matches: " + m.error.message); return; }
+    if (m.error) { return; }
     
     DATA.matches = (m.data || []).slice();
-    debug("✅ " + DATA.matches.length + " matches", true);
     
     if (DATA.matches.length === 0) {
       el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
@@ -507,12 +478,8 @@ async function loadMatches() {
     if (allEventIds.length > 0) {
       var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name))").in("event_id", allEventIds);
       
-      if (t.error) {
-        debug("⚠️ Lỗi teams: " + t.error.message);
-        DATA.teams = [];
-      } else {
+      if (!t.error) {
         DATA.teams = (t.data || []).slice();
-        debug("✅ Loaded " + DATA.teams.length + " teams", true);
       }
       
       DATA.players = [];
@@ -528,7 +495,6 @@ async function loadMatches() {
           });
         });
       }
-      debug("✅ " + DATA.players.length + " players", true);
       
       var st = await sb.from("stages").select("*").in("event_id", allEventIds);
       DATA.stages = (st.data || []).slice();
@@ -540,8 +506,6 @@ async function loadMatches() {
           DATA.groups = (g.data || []).slice();
         } else { DATA.groups = []; }
       } else { DATA.groups = []; }
-      
-      debug("✅ " + DATA.stages.length + " stages, " + DATA.groups.length + " groups", true);
     } else {
       DATA.teams = [];
       DATA.players = [];
@@ -550,7 +514,7 @@ async function loadMatches() {
     }
     
     renderMatchesByRound();
-  } catch(e) { debug("❌ Lỗi: " + e.message); console.error(e); }
+  } catch(e) { console.error(e); }
 }
 
 function getTeamName(teamId) {
@@ -601,7 +565,6 @@ function getRoundInfo(match) {
   return { type: 'other', name: 'Khác', class: 'ko-header' };
 }
 
-// 🌟 HÀM HIỂN THỊ MÃ TRẬN ĐẤU GIỐNG INDEX.HTML
 function displayCode(m) {
   if (!m) return "?";
   if (m.group_id) {
@@ -694,7 +657,6 @@ function renderMatchCard(m) {
   var scoreText = (status === 'finished' || status === 'completed') ? (h + " - " + a) : "vs";
   var scoreClass = (status === 'finished' || status === 'completed') ? 'done' : '';
   
-  // 🌟 Sử dụng displayCode để hiển thị mã trận đấu đẹp (A1, TK1, CK...)
   var matchCode = displayCode(m);
   
   var H = '<div class="match-card ' + status + '" onclick="openScoreModal(\'' + m.id + '\')">';
@@ -719,7 +681,6 @@ async function openScoreModal(matchId) {
   var hn = getTeamName(currentMatchData.home_team_id);
   var an = getTeamName(currentMatchData.away_team_id);
   
-  // 🌟 Hiển thị mã trận đấu đẹp trong modal
   el("modal-match-code").textContent = "🎯 " + displayCode(currentMatchData);
   el("modal-home-name").textContent = hn;
   el("modal-away-name").textContent = an;
@@ -744,6 +705,7 @@ async function openScoreModal(matchId) {
   
   updateServeButtons();
   updateTopScoreDisplay();
+  updateScoreControlsVisibility();
   
   el("score-modal").classList.add("show");
 }
@@ -804,6 +766,24 @@ function updateTopScoreDisplay() {
   el("top-serve-turn").textContent = serveTurn;
 }
 
+// 🌟 LOGIC MỚI: Ẩn/Hiện nút +/- theo đội đang giao banh
+function updateScoreControlsVisibility() {
+  var homeControls = el("home-score-controls");
+  var awayControls = el("away-score-controls");
+  if (!homeControls || !awayControls) return;
+
+  if (localServeState.team === 'home') {
+    homeControls.style.display = 'flex';
+    awayControls.style.display = 'none';
+  } else if (localServeState.team === 'away') {
+    homeControls.style.display = 'none';
+    awayControls.style.display = 'flex';
+  } else {
+    homeControls.style.display = 'flex';
+    awayControls.style.display = 'flex';
+  }
+}
+
 function closeScoreModal() {
   el("score-modal").classList.remove("show");
   currentMatchId = null;
@@ -857,6 +837,7 @@ async function setServe(team, turn) {
     
     updateServeButtons();
     updateTopScoreDisplay();
+    updateScoreControlsVisibility(); // Cập nhật lại nút +/-
     
     await createRally('SERVE_CHANGE');
     
@@ -867,6 +848,7 @@ async function setServe(team, turn) {
     localServeState.team = currentMatchData.serving_team || 'home';
     localServeState.turn = currentMatchData.serving_turn || 1;
     updateServeButtons();
+    updateScoreControlsVisibility();
   }
 }
 
@@ -903,7 +885,6 @@ async function changeScore(team, delta) {
 
 async function createRally(eventType) {
   if (!currentMatchId || !CURRENT_USER || !currentMatchData) {
-    console.warn("Cannot create rally: missing data");
     return;
   }
   
@@ -913,7 +894,6 @@ async function createRally(eventType) {
   
   var rallyKey = m.id + '|' + (m.home_score||0) + '|' + (m.away_score||0) + '|' + serveTurn + '|' + eventType;
   if (lastRallyKey === rallyKey) {
-    console.log("Skip duplicate rally:", rallyKey);
     return;
   }
   lastRallyKey = rallyKey;
@@ -936,8 +916,6 @@ async function createRally(eventType) {
   
   var description = serverName + ' (đội: ' + serverTeamName + ') giao từ Ô ' + serverSlot + ' → ' + receiverName + ' (đội: ' + receiverTeamName + ') đỡ ở Ô ' + receiverSlot + ' - Lượt Giao ' + serveTurn;
   
-  logRally("Creating: " + eventType + " - " + description);
-  
   await insertRallyDirect({
     match_id: currentMatchId,
     home_score: m.home_score || 0,
@@ -959,21 +937,13 @@ async function createRally(eventType) {
 
 async function insertRallyDirect(rallyData) {
   try {
-    console.log("[RALLY] Inserting:", rallyData);
-    debug("🔄 Đang ghi rally: " + rallyData.event_type);
-    
-    var { data: lastRally, error: countError } = await sb
+    var { data: lastRally } = await sb
       .from("match_rallies")
       .select("rally_number")
       .eq("match_id", rallyData.match_id)
       .order("rally_number", {ascending: false})
       .limit(1)
       .maybeSingle();
-    
-    if (countError) {
-      console.error("[RALLY] Count error:", countError);
-      debug("❌ Lỗi đếm rally: " + countError.message);
-    }
     
     var nextRallyNumber = (lastRally && lastRally.rally_number ? lastRally.rally_number : 0) + 1;
     
@@ -996,26 +966,19 @@ async function insertRallyDirect(rallyData) {
       created_by: rallyData.created_by
     };
     
-    var { data: inserted, error: insertError } = await sb
+    var { error: insertError } = await sb
       .from("match_rallies")
-      .insert(insertData)
-      .select();
+      .insert(insertData);
     
     if (insertError) {
-      console.error("[RALLY] Insert error:", insertError);
-      debug("❌ Lỗi ghi rally: " + insertError.message + "\nCode: " + insertError.code);
       toast("❌ Lỗi ghi rally: " + insertError.message);
       return false;
     }
     
-    console.log("[RALLY] ✅ Success:", inserted);
-    logRally("✅ Rally #" + nextRallyNumber + " đã ghi: " + rallyData.event_type);
     toast("🏓 Rally #" + nextRallyNumber);
     return true;
     
   } catch(e) {
-    console.error("[RALLY] Exception:", e);
-    debug("❌ Exception: " + e.message);
     return false;
   }
 }
@@ -1042,9 +1005,11 @@ async function finishMatch() {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
+// 🌟 LOGIC TIMEOUT MỚI
 function openTimeoutModal() {
+  timeoutElapsed = 0; // Reset về 0
   el("timeout-modal").classList.add("show");
-  updateTimeoutDisplay();
+  startTimeout(); // Chạy ngay lập tức
 }
 
 function closeTimeoutModal() {
@@ -1052,18 +1017,8 @@ function closeTimeoutModal() {
   stopTimeout();
 }
 
-function toggleTimeout() {
-  if (timeoutRunning) {
-    stopTimeout();
-  } else {
-    startTimeout();
-  }
-}
-
 function startTimeout() {
   timeoutRunning = true;
-  el("timeout-toggle-btn").textContent = '⏸ Tạm dừng';
-  el("timeout-toggle-btn").className = 'btn btn-w';
   el("timeout-display").classList.add('running');
   
   timeoutInterval = setInterval(function() {
@@ -1078,16 +1033,7 @@ function stopTimeout() {
     clearInterval(timeoutInterval);
     timeoutInterval = null;
   }
-  el("timeout-toggle-btn").textContent = timeoutElapsed > 0 ? '▶ Tiếp tục' : '▶ Bắt đầu';
-  el("timeout-toggle-btn").className = 'btn btn-p';
   el("timeout-display").classList.remove('running');
-}
-
-function resetTimeout() {
-  stopTimeout();
-  timeoutElapsed = 0;
-  updateTimeoutDisplay();
-  el("timeout-toggle-btn").textContent = '▶ Bắt đầu';
 }
 
 function updateTimeoutDisplay() {
@@ -1159,7 +1105,7 @@ function stopRealtime() {
     } else {
       el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">🔐</div><p style="font-size:12px;margin:0">Vui lòng đăng nhập</p></div>';
     }
-  } catch(e) { debug("❌ Init error: " + e.message); }
+  } catch(e) { console.error("Init error:", e); }
 })();
 </script>
 </body>
