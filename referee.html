@@ -20,6 +20,7 @@ button,input,select{font:inherit}
 .btn:active{transform:scale(.95)}
 .btn-p{background:var(--pk);color:#fff}
 .btn-l{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln)}
+.btn-w{background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.4)}
 main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 
 .filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
@@ -61,6 +62,14 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .modal-header h3{margin:0;color:var(--pk);font-size:14px}
 .modal-close{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:0 6px}
 
+.score-top-bar{background:var(--sf2);border-radius:8px;padding:12px;margin-bottom:10px;text-align:center}
+.score-top-display{display:flex;justify-content:center;align-items:center;gap:8px;font-size:28px;font-weight:900;font-family:monospace}
+.score-top-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.score-top-label{font-size:9px;color:var(--mu);text-transform:uppercase}
+.score-top-value{color:var(--tx)}
+.score-top-value.server{color:var(--rd)}
+.score-top-sep{color:var(--mu);font-weight:800}
+
 .score-section{background:var(--bg);border-radius:8px;padding:10px;margin-bottom:10px}
 .score-display{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 .score-team{text-align:center}
@@ -94,10 +103,13 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .serve-btn .tick{display:inline-block;color:var(--rd);font-weight:900}
 .serve-btn.active .tick{color:#fff}
 
-.rally-info{background:var(--bg);border-radius:6px;padding:8px;margin-bottom:10px;font-size:10px;color:var(--mu);line-height:1.4;border-left:3px solid var(--pk);white-space:pre-wrap}
-
-.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
 .modal-actions .btn{padding:10px;font-size:12px;justify-content:center}
+
+.timeout-display{font-size:56px;font-weight:900;font-family:monospace;color:var(--or);text-align:center;margin:20px 0;letter-spacing:2px}
+.timeout-display.running{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.timeout-controls{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
 
 .toast{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:8px 14px;border-radius:99px;font-weight:800;font-size:11px;z-index:99;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
@@ -120,6 +132,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   .serve-btn{font-size:14px;padding:5px 3px}
   .modal{padding:10px}
   .modal-header h3{font-size:13px}
+  .score-top-display{font-size:24px}
+  .timeout-display{font-size:48px}
 }
 
 @media(min-width:381px) and (max-width:480px){
@@ -131,6 +145,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   .modal{max-width:500px;padding:14px}
   .score-value{font-size:40px}
   .score-btn{width:44px;height:44px;font-size:22px}
+  .score-top-display{font-size:32px}
+  .timeout-display{font-size:64px}
 }
 
 @media(max-height:500px) and (orientation:landscape){
@@ -138,7 +154,9 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   .score-value{font-size:28px}
   .score-btn{width:34px;height:34px;font-size:16px}
   .slots-section{padding:8px}
-  .modal-actions{grid-template-columns:1fr 1fr;gap:6px}
+  .modal-actions{grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .score-top-display{font-size:24px}
+  .timeout-display{font-size:48px}
 }
 </style>
 </head>
@@ -191,6 +209,25 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   <div class="modal-header">
     <h3 id="modal-match-code">Trận: --</h3>
     <button class="modal-close" onclick="closeScoreModal()">×</button>
+  </div>
+  
+  <div class="score-top-bar">
+    <div class="score-top-display">
+      <div class="score-top-item">
+        <div class="score-top-label" id="top-server-name">Đội A</div>
+        <div class="score-top-value server" id="top-server-score">0</div>
+      </div>
+      <span class="score-top-sep">-</span>
+      <div class="score-top-item">
+        <div class="score-top-label" id="top-receiver-name">Đội B</div>
+        <div class="score-top-value" id="top-receiver-score">0</div>
+      </div>
+      <span class="score-top-sep">-</span>
+      <div class="score-top-item">
+        <div class="score-top-label">Lượt</div>
+        <div class="score-top-value" id="top-serve-turn">1</div>
+      </div>
+    </div>
   </div>
   
   <div class="score-section">
@@ -268,11 +305,27 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     </div>
   </div>
   
-  <div id="rally-info" class="rally-info">Chưa có thông tin</div>
-  
   <div class="modal-actions">
     <button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button>
+    <button class="btn btn-w" onclick="openTimeoutModal()">⏱ Timeout</button>
     <button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button>
+  </div>
+</div>
+</div>
+
+<div id="timeout-modal" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <h3>⏱ TIMEOUT</h3>
+    <button class="modal-close" onclick="closeTimeoutModal()">×</button>
+  </div>
+  <div class="timeout-display" id="timeout-display">00:00</div>
+  <div class="timeout-controls">
+    <button class="btn btn-p" id="timeout-toggle-btn" onclick="toggleTimeout()" style="min-width:120px">▶ Bắt đầu</button>
+  </div>
+  <div class="modal-actions" style="margin-top:0">
+    <button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button>
+    <button class="btn btn-l" onclick="resetTimeout()">↺ Reset</button>
   </div>
 </div>
 </div>
@@ -298,7 +351,10 @@ var realtimeInterval = null;
 var lastRallyKey = null;
 var localServeState = { team: 'home', turn: 1 };
 
-/* === HELPERS === */
+var timeoutElapsed = 0;
+var timeoutInterval = null;
+var timeoutRunning = false;
+
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function toast(msg) {
@@ -318,7 +374,6 @@ function logRally(msg) {
   debug("🏓 " + msg, true);
 }
 
-/* === AUTH === */
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
 function closeLogin() { el("login-modal").classList.remove("show"); }
 async function doLogin() {
@@ -351,22 +406,15 @@ function applyUI() {
   if (logged) el("user-chip").textContent = "👤 " + CURRENT_USER.username;
 }
 
-/* === 🌟 DATA LOADING - CHỈ LẤY GIẢI CỦA CHÍNH MÌNH === */
 async function loadData() {
   if (!CURRENT_USER) return;
   debug("🔄 Đang tải...\nUser: " + CURRENT_USER.username + "\nID: " + CURRENT_USER.id);
   
   try {
-    // 🌟 CHỈ QUERY CÁC GIẢI CÓ admin_id TRÙNG VỚI USER ĐANG ĐĂNG NHẬP
     var tr = await sb.from("tournaments").select("*").eq('admin_id', CURRENT_USER.id).order("created_at", {ascending:false});
-    
-    if (tr.error) { 
-      debug("❌ Lỗi tournaments: " + tr.error.message); 
-      return; 
-    }
+    if (tr.error) { debug("❌ Lỗi tournaments: " + tr.error.message); return; }
     
     DATA.tournaments = (tr.data || []).slice();
-    
     debug("✅ " + DATA.tournaments.length + " giải của bạn", true);
     
     var tSelect = el("tournament-filter");
@@ -553,6 +601,24 @@ function getRoundInfo(match) {
   return { type: 'other', name: 'Khác', class: 'ko-header' };
 }
 
+// 🌟 HÀM HIỂN THỊ MÃ TRẬN ĐẤU GIỐNG INDEX.HTML
+function displayCode(m) {
+  if (!m) return "?";
+  if (m.group_id) {
+    var grp = DATA.groups.find(function(g){ return g && g.id===m.group_id; });
+    if (grp) {
+      var gm = DATA.matches.filter(function(x){ return x.group_id===m.group_id; }).sort(function(a,b){ return Number(a.bracket_slot)-Number(b.bracket_slot); });
+      var idx = gm.findIndex(function(x){ return x.id===m.id; });
+      return grp.code + (idx + 1);
+    }
+  }
+  if (m.round===2) return "TK" + ((Number(m.bracket_slot)%10)||1);
+  if (m.round===3) return "BK" + ((Number(m.bracket_slot)%10)||1);
+  if (m.round===4) return "CK";
+  if (m.round===1.5) return "V16-" + ((Number(m.bracket_slot)%20)||1);
+  return String(m.match_code||"?");
+}
+
 function renderMatchesByRound() {
   if (!DATA.matches || DATA.matches.length === 0) {
     el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
@@ -628,9 +694,12 @@ function renderMatchCard(m) {
   var scoreText = (status === 'finished' || status === 'completed') ? (h + " - " + a) : "vs";
   var scoreClass = (status === 'finished' || status === 'completed') ? 'done' : '';
   
+  // 🌟 Sử dụng displayCode để hiển thị mã trận đấu đẹp (A1, TK1, CK...)
+  var matchCode = displayCode(m);
+  
   var H = '<div class="match-card ' + status + '" onclick="openScoreModal(\'' + m.id + '\')">';
   H += '<div class="match-header">';
-  H += '<div class="match-code">' + esc(m.match_code||'') + '</div>';
+  H += '<div class="match-code">' + esc(matchCode) + '</div>';
   H += '<span class="match-status ' + status + '">' + (status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳')) + '</span>';
   H += '</div>';
   H += '<div class="match-teams">';
@@ -642,7 +711,6 @@ function renderMatchCard(m) {
   return H;
 }
 
-/* === SCORE MODAL === */
 async function openScoreModal(matchId) {
   currentMatchId = matchId;
   currentMatchData = DATA.matches.find(function(x) { return x && x.id === matchId; });
@@ -651,7 +719,8 @@ async function openScoreModal(matchId) {
   var hn = getTeamName(currentMatchData.home_team_id);
   var an = getTeamName(currentMatchData.away_team_id);
   
-  el("modal-match-code").textContent = "🎯 " + (currentMatchData.match_code||'');
+  // 🌟 Hiển thị mã trận đấu đẹp trong modal
+  el("modal-match-code").textContent = "🎯 " + displayCode(currentMatchData);
   el("modal-home-name").textContent = hn;
   el("modal-away-name").textContent = an;
   el("modal-home-score").textContent = currentMatchData.home_score || 0;
@@ -674,7 +743,7 @@ async function openScoreModal(matchId) {
   localServeState.turn = currentMatchData.serving_turn || 1;
   
   updateServeButtons();
-  updateRallyInfo();
+  updateTopScoreDisplay();
   
   el("score-modal").classList.add("show");
 }
@@ -703,7 +772,7 @@ function updateServeButtons() {
   el("serve-away-l2").classList.toggle('active', serveTeam === 'away' && serveTurn === 2);
 }
 
-function updateRallyInfo() {
+function updateTopScoreDisplay() {
   if (!currentMatchData) return;
   var h = currentMatchData.home_score || 0;
   var a = currentMatchData.away_score || 0;
@@ -711,14 +780,28 @@ function updateRallyInfo() {
   var serveTeam = localServeState.team;
   var serveTurn = localServeState.turn;
   
-  var serveTeamName = serveTeam === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent;
-  var receiveTeamName = serveTeam === 'home' ? el("modal-away-name").textContent : el("modal-home-name").textContent;
+  var hn = el("modal-home-name").textContent;
+  var an = el("modal-away-name").textContent;
   
-  var info = '📊 Tỷ số: ' + h + ' - ' + a + '\n';
-  info += '🏓 ' + serveTeamName + ' đang giao (L' + serveTurn + ')\n';
-  info += '👈 ' + receiveTeamName + ' đang nhận';
+  var serverName, receiverName, serverScore, receiverScore;
   
-  el("rally-info").textContent = info;
+  if (serveTeam === 'home') {
+    serverName = hn;
+    receiverName = an;
+    serverScore = h;
+    receiverScore = a;
+  } else {
+    serverName = an;
+    receiverName = hn;
+    serverScore = a;
+    receiverScore = h;
+  }
+  
+  el("top-server-name").textContent = serverName;
+  el("top-receiver-name").textContent = receiverName;
+  el("top-server-score").textContent = serverScore;
+  el("top-receiver-score").textContent = receiverScore;
+  el("top-serve-turn").textContent = serveTurn;
 }
 
 function closeScoreModal() {
@@ -773,7 +856,7 @@ async function setServe(team, turn) {
     currentMatchData.match_status = 'live';
     
     updateServeButtons();
-    updateRallyInfo();
+    updateTopScoreDisplay();
     
     await createRally('SERVE_CHANGE');
     
@@ -813,7 +896,7 @@ async function changeScore(team, delta) {
     var eventType = team === 'home' ? 'HOME_SCORE' : 'AWAY_SCORE';
     await createRally(eventType);
     
-    updateRallyInfo();
+    updateTopScoreDisplay();
     toast("✅ " + h + " - " + a);
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
@@ -959,7 +1042,62 @@ async function finishMatch() {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
-/* === REALTIME === */
+function openTimeoutModal() {
+  el("timeout-modal").classList.add("show");
+  updateTimeoutDisplay();
+}
+
+function closeTimeoutModal() {
+  el("timeout-modal").classList.remove("show");
+  stopTimeout();
+}
+
+function toggleTimeout() {
+  if (timeoutRunning) {
+    stopTimeout();
+  } else {
+    startTimeout();
+  }
+}
+
+function startTimeout() {
+  timeoutRunning = true;
+  el("timeout-toggle-btn").textContent = '⏸ Tạm dừng';
+  el("timeout-toggle-btn").className = 'btn btn-w';
+  el("timeout-display").classList.add('running');
+  
+  timeoutInterval = setInterval(function() {
+    timeoutElapsed++;
+    updateTimeoutDisplay();
+  }, 1000);
+}
+
+function stopTimeout() {
+  timeoutRunning = false;
+  if (timeoutInterval) {
+    clearInterval(timeoutInterval);
+    timeoutInterval = null;
+  }
+  el("timeout-toggle-btn").textContent = timeoutElapsed > 0 ? '▶ Tiếp tục' : '▶ Bắt đầu';
+  el("timeout-toggle-btn").className = 'btn btn-p';
+  el("timeout-display").classList.remove('running');
+}
+
+function resetTimeout() {
+  stopTimeout();
+  timeoutElapsed = 0;
+  updateTimeoutDisplay();
+  el("timeout-toggle-btn").textContent = '▶ Bắt đầu';
+}
+
+function updateTimeoutDisplay() {
+  var minutes = Math.floor(timeoutElapsed / 60);
+  var seconds = timeoutElapsed % 60;
+  el("timeout-display").textContent = 
+    (minutes < 10 ? '0' : '') + minutes + ':' + 
+    (seconds < 10 ? '0' : '') + seconds;
+}
+
 function startRealtime() {
   stopRealtime();
   realtimeInterval = setInterval(async function() {
@@ -996,7 +1134,7 @@ function startRealtime() {
               el("modal-home-score").textContent = cm.home_score || 0;
               el("modal-away-score").textContent = cm.away_score || 0;
               
-              updateRallyInfo();
+              updateTopScoreDisplay();
             }
           }
         }
@@ -1009,7 +1147,6 @@ function stopRealtime() {
   if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; }
 }
 
-/* === INIT === */
 (async function init() {
   try {
     var u = sessionStorage.getItem('pb_admin');
