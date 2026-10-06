@@ -27,10 +27,9 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .filter-bar label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mu);cursor:pointer;padding:5px 8px;background:var(--sf);border-radius:6px;border:1px solid var(--ln);white-space:nowrap}
 .filter-bar input[type="checkbox"]{width:14px;height:14px;accent-color:var(--pk)}
 
-.debug-box{background:rgba(248,113,113,.1);border:1px solid var(--rd);border-radius:6px;padding:8px;margin-bottom:10px;font-size:10px;color:var(--rd);font-family:monospace;max-height:100px;overflow-y:auto;white-space:pre-wrap}
+.debug-box{background:rgba(248,113,113,.1);border:1px solid var(--rd);border-radius:6px;padding:8px;margin-bottom:10px;font-size:10px;color:var(--rd);font-family:monospace;max-height:120px;overflow-y:auto;white-space:pre-wrap}
 .debug-box.ok{background:rgba(163,230,53,.1);border-color:var(--li);color:var(--li)}
 
-/* 🌟 GROUP SECTIONS - PHÂN THEO BẢNG */
 .group-section{margin-bottom:14px;background:var(--sf);border:1px solid var(--ln);border-radius:8px;overflow:hidden}
 .group-header{padding:8px 10px;font-weight:800;font-size:12px;display:flex;justify-content:space-between;align-items:center}
 .group-header.group-a{background:rgba(163,230,53,.15);color:var(--li)}
@@ -229,13 +228,13 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
       <div class="slot-group home">
         <div class="slot-group-title">ĐỘI A</div>
         <div class="player-select-wrap">
-          <label> Ô 1</label>
+          <label>🎯 Ô 1</label>
           <select id="slot-home-1" class="slot-select" onchange="onSlotChange('home',1)">
             <option value="">-- Chọn --</option>
           </select>
         </div>
         <div class="player-select-wrap">
-          <label> Ô 2</label>
+          <label>🎯 Ô 2</label>
           <select id="slot-home-2" class="slot-select" onchange="onSlotChange('home',2)">
             <option value="">-- Chọn --</option>
           </select>
@@ -253,13 +252,13 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
       <div class="slot-group away">
         <div class="slot-group-title">ĐỘI B</div>
         <div class="player-select-wrap">
-          <label>🎯 Ô 1</label>
+          <label> Ô 1</label>
           <select id="slot-away-1" class="slot-select" onchange="onSlotChange('away',1)">
             <option value="">-- Chọn --</option>
           </select>
         </div>
         <div class="player-select-wrap">
-          <label>🎯 Ô 2</label>
+          <label> Ô 2</label>
           <select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)">
             <option value="">-- Chọn --</option>
           </select>
@@ -280,7 +279,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   
   <div class="modal-actions">
     <button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button>
-    <button class="btn btn-p" onclick="finishMatch()"> Kết thúc</button>
+    <button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button>
   </div>
 </div>
 </div>
@@ -304,8 +303,6 @@ var currentMatchId = null;
 var currentMatchData = null;
 var realtimeInterval = null;
 var lastRallyKey = null;
-
-//  LOCAL SERVE STATE - GIỮ RIÊNG, KHÔNG BỊ POLLING GHI ĐÈ
 var localServeState = { team: 'home', turn: 1 };
 
 /* === HELPERS === */
@@ -314,7 +311,7 @@ function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g
 function toast(msg) {
   var t = el("toast"); t.textContent = msg; t.className = "toast show";
   if (window._tt) clearTimeout(window._tt);
-  window._tt = setTimeout(function(){ t.className = "toast"; }, 2000);
+  window._tt = setTimeout(function(){ t.className = "toast"; }, 2500);
 }
 function debug(msg, isOk) {
   var box = el("debug-box");
@@ -322,6 +319,10 @@ function debug(msg, isOk) {
   box.classList.toggle("hidden", !msg);
   box.classList.toggle("ok", isOk);
   console.log("[DEBUG]", msg);
+}
+function logRally(msg) {
+  console.log("[RALLY]", msg);
+  debug("🏓 " + msg, true);
 }
 
 /* === AUTH === */
@@ -347,14 +348,14 @@ function doLogout() {
   stopRealtime();
   applyUI();
   el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p>Vui lòng đăng nhập</p></div>';
-  toast(" Đã đăng xuất");
+  toast("👋 Đã đăng xuất");
 }
 function applyUI() {
   var logged = !!CURRENT_USER;
   el("login-btn").classList.toggle("hidden", logged);
   el("logout-btn").classList.toggle("hidden", !logged);
   el("user-chip").classList.toggle("hidden", !logged);
-  if (logged) el("user-chip").textContent = " " + CURRENT_USER.username;
+  if (logged) el("user-chip").textContent = "👤 " + CURRENT_USER.username;
 }
 
 /* === DATA LOADING === */
@@ -478,33 +479,23 @@ async function loadMatches() {
     debug("✅ " + DATA.matches.length + " matches", true);
     
     if (DATA.matches.length === 0) {
-      el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
+      el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px"></div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
       return;
     }
     
-    // 🌟 Load teams với nested players
     var allEventIds = DATA.events.map(function(e) { return e ? e.id : null; }).filter(function(id) { return id !== null; });
     
     if (allEventIds.length > 0) {
-      // Query teams với nested relationship
       var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name))").in("event_id", allEventIds);
       
       if (t.error) {
-        debug("️ Lỗi teams: " + t.error.message);
+        debug("⚠️ Lỗi teams: " + t.error.message);
         DATA.teams = [];
       } else {
         DATA.teams = (t.data || []).slice();
         debug("✅ Loaded " + DATA.teams.length + " teams", true);
-        
-        // Debug team structure
-        if (DATA.teams.length > 0) {
-          var sampleTeam = DATA.teams[0];
-          console.log("Sample team:", JSON.stringify(sampleTeam));
-          debug("Sample team: " + sampleTeam.name + ", members: " + (sampleTeam.team_members ? sampleTeam.team_members.length : 0), true);
-        }
       }
       
-      // 🌟 Flatten players từ team_members
       DATA.players = [];
       if (DATA.teams && DATA.teams.length > 0) {
         DATA.teams.forEach(function(tm) {
@@ -520,7 +511,6 @@ async function loadMatches() {
       }
       debug("✅ " + DATA.players.length + " players", true);
       
-      // Load stages & groups
       var st = await sb.from("stages").select("*").in("event_id", allEventIds);
       DATA.stages = (st.data || []).slice();
       
@@ -550,7 +540,6 @@ function getTeamName(teamId) {
   return t ? (t.name || 'TBD') : 'TBD';
 }
 
-// 🌟 FIX: Lấy players của team - handle cả 2 case
 function getTeamPlayers(teamId) {
   if (!teamId) return [];
   var team = DATA.teams.find(function(x) { return x && x.id === teamId; });
@@ -562,12 +551,10 @@ function getTeamPlayers(teamId) {
   members.forEach(function(m) {
     if (!m || !m.player_id) return;
     
-    // Case 1: players nested trong team_members
     var playerName = 'VĐV';
     if (m.players && m.players.full_name) {
       playerName = m.players.full_name;
     } else {
-      // Case 2: tìm trong DATA.players
       var p = DATA.players.find(function(x) { return x && x.id === m.player_id; });
       if (p && p.full_name) playerName = p.full_name;
     }
@@ -579,7 +566,6 @@ function getTeamPlayers(teamId) {
     });
   });
   
-  console.log("Players for team " + teamId + ":", result);
   return result;
 }
 
@@ -590,21 +576,19 @@ function getRoundInfo(match) {
     return { type: 'group', name: 'Bảng ' + (g ? (g.code || '?') : '?'), class: 'group', groupCode: g ? g.code : '?' };
   }
   if (match.round === 1.5) return { type: 'r16', name: '🎯 Vòng 1/8', class: 'ko-header' };
-  if (match.round === 2) return { type: 'tk', name: ' Tứ kết', class: 'ko-header' };
-  if (match.round === 3) return { type: 'bk', name: ' Bán kết', class: 'ko-header' };
-  if (match.round === 4) return { type: 'ck', name: '🏆 Chung kết', class: 'ko-header' };
+  if (match.round === 2) return { type: 'tk', name: '🎯 Tứ kết', class: 'ko-header' };
+  if (match.round === 3) return { type: 'bk', name: '🏅 Bán kết', class: 'ko-header' };
+  if (match.round === 4) return { type: 'ck', name: ' Chung kết', class: 'ko-header' };
   return { type: 'other', name: 'Khác', class: 'ko-header' };
 }
 
-//  FIX: Render phân theo BẢNG (A, B, C, D) thay vì chỉ round type
 function renderMatchesByRound() {
   if (!DATA.matches || DATA.matches.length === 0) {
-    el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
+    el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px"></div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
     return;
   }
   
-  // 🌟 Group matches theo bảng (A, B, C, D) cho vòng bảng
-  var groupMatches = {}; // { 'A': [...], 'B': [...], 'C': [...], 'D': [...] }
+  var groupMatches = {};
   var koMatches = { 'r16': [], 'tk': [], 'bk': [], 'ck': [], 'other': [] };
   
   DATA.matches.forEach(function(m) {
@@ -612,11 +596,9 @@ function renderMatchesByRound() {
     var round = getRoundInfo(m);
     
     if (round.type === 'group' && round.groupCode) {
-      // Vòng bảng - group theo code
       if (!groupMatches[round.groupCode]) groupMatches[round.groupCode] = [];
       groupMatches[round.groupCode].push(m);
     } else {
-      // KO rounds
       if (koMatches[round.type]) koMatches[round.type].push(m);
       else koMatches['other'].push(m);
     }
@@ -624,7 +606,6 @@ function renderMatchesByRound() {
   
   var H = '';
   
-  //  Render từng bảng (A, B, C, D...)
   var groupCodes = Object.keys(groupMatches).sort();
   var groupColors = { 'A': 'group-a', 'B': 'group-b', 'C': 'group-c', 'D': 'group-d' };
   
@@ -635,7 +616,7 @@ function renderMatchesByRound() {
     var colorClass = groupColors[code] || 'group-a';
     
     H += '<div class="group-section">';
-    H += '<div class="group-header ' + colorClass + '"><span>📋 Bảng ' + code + '</span><span class="count">' + matches.length + ' trận</span></div>';
+    H += '<div class="group-header ' + colorClass + '"><span> Bảng ' + code + '</span><span class="count">' + matches.length + ' trận</span></div>';
     
     matches.forEach(function(m) {
       H += renderMatchCard(m);
@@ -644,7 +625,6 @@ function renderMatchesByRound() {
     H += '</div>';
   });
   
-  // 🌟 Render KO rounds
   var koOrder = ['r16', 'tk', 'bk', 'ck', 'other'];
   var koTitles = {
     'r16': '🎯 Vòng 1/8',
@@ -691,7 +671,7 @@ function renderMatchCard(m) {
   return H;
 }
 
-/* === 🌟 SCORE MODAL - FIX SERVE BUTTONS === */
+/* === SCORE MODAL === */
 async function openScoreModal(matchId) {
   currentMatchId = matchId;
   currentMatchData = DATA.matches.find(function(x) { return x && x.id === matchId; });
@@ -706,7 +686,6 @@ async function openScoreModal(matchId) {
   el("modal-home-score").textContent = currentMatchData.home_score || 0;
   el("modal-away-score").textContent = currentMatchData.away_score || 0;
   
-  // 🌟 FIX: Load players vào dropdown
   var homePlayers = getTeamPlayers(currentMatchData.home_team_id);
   var awayPlayers = getTeamPlayers(currentMatchData.away_team_id);
   
@@ -718,13 +697,11 @@ async function openScoreModal(matchId) {
   populateSlotSelect('slot-away-1', awayPlayers, 1);
   populateSlotSelect('slot-away-2', awayPlayers, 2);
   
-  // Set current slots
   if (currentMatchData.home_player_slot1) el("slot-home-1").value = currentMatchData.home_player_slot1;
   if (currentMatchData.home_player_slot2) el("slot-home-2").value = currentMatchData.home_player_slot2;
   if (currentMatchData.away_player_slot1) el("slot-away-1").value = currentMatchData.away_player_slot1;
   if (currentMatchData.away_player_slot2) el("slot-away-2").value = currentMatchData.away_player_slot2;
   
-  //  FIX: Khởi tạo local serve state từ DB lần đầu
   localServeState.team = currentMatchData.serving_team || 'home';
   localServeState.turn = currentMatchData.serving_turn || 1;
   
@@ -750,9 +727,7 @@ function populateSlotSelect(selectId, players, position) {
   }
 }
 
-// 🌟 FIX: Chỉ dùng localServeState, KHÔNG đọc từ currentMatchData
 function updateServeButtons() {
-  // 🌟 QUAN TRỌNG: Chỉ dùng local state, không bị polling ghi đè
   var serveTeam = localServeState.team;
   var serveTurn = localServeState.turn;
   
@@ -767,7 +742,6 @@ function updateRallyInfo() {
   var h = currentMatchData.home_score || 0;
   var a = currentMatchData.away_score || 0;
   
-  // 🌟 Dùng local state cho rally info
   var serveTeam = localServeState.team;
   var serveTurn = localServeState.turn;
   
@@ -811,16 +785,13 @@ async function onSlotChange(team, slotNum) {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
-// 🌟 FIX: Update localServeState khi bấm, KHÔNG bị polling reset
 async function setServe(team, turn) {
   if (!currentMatchId) return;
   
-  // Nếu đã active rồi thì không làm gì
   if (localServeState.team === team && localServeState.turn === turn) {
     return;
   }
   
-  //  Update local state NGAY LẬP TỨC (trước khi gọi DB)
   localServeState.team = team;
   localServeState.turn = turn;
   
@@ -835,7 +806,6 @@ async function setServe(team, turn) {
     currentMatchData.serving_turn = turn;
     currentMatchData.match_status = 'live';
     
-    // 🌟 Chỉ update UI từ local state
     updateServeButtons();
     updateRallyInfo();
     
@@ -845,7 +815,6 @@ async function setServe(team, turn) {
     toast("✅ " + teamName + " giao L" + turn);
   } catch(e) { 
     toast("❌ Lỗi: " + e.message);
-    // Rollback local state nếu lỗi
     localServeState.team = currentMatchData.serving_team || 'home';
     localServeState.turn = currentMatchData.serving_turn || 1;
     updateServeButtons();
@@ -883,18 +852,23 @@ async function changeScore(team, delta) {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
+/* === 🌟 INSERT RALLY - DIRECT INSERT (KHÔNG DÙNG RPC) === */
 async function createRally(eventType) {
-  if (!currentMatchId || !CURRENT_USER || !currentMatchData) return;
+  if (!currentMatchId || !CURRENT_USER || !currentMatchData) {
+    console.warn("Cannot create rally: missing data");
+    return;
+  }
   
   var m = currentMatchData;
-  
-  // 🌟 Dùng local state cho rally
   var serveTeam = localServeState.team;
   var serveTurn = localServeState.turn;
   
   // Chống ghi trùng
   var rallyKey = m.id + '|' + (m.home_score||0) + '|' + (m.away_score||0) + '|' + serveTurn + '|' + eventType;
-  if (lastRallyKey === rallyKey) return;
+  if (lastRallyKey === rallyKey) {
+    console.log("Skip duplicate rally:", rallyKey);
+    return;
+  }
   lastRallyKey = rallyKey;
   
   var serverSlot = serveTurn;
@@ -915,69 +889,93 @@ async function createRally(eventType) {
   
   var description = serverName + ' (đội: ' + serverTeamName + ') giao từ Ô ' + serverSlot + ' → ' + receiverName + ' (đội: ' + receiverTeamName + ') đỡ ở Ô ' + receiverSlot + ' - Lượt Giao ' + serveTurn;
   
-  // Thử RPC trước
-  try {
-    var { error: rpcError } = await sb.rpc('auto_create_rally', {
-      p_match_id: currentMatchId,
-      p_home_score: m.home_score || 0,
-      p_away_score: m.away_score || 0,
-      p_serve_turn: serveTurn,
-      p_event_type: eventType,
-      p_server_player_id: serverPlayerId,
-      p_server_team: serveTeam,
-      p_server_slot: serverSlot,
-      p_receiver_player_id: receiverPlayerId,
-      p_receiver_team: serveTeam === 'home' ? 'away' : 'home',
-      p_receiver_slot: receiverSlot,
-      p_home_position: m.home_position || '1-2',
-      p_away_position: m.away_position || '1-2',
-      p_created_by: CURRENT_USER.id
-    });
-    
-    if (rpcError) {
-      console.warn("RPC error, fallback:", rpcError.message);
-      await insertRallyDirect(currentMatchId, m.home_score || 0, m.away_score || 0, serveTurn, eventType, serverPlayerId, serveTeam, serverSlot, receiverPlayerId, serveTeam === 'home' ? 'away' : 'home', receiverSlot, m.home_position || '1-2', m.away_position || '1-2', description, CURRENT_USER.id);
-    } else {
-      console.log("✅ Rally created via RPC:", eventType);
-    }
-  } catch(e) {
-    console.warn("RPC failed, using direct insert:", e.message);
-    await insertRallyDirect(currentMatchId, m.home_score || 0, m.away_score || 0, serveTurn, eventType, serverPlayerId, serveTeam, serverSlot, receiverPlayerId, serveTeam === 'home' ? 'away' : 'home', receiverSlot, m.home_position || '1-2', m.away_position || '1-2', description, CURRENT_USER.id);
-  }
+  logRally("Creating: " + eventType + " - " + description);
+  
+  // 🌟 DIRECT INSERT - KHÔNG DÙNG RPC
+  await insertRallyDirect({
+    match_id: currentMatchId,
+    home_score: m.home_score || 0,
+    away_score: m.away_score || 0,
+    serve_turn: serveTurn,
+    event_type: eventType,
+    server_player_id: serverPlayerId || null,
+    server_team: serveTeam,
+    server_slot: serverSlot,
+    receiver_player_id: receiverPlayerId || null,
+    receiver_team: serveTeam === 'home' ? 'away' : 'home',
+    receiver_slot: receiverSlot,
+    home_position: m.home_position || '1-2',
+    away_position: m.away_position || '1-2',
+    description: description,
+    created_by: CURRENT_USER.id
+  });
 }
 
-async function insertRallyDirect(matchId, homeScore, awayScore, serveTurn, eventType, serverPlayerId, serverTeam, serverSlot, receiverPlayerId, receiverTeam, receiverSlot, homePosition, awayPosition, description, createdBy) {
+async function insertRallyDirect(rallyData) {
   try {
-    var { data: lastRally } = await sb.from("match_rallies").select("rally_number").eq("match_id", matchId).order("rally_number", {ascending:false}).limit(1).maybeSingle();
-    var nextRallyNumber = (lastRally && lastRally.rally_number ? lastRally.rally_number : 0) + 1;
+    console.log("[RALLY] Inserting:", rallyData);
+    debug("🔄 Đang ghi rally: " + rallyData.event_type);
     
-    var { error } = await sb.from("match_rallies").insert({
-      match_id: matchId,
-      rally_number: nextRallyNumber,
-      home_score: homeScore,
-      away_score: awayScore,
-      serve_turn: serveTurn,
-      event_type: eventType,
-      server_player_id: serverPlayerId,
-      server_team: serverTeam,
-      server_slot: serverSlot,
-      receiver_player_id: receiverPlayerId,
-      receiver_team: receiverTeam,
-      receiver_slot: receiverSlot,
-      home_position: homePosition,
-      away_position: awayPosition,
-      description: description,
-      created_by: createdBy
-    });
+    // Lấy rally_number tiếp theo
+    var { data: lastRally, error: countError } = await sb
+      .from("match_rallies")
+      .select("rally_number")
+      .eq("match_id", rallyData.match_id)
+      .order("rally_number", {ascending: false})
+      .limit(1)
+      .maybeSingle();
     
-    if (error) {
-      console.error("Insert rally error:", error.message);
-      debug("️ Lỗi ghi rally: " + error.message);
-    } else {
-      console.log("✅ Rally #" + nextRallyNumber + " created:", eventType);
+    if (countError) {
+      console.error("[RALLY] Count error:", countError);
+      debug("❌ Lỗi đếm rally: " + countError.message);
     }
+    
+    var nextRallyNumber = (lastRally && lastRally.rally_number ? lastRally.rally_number : 0) + 1;
+    console.log("[RALLY] Next number:", nextRallyNumber);
+    
+    // Insert với đầy đủ fields
+    var insertData = {
+      match_id: rallyData.match_id,
+      rally_number: nextRallyNumber,
+      home_score: rallyData.home_score,
+      away_score: rallyData.away_score,
+      serve_turn: rallyData.serve_turn,
+      event_type: rallyData.event_type,
+      server_player_id: rallyData.server_player_id,
+      server_team: rallyData.server_team,
+      server_slot: rallyData.server_slot,
+      receiver_player_id: rallyData.receiver_player_id,
+      receiver_team: rallyData.receiver_team,
+      receiver_slot: rallyData.receiver_slot,
+      home_position: rallyData.home_position,
+      away_position: rallyData.away_position,
+      description: rallyData.description,
+      created_by: rallyData.created_by
+    };
+    
+    console.log("[RALLY] Final insert data:", insertData);
+    
+    var { data: inserted, error: insertError } = await sb
+      .from("match_rallies")
+      .insert(insertData)
+      .select();
+    
+    if (insertError) {
+      console.error("[RALLY] Insert error:", insertError);
+      debug("❌ Lỗi ghi rally: " + insertError.message + "\nCode: " + insertError.code);
+      toast("❌ Lỗi ghi rally: " + insertError.message);
+      return false;
+    }
+    
+    console.log("[RALLY] ✅ Success:", inserted);
+    logRally("✅ Rally #" + nextRallyNumber + " đã ghi: " + rallyData.event_type);
+    toast("🏓 Rally #" + nextRallyNumber);
+    return true;
+    
   } catch(e) {
-    console.error("Insert rally failed:", e);
+    console.error("[RALLY] Exception:", e);
+    debug("❌ Exception: " + e.message);
+    return false;
   }
 }
 
@@ -1003,7 +1001,7 @@ async function finishMatch() {
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
 
-/* === 🌟 REALTIME - FIX: KHÔNG GHI ĐÈ SERVE STATE === */
+/* === REALTIME === */
 function startRealtime() {
   stopRealtime();
   realtimeInterval = setInterval(async function() {
@@ -1030,11 +1028,9 @@ function startRealtime() {
           DATA.matches = (m.data || []).slice();
           renderMatchesByRound();
           
-          // 🌟 FIX: Khi modal đang mở, CHỈ update score/status, KHÔNG update serve state
           if (currentMatchId && currentMatchData) {
             var cm = DATA.matches.find(function(x) { return x && x.id === currentMatchId; });
             if (cm) {
-              // Chỉ update score
               currentMatchData.home_score = cm.home_score;
               currentMatchData.away_score = cm.away_score;
               currentMatchData.match_status = cm.match_status;
@@ -1042,9 +1038,8 @@ function startRealtime() {
               el("modal-home-score").textContent = cm.home_score || 0;
               el("modal-away-score").textContent = cm.away_score || 0;
               
-              //  KHÔNG update serve state từ DB - giữ local state
-              // updateServeButtons(); // Bỏ dòng này
-              updateRallyInfo(); // Nhưng vẫn update text với local state
+              // KHÔNG update serve state từ DB
+              updateRallyInfo();
             }
           }
         }
