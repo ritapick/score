@@ -93,7 +93,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-main-row .m-team.home{color:var(--li);text-align:right}
 .match-main-row .m-team.away{color:var(--cy);text-align:left}
 .match-main-row .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
-/* 🌟 Logic màu sắc khi dẫn điểm */
 .match-main-row .m-team.leading { color: var(--rd) !important; font-weight: 800; }
 
 .match-main-row .m-score{
@@ -103,7 +102,6 @@ td.pf{font-family:monospace;color:var(--cy)}
     border:1px solid var(--ln);
     white-space:nowrap;
 }
-/* 🌟 Màu sắc tỷ số chi tiết */
 .score-leading { color: var(--rd) !important; font-weight: 900; }
 .score-normal { color: var(--li); }
 .score-sep-small { color: var(--mu); padding: 0 2px; }
@@ -173,7 +171,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .rally-badge.score{background:rgba(34,211,238,.2);color:var(--cy);border:1px solid var(--cy)}
 .rally-badge.second{background:rgba(251,146,60,.2);color:var(--or);border:1px solid var(--or)}
 
-/* 🌟 Layout tỷ số trong Timeline: Giao - Nhận - Lượt */
+/*  Layout tỷ số trong Timeline: Giao - Nhận - Lượt */
 .rally-score{display:flex;justify-content:center;align-items:center;gap:8px;margin:12px 0}
 .rally-score-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:monospace}
 .rally-score-circle.server{background:var(--rd);color:#fff;border:2px solid var(--rd);box-shadow:0 0 10px rgba(248,113,113,.3)}
@@ -382,7 +380,7 @@ function stopRealtime() {
   if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; }
 }
 
-// 🌟 CẬP NHẬT DOM REALTIME (GIỮ NGUYÊN CẤU TRÚC, CHỈ ĐỔI CLASS/MÀU)
+// 🌟 CẬP NHẬT DOM REALTIME
 function updateMatchRowsDOM() {
   DATA.matches.forEach(function(m) {
     var row = document.querySelector('.match-item[data-match-id="' + m.id + '"]');
@@ -397,7 +395,7 @@ function updateMatchRowsDOM() {
       if (status === "completed" || status === "finished") {
         var hClass = h > a ? "score-leading" : "score-normal";
         var aClass = a > h ? "score-leading" : "score-normal";
-        scoreEl.innerHTML = `<span class="${hClass}">${h}</span><span class="score-sep-small">-</span><span class="${aClass}">${a}</span>`;
+        scoreEl.innerHTML = '<span class="' + hClass + '">' + h + '</span><span class="score-sep-small">-</span><span class="' + aClass + '">' + a + '</span>';
       } else {
         scoreEl.textContent = "vs";
       }
@@ -556,7 +554,7 @@ function renderTimeline() {
   var body = el("timeline-body");
   
   if (!DATA.rallies.length) {
-    body.innerHTML = '<div class="timeline-empty"><div class="icon">📝</div><p>Chưa có diễn biến điểm</p></div>';
+    body.innerHTML = '<div class="timeline-empty"><div class="icon"></div><p>Chưa có diễn biến điểm</p></div>';
     return;
   }
   
@@ -565,7 +563,7 @@ function renderTimeline() {
     var badge = getEventTypeBadge(r.event_type);
     
     // Tìm thông tin trận đấu để lấy tên đội
-    var match = DATA.matches.find(m => m.id === r.match_id);
+    var match = DATA.matches.find(function(m) { return m.id === r.match_id; });
     var homeTeamName = match ? (tName(match.home_team_id) || 'Đội A') : 'Đội A';
     var awayTeamName = match ? (tName(match.away_team_id) || 'Đội B') : 'Đội B';
     
@@ -576,9 +574,9 @@ function renderTimeline() {
     var serverScore = isHomeServing ? r.home_score : r.away_score;
     var receiverScore = isHomeServing ? r.away_score : r.home_score;
     
-    var desc = `<span class="team-name">${esc(serverName)}</span> (giao) <b>${serverScore}</b> - <b>${receiverScore}</b> <span class="team-name">${esc(receiverName)}</span> (nhận) <br/><span class="slot">Lượt giao: ${r.serve_turn}</span>`;
+    var desc = '<span class="team-name">' + esc(serverName) + '</span> (giao) <b>' + serverScore + '</b> - <b>' + receiverScore + '</b> <span class="team-name">' + esc(receiverName) + '</span> (nhận) <br/><span class="slot">Lượt giao: ' + r.serve_turn + '</span>';
     if (r.description) {
-        desc = esc(r.description); // Ưu tiên mô tả chi tiết từ DB nếu có
+        desc = esc(r.description);
     }
     
     H += '<div class="rally-card">';
@@ -593,7 +591,7 @@ function renderTimeline() {
     H += '<span class="rally-score-sep">-</span>';
     H += '<div class="rally-score-circle receiver" title="Đội nhận banh">' + receiverScore + '</div>';
     H += '<span class="rally-score-sep">-</span>';
-    H += '<div class="rally-score-circle turn" title="Lượt giao">L' + r.serve_turn + '</div>';
+    H += '<div class="rally-score-circle turn" title="Lượt giao">' + r.serve_turn + '</div>';
     H += '</div>';
     
     H += '<div class="rally-desc">' + desc + '</div>';
@@ -683,8 +681,8 @@ function renderTournamentList() {
   DATA.tournaments.forEach(function(t) {
     var statusCls = t.display_status || "not_started";
     var statusText = "";
-    if (statusCls === "not_started") statusText = "⏳ Chưa diễn ra";
-    else if (statusCls === "in_progress") statusText = "🔴 Đang diễn ra";
+    if (statusCls === "not_started") statusText = " Chưa diễn ra";
+    else if (statusCls === "in_progress") statusText = " Đang diễn ra";
     else statusText = "✅ Đã kết thúc";
     
     var canManage = isOwnerOfTournament(t);
@@ -693,7 +691,7 @@ function renderTournamentList() {
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
     H += '<div class="t-meta">';
-    H += '<span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
+    H += '<span> ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
     if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
     H += '<span>🏷️ Mã: ' + esc(t.code) + '</span>';
     H += '</div>';
@@ -769,7 +767,7 @@ function renderEventDetail() {
   var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; }).sort(function(a,b){ return a.code.localeCompare(b.code); });
   var numGroups = groups.length;
   
-  H += '<div class="section-title">📊 BẢNG XẾP HẠNG <span class="count">' + numGroups + ' bảng</span></div>';
+  H += '<div class="section-title"> BẢNG XẾP HẠNG <span class="count">' + numGroups + ' bảng</span></div>';
   H += '<div class="bxh-grid">';
   groups.forEach(function(g, idx) {
     var st = standings(g.id);
@@ -834,7 +832,7 @@ function renderEventDetail() {
     if (r16.length) H += renderKOGroup("🎯 VÒNG 1/8", "r16", r16);
     if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
     if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
-    if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
+    if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
     H += '</div>';
   }
   
@@ -865,7 +863,7 @@ function renderMatchItem(m, isKO) {
   if (status === "completed" || status === "finished") {
     var hScoreClass = h > a ? "score-leading" : "score-normal";
     var aScoreClass = a > h ? "score-leading" : "score-normal";
-    scoreHtml = `<span class="${hScoreClass}">${h}</span><span class="score-sep-small">-</span><span class="${aScoreClass}">${a}</span>`;
+    scoreHtml = '<span class="' + hScoreClass + '">' + h + '</span><span class="score-sep-small">-</span><span class="' + aScoreClass + '">' + a + '</span>';
   }
   
   var H = '<div class="match-item ' + (isKO ? (Number(m.round)===4?'ck':'ko') : '') + '" data-match-id="' + m.id + '" onclick="openTimelineModal(\'' + m.id + '\')">';
@@ -876,7 +874,7 @@ function renderMatchItem(m, isKO) {
   H += '<div class="m-score">' + scoreHtml + '</div>';
   H += '<div class="m-team away ' + awayLeadingClass + '">' + esc(an || 'TBD') + '</div>';
   H += '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
-  H += '<button class="timeline-btn" onclick="event.stopPropagation();openTimelineModal(\'' + m.id + '\')">📈</button>';
+  H += '<button class="timeline-btn" onclick="event.stopPropagation();openTimelineModal(\'' + m.id + '\')"></button>';
   H += '</div>';
   
   if (status === 'live' && m.serving_player_id) {
@@ -912,7 +910,7 @@ function render() {
 /* === 🌟 TIMELINE MODAL FUNCTIONS === */
 function openTimelineModal(matchId) {
   currentTimelineMatchId = matchId;
-  var m = DATA.matches.find(x => x.id === matchId);
+  var m = DATA.matches.find(function(x) { return x.id === matchId; });
   if (!m) return;
   
   var hn = tName(m.home_team_id) || 'Team A';
