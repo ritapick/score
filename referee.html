@@ -49,6 +49,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .team-name{font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-name.home{color:var(--li);text-align:right}
 .team-name.away{color:var(--cy);text-align:left}
+.team-name.bracket{color:var(--mu);font-style:italic;font-weight:600}
 .match-score{font-family:monospace;font-weight:800;font-size:16px;color:var(--tx);text-align:center;min-width:50px}
 .match-score.done{color:var(--li)}
 
@@ -62,7 +63,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .score-top-bar{background:var(--sf2);border-radius:8px;padding:12px;margin-bottom:10px;text-align:center}
 .score-top-display{display:flex;justify-content:center;align-items:center;gap:8px;font-size:28px;font-weight:900;font-family:monospace}
 .score-top-item{display:flex;flex-direction:column;align-items:center;gap:2px}
-.score-top-label{font-size:9px;color:var(--mu);text-transform:uppercase}
+.score-top-label{font-size:9px;color:var(--mu);text-transform:uppercase;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .score-top-value{color:var(--tx)}
 .score-top-value.server{color:var(--rd)}
 .score-top-sep{color:var(--mu);font-weight:800}
@@ -159,7 +160,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <!-- 🌟 NÚT TRANG CHỦ MỚI -->
   <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
   <span class="logo">⚖️ Trọng Tài</span>
 </div>
@@ -519,6 +519,15 @@ async function loadMatches() {
   } catch(e) { console.error(e); }
 }
 
+// 🌟 LOGIC MỚI: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng (1A, 2B, Thắng TK1...)
+function getMatchTeamName(teamId, bracketPos) {
+  if (!teamId) {
+    return bracketPos ? bracketPos : 'TBD';
+  }
+  var t = DATA.teams.find(function(x) { return x && x.id === teamId; });
+  return t ? (t.name || 'TBD') : 'TBD';
+}
+
 function getTeamName(teamId) {
   if (!teamId) return 'TBD';
   var t = DATA.teams.find(function(x) { return x && x.id === teamId; });
@@ -650,16 +659,21 @@ function renderMatchesByRound() {
   el("matches-container").innerHTML = H;
 }
 
+// 🌟 LOGIC MỚI: Hiển thị vị trí bảng nếu chưa có đội
 function renderMatchCard(m) {
   if (!m) return '';
   var status = m.match_status || 'scheduled';
-  var hn = getTeamName(m.home_team_id);
-  var an = getTeamName(m.away_team_id);
+  var hn = getMatchTeamName(m.home_team_id, m.home_bracket_position);
+  var an = getMatchTeamName(m.away_team_id, m.away_bracket_position);
   var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
   var scoreText = (status === 'finished' || status === 'completed') ? (h + " - " + a) : "vs";
   var scoreClass = (status === 'finished' || status === 'completed') ? 'done' : '';
   
   var matchCode = displayCode(m);
+  
+  var isBracket = !m.home_team_id || !m.away_team_id;
+  var homeClass = isBracket ? 'team-name bracket' : 'team-name home';
+  var awayClass = isBracket ? 'team-name bracket' : 'team-name away';
   
   var H = '<div class="match-card ' + status + '" onclick="openScoreModal(\'' + m.id + '\')">';
   H += '<div class="match-header">';
@@ -667,9 +681,9 @@ function renderMatchCard(m) {
   H += '<span class="match-status ' + status + '">' + (status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳')) + '</span>';
   H += '</div>';
   H += '<div class="match-teams">';
-  H += '<div class="team-name home">' + esc(hn) + '</div>';
+  H += '<div class="' + homeClass + '">' + esc(hn) + '</div>';
   H += '<div class="match-score ' + scoreClass + '">' + scoreText + '</div>';
-  H += '<div class="team-name away">' + esc(an) + '</div>';
+  H += '<div class="' + awayClass + '">' + esc(an) + '</div>';
   H += '</div>';
   H += '</div>';
   return H;
@@ -680,8 +694,9 @@ async function openScoreModal(matchId) {
   currentMatchData = DATA.matches.find(function(x) { return x && x.id === matchId; });
   if (!currentMatchData) { toast("❌ Không tìm thấy trận"); return; }
   
-  var hn = getTeamName(currentMatchData.home_team_id);
-  var an = getTeamName(currentMatchData.away_team_id);
+  // 🌟 LOGIC MỚI: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng
+  var hn = getMatchTeamName(currentMatchData.home_team_id, currentMatchData.home_bracket_position);
+  var an = getMatchTeamName(currentMatchData.away_team_id, currentMatchData.away_bracket_position);
   
   el("modal-match-code").textContent = "🎯 " + displayCode(currentMatchData);
   el("modal-home-name").textContent = hn;
@@ -917,6 +932,10 @@ async function createRally(eventType) {
   
   var description = serverName + ' (đội: ' + serverTeamName + ') giao từ Ô ' + serverSlot + ' → ' + receiverName + ' (đội: ' + receiverTeamName + ') đỡ ở Ô ' + receiverSlot + ' - Lượt Giao ' + serveTurn;
   
+  // 🌟 LOGIC MỚI: Dùng bracket position nếu có cho home_position/away_position
+  var homePos = m.home_bracket_position || m.home_position || '1-2';
+  var awayPos = m.away_bracket_position || m.away_position || '1-2';
+  
   await insertRallyDirect({
     match_id: currentMatchId,
     home_score: m.home_score || 0,
@@ -929,8 +948,8 @@ async function createRally(eventType) {
     receiver_player_id: receiverPlayerId || null,
     receiver_team: serveTeam === 'home' ? 'away' : 'home',
     receiver_slot: receiverSlot,
-    home_position: m.home_position || '1-2',
-    away_position: m.away_position || '1-2',
+    home_position: homePos,
+    away_position: awayPos,
     description: description,
     created_by: CURRENT_USER.id
   });
