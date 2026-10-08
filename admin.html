@@ -66,7 +66,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .m-team.home{color:var(--li);text-align:right}
 .m-team.away{color:var(--cy);text-align:left}
 .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
-/* 🌟 CSS MỚI CHO VỊ TRÍ BẢNG */
 .m-team.tbd-placeholder{color:var(--mu);font-style:italic;font-weight:600}
 
 .m-score-box{display:flex;align-items:center;gap:2px;background:#0d1626;padding:3px 5px;border-radius:6px;border:1px solid var(--ln);flex-shrink:0}
@@ -712,7 +711,6 @@ function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
   return 2;
 }
 
-// 🌟 LOGIC MỚI: Tính toán vị trí bảng (1A, 2B...) cho vòng KO
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
@@ -808,7 +806,6 @@ async function createKO() {
   var old = DATA.matches.filter(m => m.stage_id === DATA.kStage.id);
   if (old.length) await sb.from("matches").delete().in("id", old.map(m => m.id));
   
-  // 🌟 LOGIC MỚI: Lưu cả home_bracket_position và away_bracket_position
   var payload = koData.matches.map(m => ({
     event_id: DATA.eid, tournament_id: DATA.tournament.id, stage_id: DATA.kStage.id, round: m.round, bracket_slot: m.slot,
     match_code: DATA.tournament.code + pad(DATA.events.findIndex(e=>e.id===DATA.eid)+1,1) + m.code, match_seq: m.slot,
@@ -851,7 +848,6 @@ function openRefModal(matchId) {
   var m = DATA.matches.find(x => x.id === matchId);
   if (!m) return;
   
-  // 🌟 LOGIC MỚI: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng
   var hn = m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD");
   var an = m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD");
   
@@ -1069,6 +1065,7 @@ function stopTimeout() {
   updateTimeoutDisplay();
 }
 
+// 🌟 ĐÃ SỬA: Đảm bảo trận bán kết luôn hiển thị BK1, BK2 thay vì BK5, BK6
 function displayCode(m) {
   if (!m) return "?";
   if (m.group_id) {
@@ -1079,10 +1076,15 @@ function displayCode(m) {
       return grp.code + (idx + 1);
     }
   }
-  if (m.round === 2) return "TK" + ((Number(m.bracket_slot)%10)||1);
-  if (m.round === 3) return "BK" + ((Number(m.bracket_slot)%10)||1);
-  if (m.round === 4) return "CK";
   if (m.round === 1.5) return "V16-" + ((Number(m.bracket_slot)%20)||1);
+  if (m.round === 2) return "TK" + ((Number(m.bracket_slot)%10)||1);
+  if (m.round === 3) {
+    var slot = Number(m.bracket_slot);
+    if (slot === 5 || slot === 13) return "BK1";
+    if (slot === 6 || slot === 14) return "BK2";
+    return "BK" + ((slot % 10) || 1);
+  }
+  if (m.round === 4) return "CK";
   return String(m.match_code||"?");
 }
 
@@ -1247,9 +1249,7 @@ function render() {
   }, 50);
 }
 
-// 🌟 RENDER MATCH ROW - HIỂN THỊ VỊ TRÍ BẢNG NẾU CHƯA CÓ ĐỘI
 function renderMatchRow(m, isKO) {
-  // Ưu tiên tên đội, nếu null thì dùng bracket_position
   var hn = m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD");
   var an = m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD");
   
@@ -1265,7 +1265,6 @@ function renderMatchRow(m, isKO) {
   var H = `<div class="${rowClass}" data-match-id="${m.id}">`;
   H += `<div class="m-code">${esc(displayCode(m))}</div>`;
   
-  // Thêm class tbd-placeholder để làm mờ/italic nếu là vị trí bảng
   var homeClass = m.home_team_id ? "home" : "home tbd-placeholder";
   var awayClass = m.away_team_id ? "away" : "away tbd-placeholder";
   
