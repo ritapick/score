@@ -1118,6 +1118,7 @@ function stopTimeout() {
   updateTimeoutDisplay();
 }
 
+// 🌟 ĐÃ SỬA: Đảm bảo tên Tứ kết luôn là TK1, TK2, TK3, TK4
 function displayCode(m) {
   if (!m) return "?";
   if (m.group_id) {
@@ -1128,8 +1129,18 @@ function displayCode(m) {
       return grp.code + (idx + 1);
     }
   }
-  if (m.round === 1) return "V16-" + ((Number(m.bracket_slot)%20)||1);
-  if (m.round === 2) return "TK" + ((Number(m.bracket_slot)%10)||1);
+  if (m.round === 1) return "V16-" + Number(m.bracket_slot);
+  
+  // 🌟 SỬA LOGIC TÊN TỨ KẾT
+  if (m.round === 2) {
+    var slot = Number(m.bracket_slot);
+    if (slot === 9) return "TK1";
+    if (slot === 10) return "TK2";
+    if (slot === 11) return "TK3";
+    if (slot === 12) return "TK4";
+    return "TK" + (slot - 8);
+  }
+  
   if (m.round === 3) {
     var slot = Number(m.bracket_slot);
     if (slot === 5 || slot === 13) return "BK1";
@@ -1279,7 +1290,7 @@ function render() {
     if (km.length) {
       H += `<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px">💡 Tên đội sẽ tự động điền khi vòng bảng có kết quả.</div>`;
       var r16 = km.filter(m => Number(m.round)===1), tk = km.filter(m => Number(m.round)===2), bk = km.filter(m => Number(m.round)===3), ck = km.filter(m => Number(m.round)===4);
-      if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16); // 🌟 ĐÃ ĐỔI TÊN
+      if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
       if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
       if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
