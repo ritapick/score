@@ -174,7 +174,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 <nav class="topnav">
 <div class="brand-row">
   <a href="index.html" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
-  <span class="logo"> Quản trị</span>
+  <span class="logo">⚙ Quản trị</span>
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
@@ -187,7 +187,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 
 <div id="login-modal" class="modal-bg">
 <div class="modal">
-<h3>🔐 Đăng nhập Quản trị</h3>
+<h3> Đăng nhập Quản trị</h3>
 <input id="lu" placeholder="Tên đăng nhập"/>
 <input id="lp" type="password" placeholder="Mật khẩu"/>
 <div class="actions">
@@ -280,7 +280,7 @@ var DATA = {
   gStage: null, kStage: null, draft: [],
   acc: {s1:false, s2:true, s3:false, s4:false},
   _creatingKO: false,
-  _koPending: false
+  _koTimeout: null
 };
 var currentRefMatchId = null;
 var realtimeInterval = null;
@@ -327,7 +327,7 @@ function doLogout() {
   stopRealtime();
   applyUI();
   el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập để quản trị.</div>';
-  toast("👋 Đã đăng xuất");
+  toast(" Đã đăng xuất");
 }
 function applyUI() {
   var logged = !!CURRENT_USER;
@@ -413,7 +413,7 @@ function startRealtime() {
               var statusEl = el("ref-match-status");
               var st = cm.match_status || 'scheduled';
               statusEl.className = 'match-status ' + st;
-              statusEl.textContent = st === 'live' ? ' LIVE' : (st === 'finished' ? '✅ FIN' : '⏳');
+              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '⏳');
               updateServeRadios(cm);
             }
           }
@@ -615,6 +615,7 @@ function valDraft(g) {
   return "";
 }
 
+// 🌟 SỬA: Debounce 3 giây - chỉ gọi createKO() 1 lần sau khi user dừng bấm
 async function saveGroup(g) {
   var err = valDraft(g); if (err) { alert("❌ " + err); return; }
   var grp = DATA.groups.find(x => x.id === g);
@@ -629,14 +630,19 @@ async function saveGroup(g) {
   await sb.from("matches").insert(ins);
   toast("✅ Đã lưu bảng " + grp.code);
   
-  // 🌟 Đánh dấu pending, gọi createKO() sau 500ms để gộp nhiều bảng
-  DATA._koPending = true;
-  setTimeout(function() {
-    if (DATA._koPending) {
-      DATA._koPending = false;
-      createKO().then(function() { selE(DATA.eid); });
-    }
-  }, 500);
+  // 🌟 Debounce: Hủy timeout cũ nếu có, tạo timeout mới 3 giây
+  if (DATA._koTimeout) {
+    clearTimeout(DATA._koTimeout);
+    console.log("[DEBOUNCE] Cancelled previous timeout");
+  }
+  
+  console.log("[DEBOUNCE] Will call createKO() in 3 seconds...");
+  DATA._koTimeout = setTimeout(function() {
+    DATA._koTimeout = null;
+    createKO().then(function() { 
+      selE(DATA.eid); 
+    });
+  }, 3000);
 }
 
 async function resetGroupsAndKO() {
@@ -759,11 +765,11 @@ function computeKOTeams() {
   return result;
 }
 
-// 🌟 VIẾT LẠI HOÀN TOÀN: Xóa triệt để + Query fresh + Retry 3 lần + Fallback suffix
+// 🌟 VIẾT LẠI: Chỉ chạy 1 lần duy nhất, xóa triệt để, insert 1 lần
 async function createKO() {
+  // 🌟 Check flag - nếu đang chạy thì bỏ qua
   if (DATA._creatingKO) {
-    console.log("[CREATE KO] Already creating, queue pending");
-    DATA._koPending = true;
+    console.log("[CREATE KO] Already running, skip");
     return;
   }
   DATA._creatingKO = true;
@@ -798,78 +804,32 @@ async function createKO() {
     var prefix = DATA.tournament.code + pad(eventIndex + 1, 1);
     var koCodes = koData.matches.map(m => prefix + m.code);
     
-    console.log("[CREATE KO] KO codes to create:", koCodes);
+    console.log("[CREATE KO] KO codes:", koCodes);
     
-    // 3. Xóa TRIỆT ĐỂ với retry 3 lần
-    var maxAttempts = 3;
-    var cleanupSuccess = false;
+    // 3. Xóa TẤT CẢ trận KO cũ (query fresh từ DB)
+    console.log("[CREATE KO] Deleting ALL old KO matches...");
+    var { data: oldKoMatches, error: qErr } = await sb.from("matches")
+      .select("id")
+      .eq("event_id", DATA.eid)
+      .eq("stage_id", DATA.kStage.id);
     
-    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
-      console.log("[CREATE KO] Cleanup attempt", attempt, "/", maxAttempts);
-      
-      // 3a. Xóa theo stage_id (query fresh từ DB)
-      var { data: freshKoMatches, error: qErr } = await sb.from("matches")
-        .select("id")
-        .eq("event_id", DATA.eid)
-        .eq("stage_id", DATA.kStage.id);
-      
-      if (!qErr && freshKoMatches && freshKoMatches.length > 0) {
-        console.log("[CREATE KO] Deleting", freshKoMatches.length, "by stage_id");
-        await sb.from("matches").delete().in("id", freshKoMatches.map(m => m.id));
-      }
-      
-      // 3b. Xóa theo match_code prefix
-      console.log("[CREATE KO] Deleting by match_code prefix");
-      await sb.from("matches").delete().in("match_code", koCodes);
-      
-      // 3c. Xóa theo event_id + group_id IS NULL + round IN (1,2,3,4) - CATCH ALL
-      console.log("[CREATE KO] Deleting by event_id + group_id IS NULL");
-      await sb.from("matches").delete()
-        .eq("event_id", DATA.eid)
-        .is("group_id", null)
-        .in("round", [1, 2, 3, 4]);
-      
-      // 3d. Xóa theo event_id + stage_id = kStage.id (backup)
-      console.log("[CREATE KO] Deleting by event_id + stage_id");
-      await sb.from("matches").delete()
-        .eq("event_id", DATA.eid)
-        .eq("stage_id", DATA.kStage.id);
-      
-      // 4. Chờ đủ lâu để commit
-      var delay = 800 * attempt; // Tăng dần: 800ms, 1600ms, 2400ms
-      console.log("[CREATE KO] Waiting", delay, "ms...");
-      await new Promise(r => setTimeout(r, delay));
-      
-      // 5. Verify: query lại xem còn trận nào trùng mã không
-      var { data: remaining, error: vErr } = await sb.from("matches")
-        .select("id, match_code")
-        .eq("event_id", DATA.eid)
-        .in("match_code", koCodes);
-      
-      if (remaining && remaining.length > 0) {
-        console.warn("[CREATE KO] Still have", remaining.length, "conflicting matches:", remaining.map(m => m.match_code));
-        // Xóa theo ID cụ thể
-        await sb.from("matches").delete().in("id", remaining.map(m => m.id));
-        await new Promise(r => setTimeout(r, 400));
-      } else {
-        console.log("[CREATE KO] ✅ Cleanup verified, no conflicts");
-        cleanupSuccess = true;
-        break;
-      }
+    if (qErr) {
+      console.error("[CREATE KO] Query error:", qErr);
+    } else if (oldKoMatches && oldKoMatches.length > 0) {
+      console.log("[CREATE KO] Deleting", oldKoMatches.length, "old KO matches");
+      await sb.from("matches").delete().in("id", oldKoMatches.map(m => m.id));
+      // Chờ commit
+      await new Promise(r => setTimeout(r, 1000));
     }
     
-    if (!cleanupSuccess) {
-      console.warn("[CREATE KO] Cleanup failed after", maxAttempts, "attempts, using fallback suffix");
-    }
-    
-    // 6. Insert payload - nếu vẫn conflict, thêm suffix
+    // 4. Insert 15 trận KO mới
     var payload = koData.matches.map(m => ({
       event_id: DATA.eid, 
       tournament_id: DATA.tournament.id, 
       stage_id: DATA.kStage.id, 
       round: m.round, 
       bracket_slot: m.slot,
-      match_code: cleanupSuccess ? (prefix + m.code) : (prefix + m.code + '_' + Date.now()), 
+      match_code: prefix + m.code, 
       match_seq: m.slot,
       home_team_id: m.h, 
       away_team_id: m.a, 
@@ -887,35 +847,14 @@ async function createKO() {
     
     if (error) {
       console.error("[CREATE KO] Insert error:", error);
-      
-      // Fallback cuối cùng: thêm suffix timestamp
-      if (error.code === '23505') {
-        console.warn("[CREATE KO] Still duplicate, adding timestamp suffix");
-        var fallbackPayload = payload.map(m => ({
-          ...m,
-          match_code: m.match_code + '_' + Date.now()
-        }));
-        
-        var { data: fbData, error: fbError } = await sb.from("matches").insert(fallbackPayload);
-        
-        if (fbError) {
-          console.error("[CREATE KO] Fallback also failed:", fbError);
-          alert("❌ Lỗi tạo trận KO: " + fbError.message + "\n\nVui lòng bấm '🗑 Xóa toàn bộ' và thử lại.");
-          return;
-        }
-        
-        console.log("[CREATE KO] Fallback success");
-        toast("✅ Đã tạo khung KO (với mã điều chỉnh)");
-      } else {
-        alert("❌ Lỗi tạo trận KO: " + error.message);
-        return;
-      }
-    } else {
-      console.log("[CREATE KO] Success:", data);
-      toast("✅ Đã tạo khung KO với " + payload.length + " trận");
+      alert("❌ Lỗi tạo trận KO: " + error.message + "\n\nVui lòng bấm '🗑 Xóa toàn bộ' và thử lại.");
+      return;
     }
     
-    // 7. Refresh DATA.matches từ DB
+    console.log("[CREATE KO] Success");
+    toast("✅ Đã tạo khung KO với " + payload.length + " trận");
+    
+    // 5. Refresh DATA.matches từ DB
     var { data: freshMatches } = await sb.from("matches").select("*").eq("event_id", DATA.eid).order("match_seq");
     if (freshMatches) {
       DATA.matches = freshMatches;
@@ -927,11 +866,6 @@ async function createKO() {
     alert("❌ Lỗi tạo KO: " + e.message);
   } finally {
     DATA._creatingKO = false;
-    // Nếu có pending request, chạy lại
-    if (DATA._koPending) {
-      DATA._koPending = false;
-      setTimeout(function() { createKO(); }, 500);
-    }
   }
 }
 
@@ -1043,7 +977,7 @@ async function onSlotChange(teamSide, slotNum) {
   var slot1 = el("ref-" + teamSide + "-slot1").value;
   var slot2 = el("ref-" + teamSide + "-slot2").value;
   if (slot1 && slot2 && slot1 === slot2) {
-    alert("️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
+    alert("⚠️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
     el("ref-" + teamSide + "-slot" + slotNum).value = "";
     return;
   }
@@ -1208,8 +1142,8 @@ function render() {
   } else {
     H += `<div class="fg"><select onchange="selT(this.value)">`;
     DATA.tournaments.forEach(t => { H += `<option value="${t.id}" ${t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; });
-    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')"> Xóa giải</button></div>`;
-    H += `<div class="section-title"> Nội dung thi đấu</div>`;
+    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')">🗑 Xóa giải</button></div>`;
+    H += `<div class="section-title">📋 Nội dung thi đấu</div>`;
     H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
     DATA.events.forEach(e => {
       var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
@@ -1256,7 +1190,7 @@ function render() {
   } else if (!DATA.gStage) {
     H += `<div class="fg"><input id="num-groups" type="number" min="2" value="4" placeholder="Số bảng (≥2)"/><button class="btn btn-p" onclick="initGroupsFlexible()">➕ Tạo bảng đấu</button></div>`;
   } else {
-    H += `<div class="reset-bar"><div class="info-text">📊 Đang có <b>${DATA.groups.filter(g=>g.stage_id===DATA.gStage.id).length} bảng</b> · <b>${matchCount} trận</b>.</div><button class="btn btn-d btn-s" onclick="resetGroupsAndKO()"> Xóa toàn bộ</button></div>`;
+    H += `<div class="reset-bar"><div class="info-text">📊 Đang có <b>${DATA.groups.filter(g=>g.stage_id===DATA.gStage.id).length} bảng</b> · <b>${matchCount} trận</b>.</div><button class="btn btn-d btn-s" onclick="resetGroupsAndKO()">🗑 Xóa toàn bộ</button></div>`;
     var un = unassigned();
     if (un.length) H += `<div style="color:var(--or);font-size:11px;margin-bottom:8px">⚠ Chưa xếp: ${un.length} đội</div>`;
     H += `<div class="group-assign">`;
@@ -1313,12 +1247,12 @@ function render() {
     });
     var km = DATA.matches.filter(m => !m.group_id).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
     if (km.length) {
-      H += `<div class="ko-section"><h3> VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px">💡 Tên đội sẽ tự động điền khi vòng bảng có kết quả.</div>`;
+      H += `<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px">💡 Tên đội sẽ tự động điền khi vòng bảng có kết quả.</div>`;
       var r16 = km.filter(m => Number(m.round)===1), tk = km.filter(m => Number(m.round)===2), bk = km.filter(m => Number(m.round)===3), ck = km.filter(m => Number(m.round)===4);
-      if (r16.length) H += renderKOGroup(" VÒNG 1/16", "r16", r16);
+      if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
-      if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
-      if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
+      if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
+      if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
       H += `</div>`;
     }
   }
@@ -1367,7 +1301,7 @@ function renderMatchRow(m, isKO) {
   var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : '⏳');
   H += `<span class="m-status-badge ${status}">${statusText}</span>`;
   var btnTitle = status === 'finished' ? 'Chỉnh sửa kết quả' : (status === 'live' ? 'Tiếp tục ghi điểm' : 'Bắt đầu ghi điểm');
-  H += `<button class="m-ref-btn" onclick="openRefModal('${m.id}')" title="${btnTitle}">⚖️</button>`;
+  H += `<button class="m-ref-btn" onclick="openRefModal('${m.id}')" title="${btnTitle}">️</button>`;
   H += `</div>`;
   return H;
 }
