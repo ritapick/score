@@ -519,7 +519,42 @@ async function loadMatches() {
   } catch(e) { console.error(e); }
 }
 
-// 🌟 LOGIC MỚI: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng (1A, 2B, Thắng TK1...)
+function teamsInG(gid) {
+  var tids = DATA.groupTeams.filter(x => x.group_id === gid).map(x => x.team_id);
+  return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
+}
+
+// 🌟 HÀM MỚI: Tính toán bảng xếp hạng để xác định đội đi tiếp
+function standings(g) {
+  var t = teamsInG(g), st = {};
+  t.forEach(x => st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0});
+  DATA.matches.filter(m => m.group_id === g && (Number(m.home_score)>0 || Number(m.away_score)>0)).forEach(m => {
+    var h = st[m.home_team_id], a = st[m.away_team_id]; if (!h || !a) return;
+    h.pf += Number(m.home_score)||0; h.pa += Number(m.away_score)||0; h.played++;
+    a.pf += Number(m.away_score)||0; a.pa += Number(m.home_score)||0; a.played++;
+    if (Number(m.home_score) > Number(m.away_score)) h.w++;
+    else if (Number(m.away_score) > Number(m.home_score)) a.w++;
+  });
+  var arr = []; for (var k in st) arr.push(st[k]);
+  return arr.sort((x,y) => {
+    if (y.w !== x.w) return y.w - x.w;
+    var dx = x.pf - x.pa, dy = y.pf - y.pa;
+    if (dy !== dx) return dy - dx;
+    return y.pf - x.pf;
+  });
+}
+
+// 🌟 HÀM MỚI: Kiểm tra xem bảng đã hoàn thành tất cả các trận chưa
+function isGroupComplete(gid) {
+  var t = teamsInG(gid);
+  var exp = t.length * (t.length - 1) / 2;
+  var completedMatches = DATA.matches.filter(m => 
+    m.group_id === gid && 
+    (m.match_status === "finished" || m.match_status === "completed")
+  ).length;
+  return t.length >= 2 && completedMatches >= exp;
+}
+
 function getMatchTeamName(teamId, bracketPos) {
   if (!teamId) {
     return bracketPos ? bracketPos : 'TBD';
@@ -659,7 +694,6 @@ function renderMatchesByRound() {
   el("matches-container").innerHTML = H;
 }
 
-// 🌟 LOGIC MỚI: Hiển thị vị trí bảng nếu chưa có đội
 function renderMatchCard(m) {
   if (!m) return '';
   var status = m.match_status || 'scheduled';
@@ -694,7 +728,6 @@ async function openScoreModal(matchId) {
   currentMatchData = DATA.matches.find(function(x) { return x && x.id === matchId; });
   if (!currentMatchData) { toast("❌ Không tìm thấy trận"); return; }
   
-  // 🌟 LOGIC MỚI: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng
   var hn = getMatchTeamName(currentMatchData.home_team_id, currentMatchData.home_bracket_position);
   var an = getMatchTeamName(currentMatchData.away_team_id, currentMatchData.away_bracket_position);
   
@@ -932,7 +965,6 @@ async function createRally(eventType) {
   
   var description = serverName + ' (đội: ' + serverTeamName + ') giao từ Ô ' + serverSlot + ' → ' + receiverName + ' (đội: ' + receiverTeamName + ') đỡ ở Ô ' + receiverSlot + ' - Lượt Giao ' + serveTurn;
   
-  // 🌟 LOGIC MỚI: Dùng bracket position nếu có cho home_position/away_position
   var homePos = m.home_bracket_position || m.home_position || '1-2';
   var awayPos = m.away_bracket_position || m.away_position || '1-2';
   
@@ -1003,6 +1035,54 @@ async function insertRallyDirect(rallyData) {
   }
 }
 
+// 🌟 HÀM MỚI: Tự động đồng bộ đội vào vòng KO khi bảng hoàn thành
+async function syncKO() {
+  var eid = el("event-filter").value;
+  if (!eid) return false;
+
+  if (!DATA.kStage) {
+    var stQuery = await sb.from("stages")
+      .select("*")
+      .eq("event_id", eid)
+      .eq("stage_type", "knockout")
+      .maybeSingle();
+    if (stQuery.data) {
+      DATA.kStage = stQuery.data;
+    } else {
+      return false;
+    }
+  }
+
+  // Gọi computeKOTeams để lấy danh sách đội mới nhất
+  var koData = computeKOTeams();
+  if (!koData) return false;
+
+  var updated = false;
+  for (var i = 0; i < koData.matches.length; i++) {
+    var km = koData.matches[i];
+    var m = DATA.matches.find(x => x.stage_id === DATA.kStage.id && Number(x.bracket_slot) === Number(km.slot));
+    if (!m) continue;
+
+    // Nếu có sự thay đổi về đội (từ null -> có đội, hoặc đổi đội)
+    if (m.home_team_id !== km.h || m.away_team_id !== km.a) {
+      await sb.from("matches").update({
+        home_team_id: km.h, 
+        away_team_id: km.a
+      }).eq("id", m.id);
+      m.home_team_id = km.h; 
+      m.away_team_id = km.a; 
+      updated = true;
+      console.log("[SYNC KO] Updated", km.code, ":", km.h_pos, "vs", km.a_pos);
+    }
+  }
+
+  if (updated) {
+    toast("✅ Đã tự động cập nhật đội vào vòng KO");
+    await loadMatches(); // Tải lại để cập nhật giao diện
+  }
+  return updated;
+}
+
 async function finishMatch() {
   if (!currentMatchId) return;
   
@@ -1021,6 +1101,10 @@ async function finishMatch() {
     currentMatchData.match_status = 'finished';
     closeScoreModal();
     toast("🏁 Đã kết thúc");
+    
+    // 🌟 GỌI SYNC KO: Tự động cập nhật đội vào vòng Knockout nếu bảng vừa hoàn thành
+    await syncKO();
+    
     await loadMatches();
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
