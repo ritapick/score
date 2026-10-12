@@ -451,7 +451,22 @@ function teamsInG(gid) {
   return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
 }
 
-// 🌟 ĐÃ SỬA: Kiểm tra match_status để đảm bảo đồng bộ với isGroupComplete
+// 🌟 ĐÃ THÊM DEBUG: Kiểm tra chính xác tại sao isGroupComplete trả về false
+function isGroupComplete(gid) {
+  var t = teamsInG(gid);
+  var exp = t.length * (t.length - 1) / 2;
+  var groupMatches = DATA.matches.filter(m => m.group_id === gid);
+  var completedMatches = groupMatches.filter(m => m.match_status === "finished" || m.match_status === "completed").length;
+  
+  console.log(`[DEBUG isGroupComplete] Bảng ID: ${gid}`);
+  console.log(`[DEBUG] Số đội trong bảng: ${t.length}`);
+  console.log(`[DEBUG] Số trận CẦN đấu: ${exp}`);
+  console.log(`[DEBUG] Số trận ĐÃ kết thúc (finished/completed): ${completedMatches}`);
+  console.log(`[DEBUG] Chi tiết các trận trong bảng:`, groupMatches.map(m => ({ id: m.id.substring(0,8), status: m.match_status })));
+  
+  return t.length >= 2 && completedMatches >= exp;
+}
+
 function standings(g) {
   var t = teamsInG(g), st = {};
   t.forEach(x => st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0});
@@ -469,13 +484,6 @@ function standings(g) {
     if (dy !== dx) return dy - dx;
     return y.pf - x.pf;
   });
-}
-
-function isGroupComplete(gid) {
-  var t = teamsInG(gid);
-  var exp = t.length * (t.length - 1) / 2;
-  var completedMatches = DATA.matches.filter(m => m.group_id === gid && (m.match_status === "finished" || m.match_status === "completed")).length;
-  return t.length >= 2 && completedMatches >= exp;
 }
 
 function getMatchTeamName(teamId, bracketPos) {
@@ -685,15 +693,12 @@ async function onSlotChange(team, slotNum) {
   update[team + '_player_slot2'] = s2 || null;
   try {
     await sb.from("matches").update(update).eq("id", currentMatchId);
-    Object.assign(currentMatchData, update);
-    
-    // 🌟 CẬP NHẬT VÀO DATA.matches
     var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
     if (idx !== -1) {
       DATA.matches[idx][team + '_player_slot1'] = s1 || null;
       DATA.matches[idx][team + '_player_slot2'] = s2 || null;
     }
-    
+    Object.assign(currentMatchData, update);
     toast("✅ Đã cập nhật VĐV");
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
@@ -704,16 +709,13 @@ async function setServe(team, turn) {
   localServeState.team = team; localServeState.turn = turn;
   try {
     await sb.from("matches").update({ serving_team: team, serving_turn: turn, match_status: 'live' }).eq("id", currentMatchId);
-    currentMatchData.serving_team = team; currentMatchData.serving_turn = turn; currentMatchData.match_status = 'live';
-    
-    // 🌟 CẬP NHẬT VÀO DATA.matches
     var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
     if (idx !== -1) {
       DATA.matches[idx].serving_team = team;
       DATA.matches[idx].serving_turn = turn;
       DATA.matches[idx].match_status = 'live';
     }
-    
+    currentMatchData.serving_team = team; currentMatchData.serving_turn = turn; currentMatchData.match_status = 'live';
     updateServeButtons(); updateTopScoreDisplay(); updateScoreControlsVisibility();
     await createRally('SERVE_CHANGE');
     toast("✅ " + (team === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent) + " giao L" + turn);
@@ -732,16 +734,13 @@ async function changeScore(team, delta) {
   el("modal-home-score").textContent = h; el("modal-away-score").textContent = a;
   try {
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'live' }).eq("id", currentMatchId);
-    currentMatchData.home_score = h; currentMatchData.away_score = a; currentMatchData.match_status = 'live';
-    
-    // 🌟 CẬP NHẬT VÀO DATA.matches
     var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
     if (idx !== -1) {
       DATA.matches[idx].home_score = h;
       DATA.matches[idx].away_score = a;
       DATA.matches[idx].match_status = 'live';
     }
-    
+    currentMatchData.home_score = h; currentMatchData.away_score = a; currentMatchData.match_status = 'live';
     await createRally(team === 'home' ? 'HOME_SCORE' : 'AWAY_SCORE');
     updateTopScoreDisplay();
     toast("✅ " + h + " - " + a);
@@ -844,7 +843,6 @@ async function syncKO() {
   return updated;
 }
 
-// 🌟 ĐÃ SỬA: Cập nhật trực tiếp vào DATA.matches để isGroupComplete nhận diện đúng ngay lập tức
 async function finishMatch() {
   if (!currentMatchId) return;
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
@@ -853,7 +851,6 @@ async function finishMatch() {
     console.log("[FINISH MATCH] 🏁 Đang kết thúc trận", currentMatchId);
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'finished' }).eq("id", currentMatchId);
     
-    // 🌟 CẬP NHẬT TRẠNG THÁI TRONG MẢNG DATA.matches ĐỂ CÁC HÀM KHÁC ĐỌC ĐÚNG
     var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
     if (idx !== -1) {
       DATA.matches[idx].match_status = 'finished';
