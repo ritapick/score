@@ -309,7 +309,7 @@ function isOwnerOfTournament(t) {
   return t.admin_id === CURRENT_USER.id;
 }
 
-// 🌟 LOGIC MỚI: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng (1A, 2B, Thắng TK1...)
+// 🌟 LOGIC: Ưu tiên tên đội, nếu chưa có thì dùng vị trí bảng (1A, 2B, Thắng TK1...)
 function getMatchTeamName(teamId, bracketPos) {
   if (!teamId) {
     return bracketPos ? bracketPos : 'TBD';
@@ -657,7 +657,7 @@ function standings(g) {
   });
 }
 
-// 🌟 LOGIC MỚI: Mapping chính xác slot → mã trận
+// 🌟 LOGIC: Mapping chính xác slot → mã trận (Kế thừa từ Admin)
 function displayCode(m) {
   if (!m) return "?";
   if (m.group_id) {
@@ -848,7 +848,7 @@ function renderEventDetail() {
     H += '</div>';
   });
   
-  // 🌟 LOGIC MỚI: Hiển thị đúng các vòng 1/16, TK, BK, CK
+  // 🌟 LOGIC ĐỘNG: Chỉ hiển thị các vòng KO thực sự tồn tại dựa trên số lượng bảng
   var km = DATA.matches.filter(function(m){ return !m.group_id; }).sort(function(a,b){ return Number(a.bracket_slot)-Number(b.bracket_slot); });
   if (km.length) {
     H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px;color:var(--mu);font-size:11px">💡 Tên đội sẽ tự động điền khi vòng bảng có kết quả.</div>';
