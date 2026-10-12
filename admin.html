@@ -706,7 +706,7 @@ function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
   return 2;
 }
 
-// 🌟 LOGIC ĐỘNG: Phân bổ Bye và xếp hạt giống dựa trên số lượng bảng
+// 🌟 ĐÃ SỬA LỖI: Hàm computeKOTeams không còn phụ thuộc vào biến 'complete'
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
@@ -716,20 +716,35 @@ function computeKOTeams() {
     if (!DATA.gStage || g.stage_id !== DATA.gStage.id) return;
     var st = standings(g.id);
     st.forEach(s => allSt[s.id] = s);
-    var complete = isGroupComplete(g.id);
-    advancing.push({ 
-      groupCode: g.code, 
-      pos1: { teamId: (complete && st[0]) ? st[0].id : null, pos: "1" + g.code, stats: (complete && st[0]) ? allSt[st[0].id] : null }, 
-      pos2: { teamId: (complete && st[1]) ? st[1].id : null, pos: "2" + g.code, stats: (complete && st[1]) ? allSt[st[1].id] : null }, 
-      pos3: { teamId: (complete && st[2]) ? st[2].id : null, pos: "3" + g.code, stats: (complete && st[2]) ? allSt[st[2].id] : null } 
+    
+    // SỬA LỖI: Luôn lấy đội đang đứng top trong bảng xếp hạng hiện tại, 
+    // không cần đợi isGroupComplete(g.id) === true.
+    advancing.push({
+      groupCode: g.code,
+      pos1: { teamId: (st.length > 0) ? st[0].id : null, pos: "1" + g.code, stats: (st.length > 0) ? allSt[st[0].id] : null },
+      pos2: { teamId: (st.length > 1) ? st[1].id : null, pos: "2" + g.code, stats: (st.length > 1) ? allSt[st[1].id] : null },
+      pos3: { teamId: (st.length > 2) ? st[2].id : null, pos: "3" + g.code, stats: (st.length > 2) ? allSt[st[2].id] : null }
     });
   });
 
   var result = { matches: [] };
 
-  // Helper để sắp xếp đội theo thành tích
-  function sortTeamsByStats(teams) {
-    return teams.slice().sort((a, b) => {
+  if (numGroups === 2) {
+    var seeds = [advancing[0].pos1, advancing[1].pos2, advancing[1].pos1, advancing[0].pos2];
+    result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
+    result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
+    result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
+  } 
+  else if (numGroups === 3 || numGroups === 4) {
+    var qualified = [];
+    advancing.forEach((adv, idx) => {
+      qualified.push(adv.pos1);
+      qualified.push(adv.pos2);
+      if (numGroups === 3 && idx === 0) qualified.push(adv.pos3);
+      if (numGroups === 3 && idx === 2) qualified.push(adv.pos3);
+    });
+    
+    var sortedQualified = qualified.slice().sort((a, b) => {
       if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
       if (!a.stats) return 1;
       if (!b.stats) return -1;
@@ -738,34 +753,8 @@ function computeKOTeams() {
       if (db !== da) return db - da;
       return b.stats.pf - a.stats.pf;
     });
-  }
-
-  if (numGroups === 2) {
-    // 4 đội vào Bán Kết
-    var seeds = [
-      advancing[0].pos1, // 1A
-      advancing[1].pos2, // 2B
-      advancing[1].pos1, // 1B
-      advancing[0].pos2  // 2A
-    ];
-    result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
-    result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
-    result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-  } 
-  else if (numGroups === 3 || numGroups === 4) {
-    // 8 đội vào Tứ Kết
-    var qualified = [];
-    advancing.forEach((adv, idx) => {
-      qualified.push(adv.pos1);
-      qualified.push(adv.pos2);
-      if (numGroups === 3 && idx === 0) qualified.push(adv.pos3); // Bảng A lấy hạng 3
-      if (numGroups === 3 && idx === 2) qualified.push(adv.pos3); // Bảng C lấy hạng 3
-    });
     
-    var sortedQualified = sortTeamsByStats(qualified);
-    var s = sortedQualified; // s[0] là hạt giống 1, s[7] là hạt giống 8
-    
-    // Ghép cặp chuẩn: 1v8, 4v5, 3v6, 2v7
+    var s = sortedQualified;
     result.matches.push({round: 2, slot: 9,  h: s[0].teamId, a: s[7].teamId, code: "TK1", h_pos: s[0].pos, a_pos: s[7].pos});
     result.matches.push({round: 2, slot: 10, h: s[3].teamId, a: s[4].teamId, code: "TK2", h_pos: s[3].pos, a_pos: s[4].pos});
     result.matches.push({round: 2, slot: 11, h: s[2].teamId, a: s[5].teamId, code: "TK3", h_pos: s[2].pos, a_pos: s[5].pos});
@@ -776,14 +765,34 @@ function computeKOTeams() {
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } 
   else {
-    // 5+ bảng (16 đội, có cơ chế Bye)
     var firstPlaces = advancing.map(a => a.pos1);
     var secondPlaces = advancing.map(a => a.pos2);
     var thirdPlaces = advancing.map(a => a.pos3);
 
-    var sortedFirst = sortTeamsByStats(firstPlaces);
-    var sortedSecond = sortTeamsByStats(secondPlaces);
-    var sortedThird = sortTeamsByStats(thirdPlaces);
+    var sortedFirst = firstPlaces.slice().sort((a, b) => {
+      if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
+      if (!a.stats) return 1; if (!b.stats) return -1;
+      if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
+      var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
+      if (db !== da) return db - da;
+      return b.stats.pf - a.stats.pf;
+    });
+    var sortedSecond = secondPlaces.slice().sort((a, b) => {
+      if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
+      if (!a.stats) return 1; if (!b.stats) return -1;
+      if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
+      var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
+      if (db !== da) return db - da;
+      return b.stats.pf - a.stats.pf;
+    });
+    var sortedThird = thirdPlaces.slice().sort((a, b) => {
+      if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
+      if (!a.stats) return 1; if (!b.stats) return -1;
+      if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
+      var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
+      if (db !== da) return db - da;
+      return b.stats.pf - a.stats.pf;
+    });
 
     var byeTeam = null;
     var topTeam = sortedFirst[0];
@@ -795,12 +804,9 @@ function computeKOTeams() {
     );
     
     if (tiedTeams.length > 1) {
-      var randomIndex = Math.floor(Math.random() * tiedTeams.length);
-      byeTeam = tiedTeams[randomIndex];
-      toast("🎟 BYE: Random chọn " + byeTeam.pos + " (có " + tiedTeams.length + " đội bằng điểm)");
+      byeTeam = tiedTeams[Math.floor(Math.random() * tiedTeams.length)];
     } else {
       byeTeam = topTeam;
-      toast("🎟 BYE: " + byeTeam.pos + " có thành tích tốt nhất");
     }
     
     var seeds = [];
@@ -818,11 +824,9 @@ function computeKOTeams() {
       var h_info = seeds[pairings[i][0]];
       var a_info = seeds[pairings[i][1]];
       var isBye = (i === 7 && byeTeam); 
-      
       result.matches.push({
         round: 1, slot: i + 1, h: h_info.teamId, a: a_info.teamId, 
-        code: "V16-" + (i + 1), h_pos: h_info.pos, a_pos: a_info.pos,
-        isBye: isBye
+        code: "V16-" + (i + 1), h_pos: h_info.pos, a_pos: a_info.pos, isBye: isBye
       });
     }
     
@@ -834,7 +838,6 @@ function computeKOTeams() {
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   }
-  
   return result;
 }
 
@@ -964,7 +967,7 @@ function openRefModal(matchId) {
   if (!m) return;
   var hn = m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD");
   var an = m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD");
-  el("ref-match-code").textContent = "🎯 " + displayCode(m);
+  el("ref-match-code").textContent = "🎯 " + (m.match_code || displayCode(m));
   el("ref-team-a-name").textContent = hn;
   el("ref-team-b-name").textContent = an;
   var status = m.match_status || 'scheduled';
