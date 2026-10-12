@@ -306,8 +306,8 @@ var CFG = {
 var sb;
 try { sb = window.supabase.createClient(CFG.URL, CFG.KEY); } catch(e) { console.error(e); }
 
-var CURRENT_USER = null;
-var DATA = { tournaments: [], events: [], matches: [], teams: [], players: [], groups: [], stages: [] };
+// 🌟 ĐÃ SỬA: Bổ sung groupTeams vào khai báo ban đầu
+var DATA = { tournaments: [], events: [], matches: [], teams: [], players: [], groups: [], groupTeams: [], stages: [] };
 var currentMatchId = null, currentMatchData = null, realtimeInterval = null, lastRallyKey = null;
 var localServeState = { team: 'home', turn: 1 };
 var timeoutElapsed = 0, timeoutInterval = null, timeoutRunning = false;
@@ -437,9 +437,20 @@ async function loadMatches() {
         if (stageIds.length > 0) {
           var g = await sb.from("groups").select("*").in("stage_id", stageIds);
           DATA.groups = (g.data || []).slice();
-        } else { DATA.groups = []; }
-      } else { DATA.groups = []; }
-    } else { DATA.teams = []; DATA.players = []; DATA.stages = []; DATA.groups = []; }
+          // 🌟 ĐÃ SỬA: Tải dữ liệu groupTeams để tránh lỗi undefined
+          var gt = await sb.from("group_teams").select("*").in("stage_id", stageIds);
+          DATA.groupTeams = (gt.data || []).slice();
+        } else { 
+          DATA.groups = []; 
+          DATA.groupTeams = []; 
+        }
+      } else { 
+        DATA.groups = []; 
+        DATA.groupTeams = []; 
+      }
+    } else { 
+      DATA.teams = []; DATA.players = []; DATA.stages = []; DATA.groups = []; DATA.groupTeams = []; 
+    }
     renderMatchesByRound();
   } catch(e) { console.error(e); }
 }
@@ -449,7 +460,6 @@ function teamsInG(gid) {
   return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
 }
 
-// 🌟 1. HÀM TÍNH BẢNG XẾP HẠNG
 function standings(g) {
   var t = teamsInG(g), st = {};
   t.forEach(x => st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0});
@@ -469,12 +479,10 @@ function standings(g) {
   });
 }
 
-// 🌟 2. HÀM KIỂM TRA BẢNG ĐÃ HOÀN THÀNH CHƯA (Có thêm log để debug)
 function isGroupComplete(gid) {
   var t = teamsInG(gid);
   var exp = t.length * (t.length - 1) / 2;
   var completedMatches = DATA.matches.filter(m => m.group_id === gid && (m.match_status === "finished" || m.match_status === "completed")).length;
-  console.log(`[KO DEBUG] Bảng ${gid}: Cần ${exp} trận, đã xong ${completedMatches} trận. Hoàn thành: ${t.length >= 2 && completedMatches >= exp}`);
   return t.length >= 2 && completedMatches >= exp;
 }
 
@@ -737,7 +745,7 @@ async function createRally(eventType) {
   var serverTeamName = st === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent;
   var receiverTeamName = st === 'home' ? el("modal-away-name").textContent : el("modal-home-name").textContent;
   
-  var description = serverName + ' (đội: ' + serverTeamName + ') giao từ Ô ' + tu + ' → ' + receiverName + ' (đội: ' + receiverTeamName + ') đỡ ở Ô ' + receiverSlot + ' - Lượt Giao ' + tu;
+  var description = serverName + ' (đội: ' + serverTeamName + ') giao từ Ô ' + tu + ' → ' + receiverName + ' (đội: ' + receiverTeamName + ') đỡ ở Ô ' + tu + ' - Lượt Giao ' + tu;
   
   await insertRallyDirect({
     match_id: currentMatchId, home_score: m.home_score || 0, away_score: m.away_score || 0, serve_turn: tu, event_type: eventType,
@@ -766,7 +774,6 @@ async function insertRallyDirect(rallyData) {
   } catch(e) { return false; }
 }
 
-// 🌟 3. HÀM TỰ ĐỘNG ĐỒNG BỘ ĐỘI VÀO VÒNG KO (Có log chi tiết)
 async function syncKO() {
   console.log("[SYNC KO] 🚀 Bắt đầu đồng bộ vòng KO...");
   var eid = el("event-filter").value;
@@ -812,14 +819,13 @@ async function syncKO() {
   if (updated) {
     console.log("[SYNC KO] ✅ Đã cập nhật thành công. Đang tải lại dữ liệu...");
     toast("✅ Đã tự động cập nhật đội vào vòng KO");
-    await loadMatches(); // Tải lại để render lại giao diện
+    await loadMatches();
   } else {
     console.log("[SYNC KO] ℹ️ Không có thay đổi nào cần cập nhật.");
   }
   return updated;
 }
 
-// 🌟 4. HÀM XỬ LÝ KHI KẾT THÚC TRẬN
 async function finishMatch() {
   if (!currentMatchId) return;
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
@@ -828,13 +834,11 @@ async function finishMatch() {
     console.log("[FINISH MATCH] 🏁 Đang kết thúc trận", currentMatchId);
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'finished' }).eq("id", currentMatchId);
     
-    // Cập nhật trạng thái trong bộ nhớ ngay lập tức để isGroupComplete đọc đúng
     currentMatchData.match_status = 'finished';
     
     closeScoreModal();
     toast("🏁 Đã kết thúc");
     
-    // 🌟 GỌI SYNC KO ngay sau khi kết thúc trận
     await syncKO();
     
   } catch(e) { 
@@ -895,7 +899,6 @@ function startRealtime() {
 }
 function stopRealtime() { if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; } }
 
-// 🌟 5. HÀM TÍNH TOÁN ĐỘI ĐI TIẾP (Có log chi tiết)
 function computeKOTeams() {
   if (!DATA.gStage) { console.log("[KO] ❌ Không có gStage"); return null; }
   var numGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
@@ -936,7 +939,7 @@ function computeKOTeams() {
     });
     var sortedQualified = qualified.slice().sort((a, b) => {
       if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
-      if (!a.stats) return 1; // Đẩy đội chưa hoàn thành xuống cuối
+      if (!a.stats) return 1;
       if (!b.stats) return -1;
       if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
       var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
