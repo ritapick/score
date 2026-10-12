@@ -306,7 +306,6 @@ var CFG = {
 var sb;
 try { sb = window.supabase.createClient(CFG.URL, CFG.KEY); } catch(e) { console.error(e); }
 
-// 🌟 ĐÃ SỬA: Khai báo đầy đủ CURRENT_USER và các biến khác
 var CURRENT_USER = null;
 var DATA = { tournaments: [], events: [], matches: [], teams: [], players: [], groups: [], groupTeams: [], stages: [] };
 var currentMatchId = null, currentMatchData = null, realtimeInterval = null, lastRallyKey = null;
@@ -438,20 +437,11 @@ async function loadMatches() {
         if (stageIds.length > 0) {
           var g = await sb.from("groups").select("*").in("stage_id", stageIds);
           DATA.groups = (g.data || []).slice();
-          // 🌟 ĐÃ SỬA: Tải dữ liệu groupTeams để tránh lỗi undefined
           var gt = await sb.from("group_teams").select("*").in("stage_id", stageIds);
           DATA.groupTeams = (gt.data || []).slice();
-        } else { 
-          DATA.groups = []; 
-          DATA.groupTeams = []; 
-        }
-      } else { 
-        DATA.groups = []; 
-        DATA.groupTeams = []; 
-      }
-    } else { 
-      DATA.teams = []; DATA.players = []; DATA.stages = []; DATA.groups = []; DATA.groupTeams = []; 
-    }
+        } else { DATA.groups = []; DATA.groupTeams = []; }
+      } else { DATA.groups = []; DATA.groupTeams = []; }
+    } else { DATA.teams = []; DATA.players = []; DATA.stages = []; DATA.groups = []; DATA.groupTeams = []; }
     renderMatchesByRound();
   } catch(e) { console.error(e); }
 }
@@ -461,10 +451,11 @@ function teamsInG(gid) {
   return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
 }
 
+// 🌟 ĐÃ SỬA: Kiểm tra match_status để đảm bảo đồng bộ với isGroupComplete
 function standings(g) {
   var t = teamsInG(g), st = {};
   t.forEach(x => st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0});
-  DATA.matches.filter(m => m.group_id === g && (Number(m.home_score)>0 || Number(m.away_score)>0)).forEach(m => {
+  DATA.matches.filter(m => m.group_id === g && (m.match_status === 'finished' || m.match_status === 'completed')).forEach(m => {
     var h = st[m.home_team_id], a = st[m.away_team_id]; if (!h || !a) return;
     h.pf += Number(m.home_score)||0; h.pa += Number(m.away_score)||0; h.played++;
     a.pf += Number(m.away_score)||0; a.pa += Number(m.home_score)||0; a.played++;
@@ -695,6 +686,14 @@ async function onSlotChange(team, slotNum) {
   try {
     await sb.from("matches").update(update).eq("id", currentMatchId);
     Object.assign(currentMatchData, update);
+    
+    // 🌟 CẬP NHẬT VÀO DATA.matches
+    var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
+    if (idx !== -1) {
+      DATA.matches[idx][team + '_player_slot1'] = s1 || null;
+      DATA.matches[idx][team + '_player_slot2'] = s2 || null;
+    }
+    
     toast("✅ Đã cập nhật VĐV");
   } catch(e) { toast("❌ Lỗi: " + e.message); }
 }
@@ -706,6 +705,15 @@ async function setServe(team, turn) {
   try {
     await sb.from("matches").update({ serving_team: team, serving_turn: turn, match_status: 'live' }).eq("id", currentMatchId);
     currentMatchData.serving_team = team; currentMatchData.serving_turn = turn; currentMatchData.match_status = 'live';
+    
+    // 🌟 CẬP NHẬT VÀO DATA.matches
+    var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
+    if (idx !== -1) {
+      DATA.matches[idx].serving_team = team;
+      DATA.matches[idx].serving_turn = turn;
+      DATA.matches[idx].match_status = 'live';
+    }
+    
     updateServeButtons(); updateTopScoreDisplay(); updateScoreControlsVisibility();
     await createRally('SERVE_CHANGE');
     toast("✅ " + (team === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent) + " giao L" + turn);
@@ -725,6 +733,15 @@ async function changeScore(team, delta) {
   try {
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'live' }).eq("id", currentMatchId);
     currentMatchData.home_score = h; currentMatchData.away_score = a; currentMatchData.match_status = 'live';
+    
+    // 🌟 CẬP NHẬT VÀO DATA.matches
+    var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
+    if (idx !== -1) {
+      DATA.matches[idx].home_score = h;
+      DATA.matches[idx].away_score = a;
+      DATA.matches[idx].match_status = 'live';
+    }
+    
     await createRally(team === 'home' ? 'HOME_SCORE' : 'AWAY_SCORE');
     updateTopScoreDisplay();
     toast("✅ " + h + " - " + a);
@@ -827,6 +844,7 @@ async function syncKO() {
   return updated;
 }
 
+// 🌟 ĐÃ SỬA: Cập nhật trực tiếp vào DATA.matches để isGroupComplete nhận diện đúng ngay lập tức
 async function finishMatch() {
   if (!currentMatchId) return;
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
@@ -835,7 +853,13 @@ async function finishMatch() {
     console.log("[FINISH MATCH] 🏁 Đang kết thúc trận", currentMatchId);
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'finished' }).eq("id", currentMatchId);
     
-    currentMatchData.match_status = 'finished';
+    // 🌟 CẬP NHẬT TRẠNG THÁI TRONG MẢNG DATA.matches ĐỂ CÁC HÀM KHÁC ĐỌC ĐÚNG
+    var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
+    if (idx !== -1) {
+      DATA.matches[idx].match_status = 'finished';
+      DATA.matches[idx].home_score = h;
+      DATA.matches[idx].away_score = a;
+    }
     
     closeScoreModal();
     toast("🏁 Đã kết thúc");
