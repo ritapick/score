@@ -155,7 +155,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
+  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none"> Trang chủ</a>
   <span class="logo">⚖️ Trọng Tài</span>
 </div>
 <div>
@@ -184,7 +184,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <div id="login-modal" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
-    <h3>🔐 Đăng nhập</h3>
+    <h3> Đăng nhập</h3>
     <button class="modal-close" onclick="closeLogin()">×</button>
   </div>
   <input id="lu" class="login-input" placeholder="Tên đăng nhập"/>
@@ -240,7 +240,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     </div>
   </div>
   <div class="slots-section">
-    <div class="slots-title"> Chọn VĐV & Lượt giao</div>
+    <div class="slots-title">👥 Chọn VĐV & Lượt giao</div>
     <div class="slots-grid">
       <div class="slot-group home">
         <div class="slot-group-title">ĐỘI A</div>
@@ -268,8 +268,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
           <select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)"><option value="">-- Chọn --</option></select>
         </div>
         <div class="serve-buttons">
-          <button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)" title="Lượt 1"><span class="tick"></span></button>
-          <button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕</span></button>
+          <button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)" title="Lượt 1"><span class="tick">🌕</span></button>
+          <button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button>
         </div>
       </div>
     </div>
@@ -277,7 +277,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   <div class="modal-actions">
     <button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button>
     <button class="btn btn-w" onclick="openTimeoutModal()">⏱ Timeout</button>
-    <button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button>
+    <button class="btn btn-p" onclick="finishMatch()"> Kết thúc</button>
   </div>
 </div>
 </div>
@@ -328,7 +328,7 @@ async function doLogin() {
   try {
     var { data, error } = await sb.from('admin_users').select('*').eq('username', u).eq('password', p).maybeSingle();
     if (error) throw error;
-    if (!data) { el("lmsg").textContent=" Sai thông tin!"; return; }
+    if (!data) { el("lmsg").textContent="❌ Sai thông tin!"; return; }
     CURRENT_USER = data;
     sessionStorage.setItem('pb_admin', JSON.stringify(CURRENT_USER));
     closeLogin(); applyUI(); await loadData();
@@ -338,14 +338,14 @@ async function doLogin() {
 function doLogout() {
   CURRENT_USER = null; sessionStorage.removeItem('pb_admin'); stopRealtime(); applyUI();
   el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p>Vui lòng đăng nhập</p></div>';
-  toast(" Đã đăng xuất");
+  toast("👋 Đã đăng xuất");
 }
 function applyUI() {
   var logged = !!CURRENT_USER;
   el("login-btn").classList.toggle("hidden", logged);
   el("logout-btn").classList.toggle("hidden", !logged);
   el("user-chip").classList.toggle("hidden", !logged);
-  if (logged) el("user-chip").textContent = " " + CURRENT_USER.username;
+  if (logged) el("user-chip").textContent = "👤 " + CURRENT_USER.username;
 }
 
 async function loadData() {
@@ -441,27 +441,29 @@ async function loadMatches() {
           DATA.groupTeams = (gt.data || []).slice();
         } else { DATA.groups = []; DATA.groupTeams = []; }
       } else { DATA.groups = []; DATA.groupTeams = []; }
-      
-      // 🌟 LOG DEBUG: In ra thông tin groupTeams để kiểm tra
-      console.log("[LOAD] Total groups:", DATA.groups.length);
-      console.log("[LOAD] Total groupTeams records:", DATA.groupTeams.length);
-      DATA.groupTeams.forEach(gt => {
-        console.log(`[LOAD] GroupTeam: group_id=${gt.group_id}, team_id=${gt.team_id}`);
-      });
     } else { DATA.teams = []; DATA.players = []; DATA.stages = []; DATA.groups = []; DATA.groupTeams = []; }
     renderMatchesByRound();
   } catch(e) { console.error(e); }
 }
 
-// 🌟 SỬA: Đếm số đội thực tế và DEDUPLICATE team_id
+// 🌟 SỬA HOÀN TOÀN: Đếm số đội thực tế dựa trên các trận đấu trong bảng
+// Thay vì dựa vào group_teams (có thể bị sai/dư), ta lấy từ matches
+function getTeamsFromMatches(gid) {
+  var groupMatches = DATA.matches.filter(m => m.group_id === gid);
+  var teamIds = new Set();
+  groupMatches.forEach(m => {
+    if (m.home_team_id) teamIds.add(m.home_team_id);
+    if (m.away_team_id) teamIds.add(m.away_team_id);
+  });
+  return DATA.teams.filter(t => teamIds.has(t.id));
+}
+
+//  SỬA: Đếm số đội thực tế từ matches
 function teamsInG(gid) {
-  if (!DATA.groupTeams || !DATA.teams) return [];
-  // Lấy tất cả team_id trong bảng group_teams cho group này
-  var tids = DATA.groupTeams.filter(x => x.group_id === gid).map(x => x.team_id);
-  //  DEDUPLICATE: Loại bỏ team_id trùng lặp
-  tids = [...new Set(tids)];
-  console.log(`[teamsInG] Group ${gid}: team_ids (sau dedup) =`, tids);
-  return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
+  var teams = getTeamsFromMatches(gid);
+  console.log(`[teamsInG] Bảng ${gid}: Số đội thực tế từ matches = ${teams.length}`);
+  console.log(`[teamsInG] Danh sách đội:`, teams.map(t => t.name));
+  return teams;
 }
 
 //  SỬA: Tính số trận cần đấu dựa trên số đội thực tế
@@ -478,7 +480,7 @@ function isGroupComplete(gid) {
   var numTeams = t.length;
   
   if (numTeams < 2) {
-    console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Chỉ có ${numTeams} đội, chưa đủ điều kiện`);
+    console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Chỉ có ${numTeams} đội thực tế`);
     return false;
   }
   
@@ -491,11 +493,11 @@ function isGroupComplete(gid) {
   var isComplete = completedMatches >= expectedMatches;
   
   console.log(`[DEBUG isGroupComplete] Bảng ${gid}:`);
-  console.log(`  - Số đội thực tế (sau dedup): ${numTeams}`);
+  console.log(`  - Số đội thực tế (từ matches): ${numTeams}`);
   console.log(`  - Tên các đội:`, t.map(team => team.name));
   console.log(`  - Số trận cần đấu: ${expectedMatches} (công thức: ${numTeams} * ${numTeams-1} / 2)`);
   console.log(`  - Số trận đã kết thúc: ${completedMatches}`);
-  console.log(`  - Trạng thái: ${isComplete ? '✅ HOÀN THÀNH' : '⏳ CHƯA HOÀN THÀNH'}`);
+  console.log(`  - Trạng thái: ${isComplete ? '✅ HOÀN THÀNH' : ' CHƯA HOÀN THÀNH'}`);
   
   return isComplete;
 }
@@ -618,7 +620,7 @@ function renderMatchesByRound() {
     H += '</div>';
   });
   var koOrder = ['r16', 'tk', 'bk', 'ck', 'other'];
-  var koTitles = { 'r16': '🎯 Vòng 1/8', 'tk': '🎯 Tứ kết', 'bk': '🏅 Bán kết', 'ck': ' Chung kết', 'other': 'Khác' };
+  var koTitles = { 'r16': '🎯 Vòng 1/8', 'tk': '🎯 Tứ kết', 'bk': '🏅 Bán kết', 'ck': '🏆 Chung kết', 'other': 'Khác' };
   koOrder.forEach(function(type) {
     if (koMatches[type] && koMatches[type].length > 0) {
       H += '<div class="group-section"><div class="group-header ko-header"><span>' + koTitles[type] + '</span><span class="count">' + koMatches[type].length + ' trận</span></div>';
@@ -853,12 +855,12 @@ async function syncKO() {
 
   if (typeof computeKOTeams !== 'function') {
     console.error("⚠️ computeKOTeams is not defined! Vui lòng nhấn Ctrl + F5 để xóa cache trình duyệt.");
-    toast("️ Vui lòng tải lại trang (Ctrl+F5)");
+    toast("⚠️ Vui lòng tải lại trang (Ctrl+F5)");
     return false;
   }
 
   var koData = computeKOTeams();
-  if (!koData) { console.log("[SYNC KO]  computeKOTeams trả về null"); return false; }
+  if (!koData) { console.log("[SYNC KO] ❌ computeKOTeams trả về null"); return false; }
 
   var updated = false;
   for (var i = 0; i < koData.matches.length; i++) {
@@ -869,7 +871,7 @@ async function syncKO() {
     console.log(`[SYNC KO] 🔍 Kiểm tra trận slot ${km.slot} (${km.code}): DB hiện tại h=${m.home_team_id}, a=${m.away_team_id}. KO đề xuất h=${km.h}, a=${km.a}`);
 
     if (m.home_team_id !== km.h || m.away_team_id !== km.a) {
-      console.log(`[SYNC KO]  ĐANG CẬP NHẬT trận slot ${km.slot} thành h=${km.h}, a=${km.a}`);
+      console.log(`[SYNC KO] 🔄 ĐANG CẬP NHẬT trận slot ${km.slot} thành h=${km.h}, a=${km.a}`);
       await sb.from("matches").update({ home_team_id: km.h, away_team_id: km.a }).eq("id", m.id);
       m.home_team_id = km.h; 
       m.away_team_id = km.a; 
@@ -892,7 +894,7 @@ async function finishMatch() {
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
   if (!confirm("🏁 Kết thúc trận?\n\nTỷ số: " + h + " - " + a)) return;
   try {
-    console.log("[FINISH MATCH] 🏁 Đang kết thúc trận", currentMatchId);
+    console.log("[FINISH MATCH]  Đang kết thúc trận", currentMatchId);
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'finished' }).eq("id", currentMatchId);
     
     var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
@@ -903,7 +905,7 @@ async function finishMatch() {
     }
     
     closeScoreModal();
-    toast(" Đã kết thúc");
+    toast("🏁 Đã kết thúc");
     
     await syncKO();
     
@@ -965,7 +967,7 @@ function startRealtime() {
 }
 function stopRealtime() { if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; } }
 
-// 🌟 SỬA HOÀN TOÀN: Logic KO linh hoạt + Sửa logic 2 bảng cho đúng
+// 🌟 SỬA HOÀN TOÀN: Logic KO linh hoạt dựa trên số đội thực tế từ matches
 function computeKOTeams() {
   if (!DATA.gStage) { console.log("[KO] ❌ Không có gStage"); return null; }
   
@@ -982,7 +984,7 @@ function computeKOTeams() {
     var numTeams = teamsInG(g.id).length;
     
     console.log(`[KO]  Bảng ${g.code}:`);
-    console.log(`  - Số đội thực tế: ${numTeams}`);
+    console.log(`  - Số đội thực tế (từ matches): ${numTeams}`);
     console.log(`  - Số trận cần đấu: ${numTeams * (numTeams - 1) / 2}`);
     console.log(`  - Hoàn thành: ${complete}`);
     console.log(`  - Top 1 ID: ${complete && st.length > 0 ? st[0].id : 'null'}`);
@@ -998,21 +1000,18 @@ function computeKOTeams() {
 
   var result = { matches: [] };
   
-  // 🌟 SỬA LOGIC 2 BẢNG: Ghép chéo đúng (1A vs 2B, 1B vs 2A)
+  //  SỬA LOGIC 2 BẢNG: Ghép chéo đúng (1A vs 2B, 1B vs 2A)
   if (numGroups === 2) {
     console.log("[KO] ⚙️ Xử lý logic 2 bảng → 4 đội vào Bán Kết (ghép chéo)");
-    var firstA = advancing[0].pos1; // 1A
-    var secondA = advancing[0].pos2; // 2A
-    var firstB = advancing[1].pos1; // 1B
-    var secondB = advancing[1].pos2; // 2B
+    var firstA = advancing[0].pos1;
+    var secondA = advancing[0].pos2;
+    var firstB = advancing[1].pos1;
+    var secondB = advancing[1].pos2;
     
     console.log(`[KO] Ghép cặp: BK1 = ${firstA.pos} vs ${secondB.pos}, BK2 = ${firstB.pos} vs ${secondA.pos}`);
     
-    // BK1: Nhất A vs Nhì B
     result.matches.push({round: 3, slot: 13, h: firstA.teamId, a: secondB.teamId, code: "BK1", h_pos: firstA.pos, a_pos: secondB.pos});
-    // BK2: Nhất B vs Nhì A
     result.matches.push({round: 3, slot: 14, h: firstB.teamId, a: secondA.teamId, code: "BK2", h_pos: firstB.pos, a_pos: secondA.pos});
-    // CK
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } 
   else if (numGroups === 3) {
