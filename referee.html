@@ -456,26 +456,29 @@ function teamsInG(gid) {
   return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
 }
 
-// 🌟 DEBUG CẢI TIẾN: In ra tất cả group_id có trong matches để dễ dò lỗi
+// 🌟 ĐÃ SỬA LOGIC: Kiểm tra chặt chẽ số trận thực tế và số trận đã hoàn thành
 function isGroupComplete(gid) {
+  var t = teamsInG(gid);
+  var expectedMatches = t.length * (t.length - 1) / 2;
+  
+  if (expectedMatches === 0) {
+    console.log(`[DEBUG] Bảng ${gid}: Không có đủ đội để tạo trận (cần >= 2 đội).`);
+    return false;
+  }
+
   var groupMatches = DATA.matches.filter(m => m.group_id === gid);
-  var totalMatches = groupMatches.length;
+  
+  if (groupMatches.length !== expectedMatches) {
+    console.log(`[DEBUG] Bảng ${gid}: Số trận thực tế (${groupMatches.length}) KHÁC với số trận cần đấu (${expectedMatches}). Có thể lịch chưa được tạo hoặc group_id bị sai.`);
+    return false; // Sửa lỗi: Nếu số trận không đủ, trả về false ngay lập tức
+  }
+
   var finishedMatches = groupMatches.filter(m => 
     m.match_status === 'finished' || m.match_status === 'completed'
   ).length;
 
-  // Debug chi tiết
-  var uniqueGroupIdsInMatches = [...new Set(DATA.matches.map(m => m.group_id))];
-  console.log(`=== DEBUG isGroupComplete cho Bảng ${gid} ===`);
-  console.log(`1. Target group_id cần tìm: ${gid}`);
-  console.log(`2. Tổng số trận trong DATA.matches: ${DATA.matches.length}`);
-  console.log(`3. Các group_id ĐANG CÓ trong các trận đấu:`, uniqueGroupIdsInMatches);
-  console.log(`4. Số trận KHỚP với group_id này: ${totalMatches}`);
-  console.log(`5. Số trận đã FIN/COMPLETED: ${finishedMatches}`);
-  console.log(`=> Kết luận: ${finishedMatches >= totalMatches ? '✅ HOÀN THÀNH' : '⏳ CHƯA HOÀN THÀNH'}`);
-  console.log(`=========================================`);
-
-  return finishedMatches >= totalMatches;
+  console.log(`[DEBUG] Bảng ${gid}: Tổng trận: ${expectedMatches}, Đã xong: ${finishedMatches}`);
+  return finishedMatches === expectedMatches;
 }
 
 function standings(gid) {
@@ -1118,7 +1121,7 @@ function computeKOTeams() {
     if (u) { try { CURRENT_USER = JSON.parse(u); } catch(e) { sessionStorage.removeItem('pb_admin'); } }
     applyUI();
     if (CURRENT_USER) { await loadData(); }
-    else { el("matches-container").innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">🔐</div><p style="font-size:12px;margin:0">Vui lòng đăng nhập</p></div>'; }
+    else { el("matches-container").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">🔐</div><p style="font-size:12px;margin:0">Vui lòng đăng nhập</p></div>'; }
   } catch(e) { console.error("Init error:", e); }
 })();
 </script>
