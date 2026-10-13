@@ -155,12 +155,12 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
+  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none"> Trang chủ</a>
   <span class="logo">⚖️ Trọng Tài</span>
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
-  <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
+  <button id="login-btn" class="btn btn-p" onclick="openLogin()"> Đăng nhập</button>
   <button id="logout-btn" class="btn btn-l hidden" onclick="doLogout()">Thoát</button>
 </div>
 </nav>
@@ -269,7 +269,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
         </div>
         <div class="serve-buttons">
           <button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)" title="Lượt 1"><span class="tick">🌕</span></button>
-          <button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button>
+          <button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕</span></button>
         </div>
       </div>
     </div>
@@ -289,10 +289,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     <button class="modal-close" onclick="closeTimeoutModal()">×</button>
   </div>
   <div class="timeout-display" id="timeout-display">00:00</div>
-  <div class="timeout-controls">
-    <button class="btn btn-p" id="timeout-start-btn" onclick="toggleTimeout()" style="min-width:120px">▶ Bắt đầu</button>
-  </div>
-  <div class="actions">
+  <div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;">
     <button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button>
   </div>
 </div>
@@ -449,61 +446,46 @@ async function loadMatches() {
   } catch(e) { console.error(e); }
 }
 
+// 🌟 KẾ THỪA TỪ INDEX.HTML: Đếm số đội từ groupTeams
 function teamsInG(gid) {
-  if (!DATA.groupTeams || !DATA.teams) return [];
-  var tids = DATA.groupTeams.filter(x => x.group_id === gid).map(x => x.team_id);
-  tids = [...new Set(tids)];
-  return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
+  var tids = DATA.groupTeams.filter(function(x){ return x.group_id===gid; }).map(function(x){ return x.team_id; });
+  return DATA.teams.filter(function(t){ return tids.indexOf(t.id)>=0; });
 }
 
-// 🌟 ĐÃ SỬA LOGIC: Kiểm tra chặt chẽ số trận thực tế và số trận đã hoàn thành
+// 🌟 KẾ THỪA TỪ INDEX.HTML: Tính số trận cần đấu
+function expectedMatchesInGroup(gid) {
+  var t = teamsInG(gid);
+  return t.length * (t.length - 1) / 2;
+}
+
+// 🌟 KẾ THỪA TỪ INDEX.HTML: Kiểm tra bảng hoàn thành
 function isGroupComplete(gid) {
   var t = teamsInG(gid);
-  var expectedMatches = t.length * (t.length - 1) / 2;
-  
-  if (expectedMatches === 0) {
-    console.log(`[DEBUG] Bảng ${gid}: Không có đủ đội để tạo trận (cần >= 2 đội).`);
-    return false;
-  }
-
-  var groupMatches = DATA.matches.filter(m => m.group_id === gid);
-  
-  if (groupMatches.length !== expectedMatches) {
-    console.log(`[DEBUG] Bảng ${gid}: Số trận thực tế (${groupMatches.length}) KHÁC với số trận cần đấu (${expectedMatches}). Có thể lịch chưa được tạo hoặc group_id bị sai.`);
-    return false; // Sửa lỗi: Nếu số trận không đủ, trả về false ngay lập tức
-  }
-
-  var finishedMatches = groupMatches.filter(m => 
-    m.match_status === 'finished' || m.match_status === 'completed'
-  ).length;
-
-  console.log(`[DEBUG] Bảng ${gid}: Tổng trận: ${expectedMatches}, Đã xong: ${finishedMatches}`);
-  return finishedMatches === expectedMatches;
+  var exp = t.length * (t.length - 1) / 2;
+  return t.length >= 2 && DATA.matches.filter(function(m){ 
+    var st = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
+    return m.group_id===gid && (st==="completed" || st==="finished"); 
+  }).length >= exp;
 }
 
-function standings(gid) {
-  var t = teamsInG(gid);
+// 🌟 KẾ THỪA TỪ INDEX.HTML: Tính bảng xếp hạng
+function standings(g) {
+  var t = teamsInG(g);
   var st = {};
-  if (t.length === 0) return [];
-  
-  t.forEach(x => st[x.id] = {id: x.id, w: 0, pf: 0, pa: 0, played: 0});
-  
-  DATA.matches.filter(m => m.group_id === gid && (m.match_status === 'finished' || m.match_status === 'completed')).forEach(m => {
+  t.forEach(function(x){ st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0}; });
+  DATA.matches.filter(function(m){ 
+    var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
+    return m.group_id===g && (status==="completed" || status==="finished"); 
+  }).forEach(function(m){
     var h = st[m.home_team_id], a = st[m.away_team_id];
     if (!h || !a) return;
-    h.pf += Number(m.home_score) || 0;
-    h.pa += Number(m.away_score) || 0;
-    h.played++;
-    a.pf += Number(m.away_score) || 0;
-    a.pa += Number(m.home_score) || 0;
-    a.played++;
+    h.pf += Number(m.home_score)||0; h.pa += Number(m.away_score)||0; h.played++;
+    a.pf += Number(m.away_score)||0; a.pa += Number(m.home_score)||0; a.played++;
     if (Number(m.home_score) > Number(m.away_score)) h.w++;
     else if (Number(m.away_score) > Number(m.home_score)) a.w++;
   });
-  
-  var arr = [];
-  for (var k in st) arr.push(st[k]);
-  return arr.sort((x, y) => {
+  var arr = []; for (var k in st) arr.push(st[k]);
+  return arr.sort(function(x,y){
     if (y.w !== x.w) return y.w - x.w;
     var dx = x.pf - x.pa, dy = y.pf - y.pa;
     if (dy !== dx) return dy - dx;
@@ -550,7 +532,7 @@ function getRoundInfo(match) {
   if (match.round === 1.5) return { type: 'r16', name: '🎯 Vòng 1/8', class: 'ko-header' };
   if (match.round === 2) return { type: 'tk', name: '🎯 Tứ kết', class: 'ko-header' };
   if (match.round === 3) return { type: 'bk', name: '🏅 Bán kết', class: 'ko-header' };
-  if (match.round === 4) return { type: 'ck', name: '🏆 Chung kết', class: 'ko-header' };
+  if (match.round === 4) return { type: 'ck', name: ' Chung kết', class: 'ko-header' };
   return { type: 'other', name: 'Khác', class: 'ko-header' };
 }
 
@@ -819,7 +801,7 @@ async function insertRallyDirect(rallyData) {
 async function syncKO() {
   console.log("[SYNC KO] 🚀 Bắt đầu đồng bộ vòng KO...");
   var eid = el("event-filter").value;
-  if (!eid) { console.log("[SYNC KO] ❌ Không có eid"); return false; }
+  if (!eid) { console.log("[SYNC KO]  Không có eid"); return false; }
 
   if (!DATA.kStage) {
     var stQuery = await sb.from("stages").select("*").eq("event_id", eid).eq("stage_type", "knockout").maybeSingle();
@@ -850,7 +832,7 @@ async function syncKO() {
     console.log(`[SYNC KO] 🔍 Kiểm tra trận slot ${km.slot} (${km.code}): DB hiện tại h=${m.home_team_id}, a=${m.away_team_id}. KO đề xuất h=${km.h}, a=${km.a}`);
 
     if (m.home_team_id !== km.h || m.away_team_id !== km.a) {
-      console.log(`[SYNC KO] 🔄 ĐANG CẬP NHẬT trận slot ${km.slot} thành h=${km.h}, a=${km.a}`);
+      console.log(`[SYNC KO]  ĐANG CẬP NHẬT trận slot ${km.slot} thành h=${km.h}, a=${km.a}`);
       await sb.from("matches").update({ home_team_id: km.h, away_team_id: km.a }).eq("id", m.id);
       m.home_team_id = km.h; 
       m.away_team_id = km.a; 
@@ -951,57 +933,53 @@ function startRealtime() {
 }
 function stopRealtime() { if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; } }
 
+// 🌟 SỬA LỖI LOGIC BÁN KẾT: Kế thừa từ index.html - không cần đợi complete
 function computeKOTeams() {
-  if (!DATA.gStage) { console.log("[KO] ❌ Không có gStage"); return null; }
-  
-  var allGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id);
-  var numGroups = allGroups.length;
-  console.log("[KO] 📊 Tổng số bảng thực tế:", numGroups);
+  var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
-
+  
   var advancing = [], allSt = {};
-  allGroups.forEach(g => {
+  DATA.groups.forEach(g => {
+    if (!DATA.gStage || g.stage_id !== DATA.gStage.id) return;
     var st = standings(g.id);
     st.forEach(s => allSt[s.id] = s);
-    var complete = isGroupComplete(g.id);
-    var numTeams = teamsInG(g.id).length;
     
-    console.log(`[KO] 📋 Bảng ${g.code}:`);
-    console.log(`  - Số đội thực tế: ${numTeams}`);
-    console.log(`  - Hoàn thành: ${complete}`);
-    console.log(`  - Top 1 ID: ${complete && st.length > 0 ? st[0].id : 'null'}`);
-    console.log(`  - Top 2 ID: ${complete && st.length > 1 ? st[1].id : 'null'}`);
-
+    // 🌟 SỬA LI: Không cần đợi isGroupComplete(g.id) === true
+    // Luôn lấy đội đang đứng top trong bảng xếp hạng hiện tại
     advancing.push({
       groupCode: g.code,
-      pos1: { teamId: (complete && st.length > 0) ? st[0].id : null, pos: "1" + g.code, stats: (complete && st.length > 0) ? allSt[st[0].id] : null },
-      pos2: { teamId: (complete && st.length > 1) ? st[1].id : null, pos: "2" + g.code, stats: (complete && st.length > 1) ? allSt[st[1].id] : null },
-      pos3: { teamId: (complete && st.length > 2) ? st[2].id : null, pos: "3" + g.code, stats: (complete && st.length > 2) ? allSt[st[2].id] : null }
+      pos1: { teamId: (st.length > 0) ? st[0].id : null, pos: "1" + g.code, stats: (st.length > 0) ? allSt[st[0].id] : null },
+      pos2: { teamId: (st.length > 1) ? st[1].id : null, pos: "2" + g.code, stats: (st.length > 1) ? allSt[st[1].id] : null },
+      pos3: { teamId: (st.length > 2) ? st[2].id : null, pos: "3" + g.code, stats: (st.length > 2) ? allSt[st[2].id] : null }
     });
   });
 
   var result = { matches: [] };
-  
+
+  // 🌟 SỬA LOGIC BÁN KẾT 2 BẢNG: Ghép chéo đúng (1A vs 2B, 1B vs 2A)
   if (numGroups === 2) {
     console.log("[KO] ⚙️ Xử lý logic 2 bảng → 4 đội vào Bán Kết (ghép chéo)");
-    var firstA = advancing[0].pos1;
-    var secondA = advancing[0].pos2;
-    var firstB = advancing[1].pos1;
-    var secondB = advancing[1].pos2;
+    var firstA = advancing[0].pos1; // 1A
+    var secondA = advancing[0].pos2; // 2A
+    var firstB = advancing[1].pos1; // 1B
+    var secondB = advancing[1].pos2; // 2B
     
     console.log(`[KO] Ghép cặp: BK1 = ${firstA.pos} vs ${secondB.pos}, BK2 = ${firstB.pos} vs ${secondA.pos}`);
     
+    // BK1: Nhất A vs Nhì B
     result.matches.push({round: 3, slot: 13, h: firstA.teamId, a: secondB.teamId, code: "BK1", h_pos: firstA.pos, a_pos: secondB.pos});
+    // BK2: Nhất B vs Nhì A
     result.matches.push({round: 3, slot: 14, h: firstB.teamId, a: secondA.teamId, code: "BK2", h_pos: firstB.pos, a_pos: secondA.pos});
+    // CK
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } 
-  else if (numGroups === 3) {
-    console.log("[KO] ⚙️ Xử lý logic 3 bảng → 8 đội vào Tứ Kết");
+  else if (numGroups === 3 || numGroups === 4) {
+    console.log(`[KO] ⚙️ Xử lý logic ${numGroups} bảng`);
     var qualified = [];
     advancing.forEach((adv, idx) => {
       qualified.push(adv.pos1); qualified.push(adv.pos2);
-      if (idx === 0) qualified.push(adv.pos3);
-      if (idx === 2) qualified.push(adv.pos3);
+      if (numGroups === 3 && idx === 0) qualified.push(adv.pos3);
+      if (numGroups === 3 && idx === 2) qualified.push(adv.pos3);
     });
     
     var sortedQualified = qualified.slice().sort((a, b) => {
@@ -1014,7 +992,7 @@ function computeKOTeams() {
       return b.stats.pf - a.stats.pf;
     });
     
-    console.log("[KO] 🏆 8 đội qualified:", sortedQualified.map(q => `${q.pos} (${q.teamId ? 'OK' : 'null'})`));
+    console.log("[KO] 🏆 Danh sách qualified:", sortedQualified.map(q => `${q.pos} (${q.teamId ? 'OK' : 'null'})`));
 
     var s = sortedQualified;
     result.matches.push({round: 2, slot: 9, h: s[0].teamId, a: s[7].teamId, code: "TK1", h_pos: s[0].pos, a_pos: s[7].pos});
@@ -1024,37 +1002,9 @@ function computeKOTeams() {
     result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-  }
-  else if (numGroups === 4) {
-    console.log("[KO] ⚙️ Xử lý logic 4 bảng → 8 đội vào Tứ Kết");
-    var qualified = [];
-    advancing.forEach(adv => {
-      qualified.push(adv.pos1); qualified.push(adv.pos2);
-    });
-    
-    var sortedQualified = qualified.slice().sort((a, b) => {
-      if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
-      if (!a.stats) return 1;
-      if (!b.stats) return -1;
-      if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
-      var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
-      if (db !== da) return db - da;
-      return b.stats.pf - a.stats.pf;
-    });
-    
-    console.log("[KO] 🏆 8 đội qualified:", sortedQualified.map(q => `${q.pos} (${q.teamId ? 'OK' : 'null'})`));
-
-    var s = sortedQualified;
-    result.matches.push({round: 2, slot: 9, h: s[0].teamId, a: s[7].teamId, code: "TK1", h_pos: s[0].pos, a_pos: s[7].pos});
-    result.matches.push({round: 2, slot: 10, h: s[3].teamId, a: s[4].teamId, code: "TK2", h_pos: s[3].pos, a_pos: s[4].pos});
-    result.matches.push({round: 2, slot: 11, h: s[2].teamId, a: s[5].teamId, code: "TK3", h_pos: s[2].pos, a_pos: s[5].pos});
-    result.matches.push({round: 2, slot: 12, h: s[1].teamId, a: s[6].teamId, code: "TK4", h_pos: s[1].pos, a_pos: s[6].pos});
-    result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
-    result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
-    result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-  }
+  } 
   else {
-    console.log(`[KO] ⚙️ Xử lý logic ${numGroups} bảng (5+) → 16 đội vào Vòng 1/16`);
+    console.log(`[KO] ️ Xử lý logic ${numGroups} bảng (5+)`);
     var firstPlaces = advancing.map(a => a.pos1);
     var secondPlaces = advancing.map(a => a.pos2);
     var thirdPlaces = advancing.map(a => a.pos3);
