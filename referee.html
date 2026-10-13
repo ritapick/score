@@ -155,7 +155,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none"> Trang chủ</a>
+  <a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
   <span class="logo">⚖️ Trọng Tài</span>
 </div>
 <div>
@@ -184,7 +184,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <div id="login-modal" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
-    <h3> Đăng nhập</h3>
+    <h3>🔐 Đăng nhập</h3>
     <button class="modal-close" onclick="closeLogin()">×</button>
   </div>
   <input id="lu" class="login-input" placeholder="Tên đăng nhập"/>
@@ -277,7 +277,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   <div class="modal-actions">
     <button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button>
     <button class="btn btn-w" onclick="openTimeoutModal()">⏱ Timeout</button>
-    <button class="btn btn-p" onclick="finishMatch()"> Kết thúc</button>
+    <button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button>
   </div>
 </div>
 </div>
@@ -446,85 +446,68 @@ async function loadMatches() {
   } catch(e) { console.error(e); }
 }
 
-// 🌟 SỬA HOÀN TOÀN: Đếm số đội thực tế dựa trên các trận đấu trong bảng
-// Thay vì dựa vào group_teams (có thể bị sai/dư), ta lấy từ matches
-function getTeamsFromMatches(gid) {
-  var groupMatches = DATA.matches.filter(m => m.group_id === gid);
-  var teamIds = new Set();
-  groupMatches.forEach(m => {
-    if (m.home_team_id) teamIds.add(m.home_team_id);
-    if (m.away_team_id) teamIds.add(m.away_team_id);
-  });
-  return DATA.teams.filter(t => teamIds.has(t.id));
-}
-
-//  SỬA: Đếm số đội thực tế từ matches
+// 🌟 LOGIC MỚI: Lấy danh sách đội dựa trên groupTeams (nguồn dữ liệu chính xác nhất)
 function teamsInG(gid) {
-  var teams = getTeamsFromMatches(gid);
-  console.log(`[teamsInG] Bảng ${gid}: Số đội thực tế từ matches = ${teams.length}`);
-  console.log(`[teamsInG] Danh sách đội:`, teams.map(t => t.name));
-  return teams;
+  if (!DATA.groupTeams || !DATA.teams) return [];
+  var tids = DATA.groupTeams.filter(x => x.group_id === gid).map(x => x.team_id);
+  tids = [...new Set(tids)]; // Loại bỏ trùng lặp nếu có
+  console.log(`[teamsInG] Bảng ${gid}: Tìm thấy ${tids.length} đội trong groupTeams.`);
+  return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
 }
 
-//  SỬA: Tính số trận cần đấu dựa trên số đội thực tế
-function getExpectedMatchesInGroup(gid) {
-  var t = teamsInG(gid);
-  var n = t.length;
-  if (n < 2) return 0;
-  return n * (n - 1) / 2;
-}
-
-//  SỬA: Kiểm tra bảng đã hoàn thành chưa
+// 🌟 LOGIC MỚI: Đếm số trận của bảng và so sánh với số trận đã FIN/COMPLETED
 function isGroupComplete(gid) {
-  var t = teamsInG(gid);
-  var numTeams = t.length;
-  
-  if (numTeams < 2) {
-    console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Chỉ có ${numTeams} đội thực tế`);
+  // 1. Lấy tất cả các trận đấu thuộc bảng này
+  var groupMatches = DATA.matches.filter(m => m.group_id === gid);
+  var totalMatches = groupMatches.length;
+
+  if (totalMatches === 0) {
+    console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Chưa có trận nào được xếp lịch.`);
     return false;
   }
-  
-  var expectedMatches = numTeams * (numTeams - 1) / 2;
-  var completedMatches = DATA.matches.filter(m => 
-    m.group_id === gid && 
-    (m.match_status === "finished" || m.match_status === "completed")
+
+  // 2. Đếm số trận đã có kết quả (finished hoặc completed)
+  var finishedMatches = groupMatches.filter(m => 
+    m.match_status === 'finished' || m.match_status === 'completed'
   ).length;
-  
-  var isComplete = completedMatches >= expectedMatches;
-  
+
+  // 3. So sánh: Nếu số trận kết thúc >= tổng số trận thì bảng đã hoàn thành
+  var isComplete = finishedMatches >= totalMatches;
+
   console.log(`[DEBUG isGroupComplete] Bảng ${gid}:`);
-  console.log(`  - Số đội thực tế (từ matches): ${numTeams}`);
-  console.log(`  - Tên các đội:`, t.map(team => team.name));
-  console.log(`  - Số trận cần đấu: ${expectedMatches} (công thức: ${numTeams} * ${numTeams-1} / 2)`);
-  console.log(`  - Số trận đã kết thúc: ${completedMatches}`);
-  console.log(`  - Trạng thái: ${isComplete ? '✅ HOÀN THÀNH' : ' CHƯA HOÀN THÀNH'}`);
-  
+  console.log(`  - Tổng số trận đã xếp lịch: ${totalMatches}`);
+  console.log(`  - Số trận đã kết thúc (FIN/COMPLETED): ${finishedMatches}`);
+  console.log(`  - Trạng thái: ${isComplete ? '✅ HOÀN THÀNH' : '⏳ CHƯA HOÀN THÀNH'}`);
+
   return isComplete;
 }
 
-// 🌟 SỬA: Tính standings dựa trên số đội thực tế
-function standings(g) {
-  var t = teamsInG(g), st = {};
+// 🌟 LOGIC MỚI: Tính bảng xếp hạng dựa trên các trận đã hoàn thành
+function standings(gid) {
+  var t = teamsInG(gid);
+  var st = {};
   if (t.length === 0) return [];
   
-  t.forEach(x => st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0});
+  // Khởi tạo stats cho tất cả đội trong bảng
+  t.forEach(x => st[x.id] = {id: x.id, w: 0, pf: 0, pa: 0, played: 0});
   
-  DATA.matches.filter(m => m.group_id === g && (m.match_status === 'finished' || m.match_status === 'completed')).forEach(m => {
-    var h = st[m.home_team_id], a = st[m.away_team_id]; 
+  // Chỉ tính điểm từ các trận đã kết thúc
+  DATA.matches.filter(m => m.group_id === gid && (m.match_status === 'finished' || m.match_status === 'completed')).forEach(m => {
+    var h = st[m.home_team_id], a = st[m.away_team_id];
     if (!h || !a) return;
-    h.pf += Number(m.home_score)||0; 
-    h.pa += Number(m.away_score)||0; 
+    h.pf += Number(m.home_score) || 0;
+    h.pa += Number(m.away_score) || 0;
     h.played++;
-    a.pf += Number(m.away_score)||0; 
-    a.pa += Number(m.home_score)||0; 
+    a.pf += Number(m.away_score) || 0;
+    a.pa += Number(m.home_score) || 0;
     a.played++;
     if (Number(m.home_score) > Number(m.away_score)) h.w++;
     else if (Number(m.away_score) > Number(m.home_score)) a.w++;
   });
   
-  var arr = []; 
+  var arr = [];
   for (var k in st) arr.push(st[k]);
-  return arr.sort((x,y) => {
+  return arr.sort((x, y) => {
     if (y.w !== x.w) return y.w - x.w;
     var dx = x.pf - x.pa, dy = y.pf - y.pa;
     if (dy !== dx) return dy - dx;
@@ -570,7 +553,7 @@ function getRoundInfo(match) {
   }
   if (match.round === 1.5) return { type: 'r16', name: '🎯 Vòng 1/8', class: 'ko-header' };
   if (match.round === 2) return { type: 'tk', name: '🎯 Tứ kết', class: 'ko-header' };
-  if (match.round === 3) return { type: 'bk', name: ' Bán kết', class: 'ko-header' };
+  if (match.round === 3) return { type: 'bk', name: '🏅 Bán kết', class: 'ko-header' };
   if (match.round === 4) return { type: 'ck', name: '🏆 Chung kết', class: 'ko-header' };
   return { type: 'other', name: 'Khác', class: 'ko-header' };
 }
@@ -894,7 +877,7 @@ async function finishMatch() {
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
   if (!confirm("🏁 Kết thúc trận?\n\nTỷ số: " + h + " - " + a)) return;
   try {
-    console.log("[FINISH MATCH]  Đang kết thúc trận", currentMatchId);
+    console.log("[FINISH MATCH] 🏁 Đang kết thúc trận", currentMatchId);
     await sb.from("matches").update({ home_score: h, away_score: a, match_status: 'finished' }).eq("id", currentMatchId);
     
     var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
@@ -967,7 +950,7 @@ function startRealtime() {
 }
 function stopRealtime() { if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; } }
 
-// 🌟 SỬA HOÀN TOÀN: Logic KO linh hoạt dựa trên số đội thực tế từ matches
+// 🌟 LOGIC KO: Dựa trên số đội thực tế và trạng thái hoàn thành của bảng
 function computeKOTeams() {
   if (!DATA.gStage) { console.log("[KO] ❌ Không có gStage"); return null; }
   
@@ -983,9 +966,8 @@ function computeKOTeams() {
     var complete = isGroupComplete(g.id);
     var numTeams = teamsInG(g.id).length;
     
-    console.log(`[KO]  Bảng ${g.code}:`);
-    console.log(`  - Số đội thực tế (từ matches): ${numTeams}`);
-    console.log(`  - Số trận cần đấu: ${numTeams * (numTeams - 1) / 2}`);
+    console.log(`[KO] 📋 Bảng ${g.code}:`);
+    console.log(`  - Số đội thực tế: ${numTeams}`);
     console.log(`  - Hoàn thành: ${complete}`);
     console.log(`  - Top 1 ID: ${complete && st.length > 0 ? st[0].id : 'null'}`);
     console.log(`  - Top 2 ID: ${complete && st.length > 1 ? st[1].id : 'null'}`);
@@ -1000,7 +982,6 @@ function computeKOTeams() {
 
   var result = { matches: [] };
   
-  //  SỬA LOGIC 2 BẢNG: Ghép chéo đúng (1A vs 2B, 1B vs 2A)
   if (numGroups === 2) {
     console.log("[KO] ⚙️ Xử lý logic 2 bảng → 4 đội vào Bán Kết (ghép chéo)");
     var firstA = advancing[0].pos1;
