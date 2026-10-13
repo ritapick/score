@@ -453,41 +453,27 @@ function teamsInG(gid) {
   if (!DATA.groupTeams || !DATA.teams) return [];
   var tids = DATA.groupTeams.filter(x => x.group_id === gid).map(x => x.team_id);
   tids = [...new Set(tids)];
-  console.log(`[teamsInG] Bảng ${gid}: Tìm thấy ${tids.length} đội trong groupTeams.`);
   return DATA.teams.filter(t => tids.indexOf(t.id) >= 0);
 }
 
-// 🌟 DEBUG CHI TIẾT: Tìm ra chính xác tại sao không tìm thấy trận
+// 🌟 DEBUG CẢI TIẾN: In ra tất cả group_id có trong matches để dễ dò lỗi
 function isGroupComplete(gid) {
-  console.log("=== DEBUG isGroupComplete ===");
-  console.log("1. Target group_id cần tìm:", gid);
-  console.log("2. Tổng số trận trong DATA.matches:", DATA.matches.length);
-  
-  if (DATA.matches.length > 0) {
-    var sampleMatch = DATA.matches[0];
-    console.log("3. Mẫu trận đầu tiên trong DATA.matches:", {
-      id: sampleMatch.id,
-      group_id: sampleMatch.group_id,
-      match_status: sampleMatch.match_status
-    });
-  }
-
   var groupMatches = DATA.matches.filter(m => m.group_id === gid);
-  console.log("4. Số trận tìm thấy KHỚP với group_id này:", groupMatches.length);
-  
-  if (groupMatches.length === 0) {
-    console.log("⚠️ CẢNH BÁO: Không tìm thấy trận nào có group_id khớp. Có thể trận đấu có group_id = null hoặc sai ID.");
-    return false;
-  }
-
   var totalMatches = groupMatches.length;
   var finishedMatches = groupMatches.filter(m => 
     m.match_status === 'finished' || m.match_status === 'completed'
   ).length;
 
-  console.log(`5. Tổng số trận của bảng này: ${totalMatches}`);
-  console.log(`6. Số trận đã FIN/COMPLETED: ${finishedMatches}`);
-  console.log("===============================");
+  // Debug chi tiết
+  var uniqueGroupIdsInMatches = [...new Set(DATA.matches.map(m => m.group_id))];
+  console.log(`=== DEBUG isGroupComplete cho Bảng ${gid} ===`);
+  console.log(`1. Target group_id cần tìm: ${gid}`);
+  console.log(`2. Tổng số trận trong DATA.matches: ${DATA.matches.length}`);
+  console.log(`3. Các group_id ĐANG CÓ trong các trận đấu:`, uniqueGroupIdsInMatches);
+  console.log(`4. Số trận KHỚP với group_id này: ${totalMatches}`);
+  console.log(`5. Số trận đã FIN/COMPLETED: ${finishedMatches}`);
+  console.log(`=> Kết luận: ${finishedMatches >= totalMatches ? '✅ HOÀN THÀNH' : '⏳ CHƯA HOÀN THÀNH'}`);
+  console.log(`=========================================`);
 
   return finishedMatches >= totalMatches;
 }
