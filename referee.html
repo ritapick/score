@@ -456,21 +456,24 @@ function expectedMatchesInGroup(gid) {
   return t.length * (t.length - 1) / 2;
 }
 
-// 🌟 ĐÃ THÊM LOG DEBUG CHI TIẾT
+// 🌟 CẢI TIẾN: Cơ chế dự phòng nếu match_status bị lỗi nhưng đã có tỷ số
 function isGroupComplete(gid) {
   var t = teamsInG(gid);
   var exp = t.length * (t.length - 1) / 2;
-  console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Số đội = ${t.length}, Cần đấu = ${exp}`);
   
   var finishedMatches = DATA.matches.filter(function(m){ 
-    return m.group_id === gid && (m.match_status === "completed" || m.match_status === "finished"); 
+    if (m.group_id !== gid) return false;
+    var status = m.match_status;
+    // Fallback: Nếu status bị null/scheduled/live nhưng đã có tỷ số > 0, coi như đã xong
+    if (!status || status === 'scheduled' || status === 'live') {
+      if (Number(m.home_score) > 0 || Number(m.away_score) > 0) {
+        status = 'completed';
+      }
+    }
+    return status === "completed" || status === "finished"; 
   });
-  console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Số trận đã xong (finished/completed) = ${finishedMatches.length}`);
   
-  var isComplete = t.length >= 2 && finishedMatches.length >= exp;
-  console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Kết luận = ${isComplete ? '✅ HOÀN THÀNH' : '❌ CHƯA HOÀN THÀNH'}`);
-  
-  return isComplete;
+  return t.length >= 2 && finishedMatches.length >= exp;
 }
 
 function standings(g) {
@@ -847,8 +850,6 @@ async function syncKO() {
     var m = DATA.matches.find(x => x.stage_id === DATA.kStage.id && Number(x.bracket_slot) === Number(km.slot));
     if (!m) continue;
 
-    console.log(`[SYNC KO] Kiểm tra trận ${km.code}: DB hiện tại h=${m.home_team_id}, a=${m.away_team_id}. KO đề xuất h=${km.h}, a=${km.a}`);
-
     if (m.home_team_id !== km.h || m.away_team_id !== km.a) {
       console.log(`[SYNC KO] 🔄 ĐANG CẬP NHẬT trận slot ${km.slot} (${km.code}) thành h=${km.h}, a=${km.a}`);
       await sb.from("matches").update({ home_team_id: km.h, away_team_id: km.a }).eq("id", m.id);
@@ -868,6 +869,7 @@ async function syncKO() {
   return updated;
 }
 
+// 🌟 CẢI TIẾN THEN CHỐT: Cập nhật cục bộ ngay lập tức để syncKO() đọc được dữ liệu mới nhất
 async function finishMatch() {
   if (!currentMatchId) return;
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
@@ -876,22 +878,41 @@ async function finishMatch() {
   try {
     console.log("[FINISH MATCH] 🏁 Đang kết thúc trận:", currentMatchId);
     
-    await sb.from("matches").update({
+    // 1. Cập nhật lên Database
+    const { error } = await sb.from("matches").update({
       home_score: h,
       away_score: a,
       match_status: 'finished'
     }).eq("id", currentMatchId);
     
-    console.log("[FINISH MATCH] ✅ Đã cập nhật DB. Đang tải lại dữ liệu mới nhất...");
+    if (error) {
+      console.error("[FINISH MATCH] Lỗi update DB:", error);
+      toast("❌ Lỗi lưu DB: " + error.message);
+      return;
+    }
     
-    await loadMatches();
+    console.log("[FINISH MATCH] ✅ Đã cập nhật DB thành công.");
     
-    console.log("[FINISH MATCH] ✅ Dữ liệu đã tải lại. Kích hoạt syncKO()...");
+    // 2. 🌟 QUAN TRỌNG: Cập nhật TRỰC TIẾP vào mảng DATA.matches để syncKO() đọc được ngay lập tức
+    var idx = DATA.matches.findIndex(x => x.id === currentMatchId);
+    if (idx !== -1) {
+      DATA.matches[idx].home_score = h;
+      DATA.matches[idx].away_score = a;
+      DATA.matches[idx].match_status = 'finished';
+      console.log("[FINISH MATCH] ✅ Đã cập nhật trực tiếp vào DATA.matches cục bộ.");
+    }
     
+    // 3. Kích hoạt đồng bộ KO ngay lập tức (dựa trên dữ liệu cục bộ vừa cập nhật)
+    console.log("[FINISH MATCH] 🚀 Kích hoạt syncKO()...");
     await syncKO();
     
+    // 4. Tải lại toàn bộ dữ liệu nền để đồng bộ hóa dài hạn (không cần await để không chặn UI)
+    loadMatches().then(() => {
+      renderMatchesByRound();
+    });
+    
     closeScoreModal();
-    toast("🏁 Đã kết thúc trận");
+    toast("🏁 Đã kết thúc trận và cập nhật vòng KO!");
     
   } catch(e) { 
     toast("❌ Lỗi: " + e.message); 
@@ -951,18 +972,9 @@ function startRealtime() {
 }
 function stopRealtime() { if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; } }
 
-// 🌟 ĐÃ THÊM LOG DEBUG CHI TIẾT
 function computeKOTeams() {
-  console.log("[DEBUG computeKOTeams] DATA.gStage:", DATA.gStage ? DATA.gStage.id : 'NULL');
-  console.log("[DEBUG computeKOTeams] DATA.groups length:", DATA.groups.length);
-  
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
-  console.log("[DEBUG computeKOTeams] numGroups:", numGroups);
-  
-  if (numGroups < 2) {
-    console.log("[DEBUG computeKOTeams] Trả về null vì numGroups < 2");
-    return null;
-  }
+  if (numGroups < 2) return null;
   
   var advancing = [], allSt = {};
   DATA.groups.forEach(g => {
@@ -971,7 +983,6 @@ function computeKOTeams() {
     st.forEach(s => allSt[s.id] = s);
     
     var complete = isGroupComplete(g.id);
-    console.log(`[DEBUG computeKOTeams] Bảng ${g.code} complete:`, complete);
     
     advancing.push({
       groupCode: g.code,
@@ -984,6 +995,7 @@ function computeKOTeams() {
   var result = { matches: [] };
 
   if (numGroups === 2) {
+    // 🌟 LOGIC GHÉP CẶP ĐÚNG: Nhất A gặp Nhì B, Nhất B gặp Nhì A
     var seeds = [advancing[0].pos1, advancing[1].pos2, advancing[1].pos1, advancing[0].pos2];
     result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
     result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
