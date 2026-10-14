@@ -558,9 +558,8 @@ async function insertRallyDirect(rallyData){
   }catch(e){return false}
 }
 
-// 🌟 LOGIC THEN CHỐT: Tính toán đội vào vòng KO
+// 🌟 LOGIC THEN CHỐT: Tính toán đội vào vòng KO và TỰ ĐỘNG LAN TRUYỀN ĐỘI THẮNG
 function computeKOTeams(){
-  // 1. Lọc và SẮP XẾP groups theo mã (A, B, C...) để đảm bảo thứ tự cố định
   var sortedGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).sort((a, b) => a.code.localeCompare(b.code));
   var numGroups = sortedGroups.length;
   if(numGroups < 2) return null;
@@ -582,8 +581,6 @@ function computeKOTeams(){
   var result = { matches: [] };
 
   if (numGroups === 2) {
-    // 🌟 LOGIC GHÉP CẶP ĐÚNG: Nhất A (advancing[0]) gặp Nhì B (advancing[1]), Nhất B gặp Nhì A
-    console.log("[computeKO] Logic 2 bảng: BK1 = 1A vs 2B, BK2 = 1B vs 2A");
     result.matches.push({round: 3, slot: 13, h: advancing[0].pos1.teamId, a: advancing[1].pos2.teamId, code: "BK1", h_pos: advancing[0].pos1.pos, a_pos: advancing[1].pos2.pos});
     result.matches.push({round: 3, slot: 14, h: advancing[1].pos1.teamId, a: advancing[0].pos2.teamId, code: "BK2", h_pos: advancing[1].pos1.pos, a_pos: advancing[0].pos2.pos});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -591,16 +588,14 @@ function computeKOTeams(){
   else if (numGroups === 3 || numGroups === 4) {
     var qualified = [];
     advancing.forEach((adv, idx) => {
-      qualified.push(adv.pos1); 
-      qualified.push(adv.pos2);
-      if (numGroups === 3 && idx === 0) qualified.push(adv.pos3); // Bảng A lấy hạng 3
-      if (numGroups === 3 && idx === 2) qualified.push(adv.pos3); // Bảng C lấy hạng 3
+      qualified.push(adv.pos1); qualified.push(adv.pos2);
+      if (numGroups === 3 && idx === 0) qualified.push(adv.pos3);
+      if (numGroups === 3 && idx === 2) qualified.push(adv.pos3);
     });
     
     var sortedQualified = qualified.slice().sort((a, b) => {
       if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
-      if (!a.stats) return 1;
-      if (!b.stats) return -1;
+      if (!a.stats) return 1; if (!b.stats) return -1;
       if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
       var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
       if (db !== da) return db - da;
@@ -618,7 +613,6 @@ function computeKOTeams(){
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } 
   else {
-    // Logic 5+ bảng (giữ nguyên)
     var firstPlaces = advancing.map(a => a.pos1);
     var secondPlaces = advancing.map(a => a.pos2);
     var thirdPlaces = advancing.map(a => a.pos3);
@@ -677,6 +671,43 @@ function computeKOTeams(){
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   }
+
+  // 🌟 LOGIC MỚI: Tự động lan truyền đội thắng vào vòng tiếp theo (Tứ Kết -> Bán Kết -> Chung Kết)
+  var bk1Match = result.matches.find(m => m.code === "BK1");
+  if (bk1Match) {
+    var tk1 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK1");
+    if (tk1 && (tk1.match_status === 'finished' || tk1.match_status === 'completed')) {
+      bk1Match.h = (Number(tk1.home_score) > Number(tk1.away_score)) ? tk1.home_team_id : tk1.away_team_id;
+    }
+    var tk2 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK2");
+    if (tk2 && (tk2.match_status === 'finished' || tk2.match_status === 'completed')) {
+      bk1Match.a = (Number(tk2.home_score) > Number(tk2.away_score)) ? tk2.home_team_id : tk2.away_team_id;
+    }
+  }
+  
+  var bk2Match = result.matches.find(m => m.code === "BK2");
+  if (bk2Match) {
+    var tk3 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK3");
+    if (tk3 && (tk3.match_status === 'finished' || tk3.match_status === 'completed')) {
+      bk2Match.h = (Number(tk3.home_score) > Number(tk3.away_score)) ? tk3.home_team_id : tk3.away_team_id;
+    }
+    var tk4 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK4");
+    if (tk4 && (tk4.match_status === 'finished' || tk4.match_status === 'completed')) {
+      bk2Match.a = (Number(tk4.home_score) > Number(tk4.away_score)) ? tk4.home_team_id : tk4.away_team_id;
+    }
+  }
+
+  var ckMatch = result.matches.find(m => m.code === "CK");
+  if (ckMatch) {
+    var bk1 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "BK1");
+    if (bk1 && (bk1.match_status === 'finished' || bk1.match_status === 'completed')) {
+      ckMatch.h = (Number(bk1.home_score) > Number(bk1.away_score)) ? bk1.home_team_id : bk1.away_team_id;
+    }
+    var bk2 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "BK2");
+    if (bk2 && (bk2.match_status === 'finished' || bk2.match_status === 'completed')) {
+      ckMatch.a = (Number(bk2.home_score) > Number(bk2.away_score)) ? bk2.home_team_id : bk2.away_team_id;
+    }
+  }
   
   console.log("[computeKO] Kết quả:", result.matches.map(m => m.code + ": " + m.h_pos + "(" + (m.h||'null') + ") vs " + m.a_pos + "(" + (m.a||'null') + ")").join(", "));
   return result;
@@ -716,7 +747,7 @@ async function syncKO(){
 
   if(updated){
     console.log("[syncKO] ✅ Đã cập nhật thành công");
-    toast("✅ Đã tự động cập nhật đội vào vòng KO!");
+    toast("✅ Đã tự động cập nhật đội vào vòng tiếp theo!");
     renderMatchesByRound();
   }else{
     console.log("[syncKO] ℹ️ Không có thay đổi");
