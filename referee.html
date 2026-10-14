@@ -558,6 +558,27 @@ async function insertRallyDirect(rallyData){
   }catch(e){return false}
 }
 
+// 🌟 HÀM TIỆN ÍCH: Tìm trận KO theo bracket_slot (ổn định, không phụ thuộc match_code)
+function findKOMatchBySlot(slot) {
+  if (!DATA.kStage) return null;
+  return DATA.matches.find(m => 
+    m.stage_id === DATA.kStage.id && 
+    Number(m.bracket_slot) === Number(slot)
+  );
+}
+
+// 🌟 HÀM TIỆN ÍCH: Lấy đội thắng từ một trận đã finished
+function getWinner(match) {
+  if (!match) return null;
+  var status = match.match_status;
+  if (status !== 'finished' && status !== 'completed') return null;
+  var h = Number(match.home_score) || 0;
+  var a = Number(match.away_score) || 0;
+  if (h === 0 && a === 0) return null;
+  if (h === a) return null;
+  return h > a ? match.home_team_id : match.away_team_id;
+}
+
 // 🌟 LOGIC THEN CHỐT: Tính toán đội vào vòng KO và TỰ ĐỘNG LAN TRUYỀN ĐỘI THẮNG
 function computeKOTeams(){
   var sortedGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).sort((a, b) => a.code.localeCompare(b.code));
@@ -672,41 +693,31 @@ function computeKOTeams(){
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   }
 
-  // 🌟 LOGIC MỚI: Tự động lan truyền đội thắng vào vòng tiếp theo (Tứ Kết -> Bán Kết -> Chung Kết)
+  // 🌟 LOGIC LAN TRUYỀN ĐỘI THẮNG: Dùng bracket_slot thay vì match_code
+  // Tứ Kết (slot 9-12) → Bán Kết (slot 13-14)
   var bk1Match = result.matches.find(m => m.code === "BK1");
   if (bk1Match) {
-    var tk1 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK1");
-    if (tk1 && (tk1.match_status === 'finished' || tk1.match_status === 'completed')) {
-      bk1Match.h = (Number(tk1.home_score) > Number(tk1.away_score)) ? tk1.home_team_id : tk1.away_team_id;
-    }
-    var tk2 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK2");
-    if (tk2 && (tk2.match_status === 'finished' || tk2.match_status === 'completed')) {
-      bk1Match.a = (Number(tk2.home_score) > Number(tk2.away_score)) ? tk2.home_team_id : tk2.away_team_id;
-    }
+    var tk1Winner = getWinner(findKOMatchBySlot(9));
+    var tk2Winner = getWinner(findKOMatchBySlot(10));
+    if (tk1Winner) bk1Match.h = tk1Winner;
+    if (tk2Winner) bk1Match.a = tk2Winner;
   }
   
   var bk2Match = result.matches.find(m => m.code === "BK2");
   if (bk2Match) {
-    var tk3 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK3");
-    if (tk3 && (tk3.match_status === 'finished' || tk3.match_status === 'completed')) {
-      bk2Match.h = (Number(tk3.home_score) > Number(tk3.away_score)) ? tk3.home_team_id : tk3.away_team_id;
-    }
-    var tk4 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "TK4");
-    if (tk4 && (tk4.match_status === 'finished' || tk4.match_status === 'completed')) {
-      bk2Match.a = (Number(tk4.home_score) > Number(tk4.away_score)) ? tk4.home_team_id : tk4.away_team_id;
-    }
+    var tk3Winner = getWinner(findKOMatchBySlot(11));
+    var tk4Winner = getWinner(findKOMatchBySlot(12));
+    if (tk3Winner) bk2Match.h = tk3Winner;
+    if (tk4Winner) bk2Match.a = tk4Winner;
   }
 
+  // Bán Kết (slot 13-14) → Chung Kết (slot 15)
   var ckMatch = result.matches.find(m => m.code === "CK");
   if (ckMatch) {
-    var bk1 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "BK1");
-    if (bk1 && (bk1.match_status === 'finished' || bk1.match_status === 'completed')) {
-      ckMatch.h = (Number(bk1.home_score) > Number(bk1.away_score)) ? bk1.home_team_id : bk1.away_team_id;
-    }
-    var bk2 = DATA.matches.find(m => m.stage_id === DATA.kStage.id && m.match_code === "BK2");
-    if (bk2 && (bk2.match_status === 'finished' || bk2.match_status === 'completed')) {
-      ckMatch.a = (Number(bk2.home_score) > Number(bk2.away_score)) ? bk2.home_team_id : bk2.away_team_id;
-    }
+    var bk1Winner = getWinner(findKOMatchBySlot(13));
+    var bk2Winner = getWinner(findKOMatchBySlot(14));
+    if (bk1Winner) ckMatch.h = bk1Winner;
+    if (bk2Winner) ckMatch.a = bk2Winner;
   }
   
   console.log("[computeKO] Kết quả:", result.matches.map(m => m.code + ": " + m.h_pos + "(" + (m.h||'null') + ") vs " + m.a_pos + "(" + (m.a||'null') + ")").join(", "));
