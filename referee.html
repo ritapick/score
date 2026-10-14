@@ -456,23 +456,19 @@ function expectedMatchesInGroup(gid) {
   return t.length * (t.length - 1) / 2;
 }
 
-// 🌟 ĐÃ SỬA: Thêm log chi tiết để debug chính xác từng bước
+// 🌟 ĐÃ THÊM LOG DEBUG CHI TIẾT
 function isGroupComplete(gid) {
-  console.log(`[DEBUG isGroupComplete] === Bắt đầu kiểm tra bảng: ${gid} ===`);
   var t = teamsInG(gid);
-  console.log(`  1. Số đội tìm thấy trong bảng (teamsInG): ${t.length}`);
-  
   var exp = t.length * (t.length - 1) / 2;
-  console.log(`  2. Số trận CẦN đấu (công thức n*(n-1)/2): ${exp}`);
+  console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Số đội = ${t.length}, Cần đấu = ${exp}`);
   
   var finishedMatches = DATA.matches.filter(function(m){ 
     return m.group_id === gid && (m.match_status === "completed" || m.match_status === "finished"); 
   });
-  console.log(`  3. Số trận ĐÃ kết thúc (finished/completed) KHỚP group_id: ${finishedMatches.length}`);
+  console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Số trận đã xong (finished/completed) = ${finishedMatches.length}`);
   
   var isComplete = t.length >= 2 && finishedMatches.length >= exp;
-  console.log(`  4. KẾT LUẬN: ${isComplete ? '✅ HOÀN THÀNH' : '❌ CHƯA HOÀN THÀNH'}`);
-  console.log(`=====================================================`);
+  console.log(`[DEBUG isGroupComplete] Bảng ${gid}: Kết luận = ${isComplete ? '✅ HOÀN THÀNH' : '❌ CHƯA HOÀN THÀNH'}`);
   
   return isComplete;
 }
@@ -840,13 +836,18 @@ async function syncKO() {
   }
 
   var koData = computeKOTeams();
-  if (!koData) { console.log("[SYNC KO] ❌ computeKOTeams trả về null"); return false; }
+  if (!koData) { 
+    console.log("[SYNC KO] ❌ computeKOTeams trả về null"); 
+    return false; 
+  }
 
   var updated = false;
   for (var i = 0; i < koData.matches.length; i++) {
     var km = koData.matches[i];
     var m = DATA.matches.find(x => x.stage_id === DATA.kStage.id && Number(x.bracket_slot) === Number(km.slot));
     if (!m) continue;
+
+    console.log(`[SYNC KO] Kiểm tra trận ${km.code}: DB hiện tại h=${m.home_team_id}, a=${m.away_team_id}. KO đề xuất h=${km.h}, a=${km.a}`);
 
     if (m.home_team_id !== km.h || m.away_team_id !== km.a) {
       console.log(`[SYNC KO] 🔄 ĐANG CẬP NHẬT trận slot ${km.slot} (${km.code}) thành h=${km.h}, a=${km.a}`);
@@ -860,14 +861,13 @@ async function syncKO() {
   if (updated) {
     console.log("[SYNC KO] ✅ Đã cập nhật thành công.");
     toast("✅ Đã tự động cập nhật đội vào vòng KO!");
-    renderMatchesByRound(); // Render lại ngay lập tức
+    renderMatchesByRound();
   } else {
     console.log("[SYNC KO] ℹ️ Không có thay đổi nào cần cập nhật.");
   }
   return updated;
 }
 
-// 🌟 ĐÃ SỬA TRIỆT ĐỂ: Tải lại dữ liệu trước khi gọi syncKO để đảm bảo dữ liệu cục bộ mới nhất
 async function finishMatch() {
   if (!currentMatchId) return;
   var h = parseInt(currentMatchData.home_score) || 0, a = parseInt(currentMatchData.away_score) || 0;
@@ -876,7 +876,6 @@ async function finishMatch() {
   try {
     console.log("[FINISH MATCH] 🏁 Đang kết thúc trận:", currentMatchId);
     
-    // 1. Cập nhật lên Database
     await sb.from("matches").update({
       home_score: h,
       away_score: a,
@@ -885,13 +884,10 @@ async function finishMatch() {
     
     console.log("[FINISH MATCH] ✅ Đã cập nhật DB. Đang tải lại dữ liệu mới nhất...");
     
-    // 2. QUAN TRỌNG: Tải lại toàn bộ dữ liệu từ DB để đảm bảo DATA.matches, DATA.groups, DATA.groupTeams 
-    // phản ánh chính xác trạng thái 'finished' và group_id mới nhất trước khi tính toán KO.
     await loadMatches();
     
     console.log("[FINISH MATCH] ✅ Dữ liệu đã tải lại. Kích hoạt syncKO()...");
     
-    // 3. Kích hoạt đồng bộ KO
     await syncKO();
     
     closeScoreModal();
@@ -955,9 +951,18 @@ function startRealtime() {
 }
 function stopRealtime() { if (realtimeInterval) { clearInterval(realtimeInterval); realtimeInterval = null; } }
 
+// 🌟 ĐÃ THÊM LOG DEBUG CHI TIẾT
 function computeKOTeams() {
+  console.log("[DEBUG computeKOTeams] DATA.gStage:", DATA.gStage ? DATA.gStage.id : 'NULL');
+  console.log("[DEBUG computeKOTeams] DATA.groups length:", DATA.groups.length);
+  
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
-  if (numGroups < 2) return null;
+  console.log("[DEBUG computeKOTeams] numGroups:", numGroups);
+  
+  if (numGroups < 2) {
+    console.log("[DEBUG computeKOTeams] Trả về null vì numGroups < 2");
+    return null;
+  }
   
   var advancing = [], allSt = {};
   DATA.groups.forEach(g => {
@@ -965,20 +970,20 @@ function computeKOTeams() {
     var st = standings(g.id);
     st.forEach(s => allSt[s.id] = s);
     
+    var complete = isGroupComplete(g.id);
+    console.log(`[DEBUG computeKOTeams] Bảng ${g.code} complete:`, complete);
+    
     advancing.push({
       groupCode: g.code,
-      pos1: { teamId: (st.length > 0) ? st[0].id : null, pos: "1" + g.code, stats: (st.length > 0) ? allSt[st[0].id] : null },
-      pos2: { teamId: (st.length > 1) ? st[1].id : null, pos: "2" + g.code, stats: (st.length > 1) ? allSt[st[1].id] : null },
-      pos3: { teamId: (st.length > 2) ? st[2].id : null, pos: "3" + g.code, stats: (st.length > 2) ? allSt[st[2].id] : null }
+      pos1: { teamId: (complete && st.length > 0) ? st[0].id : null, pos: "1" + g.code, stats: (complete && st.length > 0) ? allSt[st[0].id] : null },
+      pos2: { teamId: (complete && st.length > 1) ? st[1].id : null, pos: "2" + g.code, stats: (complete && st.length > 1) ? allSt[st[1].id] : null },
+      pos3: { teamId: (complete && st.length > 2) ? st[2].id : null, pos: "3" + g.code, stats: (complete && st.length > 2) ? allSt[st[2].id] : null }
     });
   });
 
   var result = { matches: [] };
 
   if (numGroups === 2) {
-    // 🌟 SỬA LOGIC: Ghép chéo đúng cho 2 bảng
-    // BK1: Nhất A vs Nhì B
-    // BK2: Nhất B vs Nhì A
     var seeds = [advancing[0].pos1, advancing[1].pos2, advancing[1].pos1, advancing[0].pos2];
     result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
     result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
