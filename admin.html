@@ -190,7 +190,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 
 <div id="login-modal" class="modal-bg">
 <div class="modal">
-<h3> Đăng nhập Quản trị</h3>
+<h3>🔐 Đăng nhập Quản trị</h3>
 <input id="lu" placeholder="Tên đăng nhập"/>
 <input id="lp" type="password" placeholder="Mật khẩu"/>
 <div class="actions">
@@ -247,8 +247,8 @@ td.pf{font-family:monospace;color:var(--cy)}
     </div>
   </div>
   <div class="ref-actions">
-    <button class="btn btn-l" onclick="closeRefModal()"> Đóng</button>
-    <button class="btn btn-w" onclick="openTimeoutModal()">⏱ Timeout</button>
+    <button class="btn btn-l" onclick="closeRefModal()">✕ Đóng</button>
+    <button class="btn btn-w" onclick="openTimeoutModal()"> Timeout</button>
     <button class="btn btn-d" onclick="finishMatch()">🏁 Kết thúc</button>
   </div>
   <div id="ref-msg" class="msg"></div>
@@ -330,7 +330,7 @@ function doLogout() {
   stopRealtime();
   applyUI();
   el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập để quản trị.</div>';
-  toast("👋 Đã đăng xuất");
+  toast(" Đã đăng xuất");
 }
 function applyUI() {
   var logged = !!CURRENT_USER;
@@ -425,7 +425,7 @@ function startRealtime() {
               var statusEl = el("ref-match-status");
               var st = cm.match_status || 'scheduled';
               statusEl.className = 'match-status ' + st;
-              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '');
+              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '⏳');
               updateServeRadios(cm);
             }
           }
@@ -457,7 +457,7 @@ function updateMatchRowsDOM() {
       statusBadge.className = 'm-status-badge ' + status;
       if (status === 'live') statusBadge.textContent = '🔴 LIVE';
       else if (status === 'finished') statusBadge.textContent = '✅ FIN';
-      else if (status === 'bye') statusBadge.textContent = '🎟 BYE';
+      else if (status === 'bye') statusBadge.textContent = ' BYE';
       else statusBadge.textContent = '';
     }
     if (servingInfo) {
@@ -489,7 +489,7 @@ async function deletePlayer(pid) {
     var pl = await sb.from("players").select("*");
     DATA.players = (pl.data || []).filter(p => isOwnerOfPlayer(p));
     toast("✅ Đã xóa VĐV"); render();
-  } catch(e) { alert(" " + e.message); }
+  } catch(e) { alert("❌ " + e.message); }
 }
 
 async function createT() {
@@ -713,7 +713,7 @@ function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
   return 2;
 }
 
-//  LOGIC MỚI: Ghép cặp Tứ Kết cố định cho 3 bảng
+// 🌟 LOGIC MỚI: Ghép cặp Tứ Kết cố định cho 3 bảng
 // TK1: 1A vs 3-2
 // TK2: 1B vs 3-1
 // TK3: 2A vs 1C
@@ -722,7 +722,7 @@ function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
   
-  // 🌟 Sắp xếp bảng theo mã (A, B, C...) để đảm bảo thứ tự cố định
+  // Sắp xếp bảng theo mã (A, B, C...) để đảm bảo thứ tự cố định
   var sortedGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).sort((a, b) => a.code.localeCompare(b.code));
   
   var advancing = [], allSt = {};
@@ -761,10 +761,10 @@ function computeKOTeams() {
   } 
   else if (numGroups === 3) {
     // 🌟 LOGIC MỚI CHO 3 BẢNG: Ghép cặp cố định
-    // TK1: 1A vs 3-2 (Nhất A gặp hạng 3 tốt thứ 2)
-    // TK2: 1B vs 3-1 (Nhất B gặp hạng 3 tốt thứ 1)
-    // TK3: 2A vs 1C (Nhì A gặp Nhất C)
-    // TK4: 2B vs 2C (Nhì B gặp Nhì C)
+    // TK1: 1A vs 3-2 (slot 9)
+    // TK2: 1B vs 3-1 (slot 10)
+    // TK3: 2A vs 1C (slot 11)
+    // TK4: 2B vs 2C (slot 12)
     
     var team1A = advancing[0].pos1; // Nhất A
     var team1B = advancing[1].pos1; // Nhất B
@@ -802,18 +802,18 @@ function computeKOTeams() {
     }
     
     console.log("[computeKO] 3 bảng - Ghép cặp cố định:");
-    console.log("  TK1:", team1A.pos, "vs", team3_2 ? team3_2.pos : 'null');
-    console.log("  TK2:", team1B.pos, "vs", team3_1 ? team3_1.pos : 'null');
-    console.log("  TK3:", team2A.pos, "vs", team1C.pos);
-    console.log("  TK4:", team2B.pos, "vs", team2C.pos);
+    console.log("  TK1 (slot 9):", team1A.pos, "vs", team3_2 ? team3_2.pos : 'null');
+    console.log("  TK2 (slot 10):", team1B.pos, "vs", team3_1 ? team3_1.pos : 'null');
+    console.log("  TK3 (slot 11):", team2A.pos, "vs", team1C.pos);
+    console.log("  TK4 (slot 12):", team2B.pos, "vs", team2C.pos);
     
-    // TK1: 1A vs 3-2
+    // TK1: 1A vs 3-2 (slot 9)
     result.matches.push({round: 2, slot: 9, h: team1A.teamId, a: team3_2 ? team3_2.teamId : null, code: "TK1", h_pos: team1A.pos, a_pos: team3_2 ? team3_2.pos : "3-2"});
-    // TK2: 1B vs 3-1
+    // TK2: 1B vs 3-1 (slot 10)
     result.matches.push({round: 2, slot: 10, h: team1B.teamId, a: team3_1 ? team3_1.teamId : null, code: "TK2", h_pos: team1B.pos, a_pos: team3_1 ? team3_1.pos : "3-1"});
-    // TK3: 2A vs 1C
+    // TK3: 2A vs 1C (slot 11)
     result.matches.push({round: 2, slot: 11, h: team2A.teamId, a: team1C.teamId, code: "TK3", h_pos: team2A.pos, a_pos: team1C.pos});
-    // TK4: 2B vs 2C
+    // TK4: 2B vs 2C (slot 12)
     result.matches.push({round: 2, slot: 12, h: team2B.teamId, a: team2C.teamId, code: "TK4", h_pos: team2B.pos, a_pos: team2C.pos});
     
     result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
@@ -945,7 +945,7 @@ async function createKO() {
         var r = await sb.from("stages").insert({event_id: DATA.eid, code: "KO", name: "Knockout", stage_type: "knockout", stage_order: 2}).select().single();
         if (r.error) {
           console.error("[CREATE KO] Error creating stage:", r.error);
-          alert(" Lỗi tạo stage KO: " + r.error.message);
+          alert("❌ Lỗi tạo stage KO: " + r.error.message);
           return;
         }
         DATA.kStage = r.data;
@@ -1072,7 +1072,7 @@ function openRefModal(matchId) {
   var status = m.match_status || 'scheduled';
   var statusEl = el("ref-match-status");
   statusEl.className = 'match-status ' + status;
-  statusEl.textContent = status === 'live' ? ' LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : ''));
+  statusEl.textContent = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : ''));
   var homePlayers = getTeamPlayers(m.home_team_id);
   var awayPlayers = getTeamPlayers(m.away_team_id);
   populateSelect('ref-home-slot1', homePlayers, m.home_player_slot1);
@@ -1144,7 +1144,7 @@ async function onSlotChange(teamSide, slotNum) {
   var slot1 = el("ref-" + teamSide + "-slot1").value;
   var slot2 = el("ref-" + teamSide + "-slot2").value;
   if (slot1 && slot2 && slot1 === slot2) {
-    alert("️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
+    alert("⚠️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
     el("ref-" + teamSide + "-slot" + slotNum).value = "";
     return;
   }
@@ -1177,7 +1177,7 @@ async function onServeCheck(teamSide, turn) {
     el("ref-msg").textContent = " " + (teamSide === 'home' ? el("ref-team-a-name").textContent : el("ref-team-b-name").textContent) + " giao L" + turn;
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = "❌ " + e.message;
+    el("ref-msg").textContent = " " + e.message;
   }
 }
 
@@ -1297,7 +1297,7 @@ function render() {
     H += `<div class="tw"><table><thead><tr><th>Họ tên</th><th>Trình</th><th>Thao tác</th></tr></thead><tbody>`;
     DATA.players.forEach(p => {
       H += `<tr><td style="text-align:left;font-weight:700">${esc(p.full_name)}</td><td>${p.skill_rating||'-'}</td>`;
-      H += `<td><button class="btn btn-b btn-xs" onclick="var n=prompt('Sửa tên:', '${esc(p.full_name)}'); var r=prompt('Sửa trình:', '${p.skill_rating||0}'); if(n) savePlayer('${p.id}', n, r)">✏️</button> <button class="btn btn-d btn-xs" onclick="deletePlayer('${p.id}')"></button></td></tr>`;
+      H += `<td><button class="btn btn-b btn-xs" onclick="var n=prompt('Sửa tên:', '${esc(p.full_name)}'); var r=prompt('Sửa trình:', '${p.skill_rating||0}'); if(n) savePlayer('${p.id}', n, r)">️</button> <button class="btn btn-d btn-xs" onclick="deletePlayer('${p.id}')"></button></td></tr>`;
     });
     H += `</tbody></table></div>`;
   }
@@ -1310,8 +1310,8 @@ function render() {
   } else {
     H += `<div class="fg"><select onchange="selT(this.value)">`;
     DATA.tournaments.forEach(t => { H += `<option value="${t.id}" ${t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; });
-    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')">🗑 Xóa giải</button></div>`;
-    H += `<div class="section-title">📋 Nội dung thi đấu</div>`;
+    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')"> Xóa giải</button></div>`;
+    H += `<div class="section-title"> Nội dung thi đấu</div>`;
     H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
     DATA.events.forEach(e => {
       var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
@@ -1336,7 +1336,7 @@ function render() {
     avail.forEach(p => H += `<option value="${p.id}">${esc(p.full_name)} (${p.skill_rating||0})</option>`);
     H += `</select><select id="tp2"><option value="">-- VĐV 2 --</option>`;
     avail.forEach(p => H += `<option value="${p.id}">${esc(p.full_name)} (${p.skill_rating||0})</option>`);
-    H += `</select><button class="btn btn-p" onclick="saveTeam()"> Tạo đội</button></div>`;
+    H += `</select><button class="btn btn-p" onclick="saveTeam()">➕ Tạo đội</button></div>`;
     if (DATA.teams.length) {
       H += `<div class="tw"><table><thead><tr><th>Đội</th><th>VĐV 1</th><th>VĐV 2</th><th>Tổng trình</th><th></th></tr></thead><tbody>`;
       DATA.teams.forEach(tm => {
@@ -1356,7 +1356,7 @@ function render() {
   if (!DATA.eid) {
     H += `<div class="hint">⚠ Chọn nội dung ở Bước 2 trước.</div>`;
   } else if (!DATA.gStage) {
-    H += `<div class="fg"><input id="num-groups" type="number" min="2" value="3" placeholder="Số bảng (≥2)"/><button class="btn btn-p" onclick="initGroupsFlexible()"> Tạo bảng đấu</button></div>`;
+    H += `<div class="fg"><input id="num-groups" type="number" min="2" value="3" placeholder="Số bảng (≥2)"/><button class="btn btn-p" onclick="initGroupsFlexible()">➕ Tạo bảng đấu</button></div>`;
   } else {
     var totalGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
     var savedCount = DATA._savedGroups.size;
@@ -1420,11 +1420,11 @@ function render() {
     
     var km = DATA.matches.filter(m => !m.group_id).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
     if (km.length) {
-      H += `<div class="ko-section"><h3> VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px">💡 Đội sẽ tự động điền khi bảng hoàn thành tất cả các trận.</div>`;
+      H += `<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px">💡 Đội sẽ tự động điền khi bảng hoàn thành tất cả các trận.</div>`;
       var r16 = km.filter(m => Number(m.round)===1), tk = km.filter(m => Number(m.round)===2), bk = km.filter(m => Number(m.round)===3), ck = km.filter(m => Number(m.round)===4);
       if (r16.length) H += renderKOGroup(" VÒNG 1/16", "r16", r16);
-      if (tk.length) H += renderKOGroup(" TỨ KẾT", "tk", tk);
-      if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
+      if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
+      if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
       if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
       H += `</div>`;
     }
@@ -1469,7 +1469,7 @@ function renderMatchRow(m, isKO) {
   var servingText = '';
   if (status === 'live' && m.serving_player_id) {
     var player = DATA.players.find(p => p.id === m.serving_player_id);
-    servingText = '🏓 ' + (player ? player.full_name.substring(0,10) : '?');
+    servingText = ' ' + (player ? player.full_name.substring(0,10) : '?');
   }
   H += `<div class="m-serving-info" title="${esc(servingText)}">${esc(servingText)}</div>`;
   var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : '⏳'));
