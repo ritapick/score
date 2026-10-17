@@ -1119,19 +1119,24 @@ function computeKOTeams() {
   return result;
 }
 
+// 🌟 ĐÃ SỬA: Tách biệt phần hiển thị công khai và phần quản lý admin
 function renderDetail() {
   var t = DATA.tournament;
   if (!t) return;
   var statusCls = t.display_status || "not_started";
   var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
-  var canManage = isSuperAdmin();
   
+  // Phần thông tin giải đấu: AI CŨNG XEM ĐƯỢC
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
   H += '<div class="meta"><span>📅 ' + esc(t.start_date || t.ngay_to_chuc || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-size:0.8rem;">' + statusText + '</span></div>';
-  if (canManage) H += '<div class="manage-bar"><a class="btn btn-primary" href="admin.html?tournament=' + encodeURIComponent(t.id) + '">⚙ Quản lý</a></div>';
+  
+  // Phần nút quản lý: CHỈ ADMIN MỚI THẤY
+  if (isSuperAdmin()) {
+    H += '<div class="manage-bar"><a class="btn btn-primary" href="admin.html?tournament=' + encodeURIComponent(t.id) + '">⚙ Quản lý giải đấu</a></div>';
+  }
   H += '</div>';
   
   if (DATA.events.length) {
