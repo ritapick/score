@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Pickleball Pro - Giải đấu</title>
+<title>PickScore</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 :root{--bg:#0b1220;--sf:#111c31;--sf2:#0e1728;--ln:rgba(148,163,184,.16);--tx:#e6edf7;--mu:#8fa3bd;--li:#a3e635;--cy:#22d3ee;--or:#fb923c;--rd:#f87171;--pk:#e94560}
@@ -256,7 +256,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <span class="logo"><span class="logo-icon">🏓</span> Pickleball Pro</span>
+  <span class="logo"><span class="logo-icon">🏓</span> PICKLEBALL SCORE</span>
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
@@ -270,7 +270,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 <main id="app">
   <div class="hero">
     <h1>🏓 GIẢI ĐẤU PICKLEBALL</h1>
-    <p>Theo dõi lịch thi đấu, bảng xếp hạng và kết quả trực tiếp</p>
+    <p>Lịch thi đấu giải PICKLEBALL</p>
   </div>
   <div id="content">Đang tải...</div>
 </main>
@@ -1000,7 +1000,7 @@ function computeKOTeams() {
 }
 
 function renderTournamentList() {
-  var H = '<div class="section-title">🏆 CÁC GIẢI ĐẤU <span class="count">' + DATA.tournaments.length + '</span></div>';
+  var H = '<div class="section-title">🏆 DANH SÁCH GIẢI ĐẤU <span class="count">' + DATA.tournaments.length + '</span></div>';
   if (!DATA.tournaments.length) {
     H += '<div class="empty-state"><div class="icon">📭</div><p>Chưa có giải đấu nào</p></div>';
     return H;
@@ -1031,7 +1031,7 @@ function renderTournamentDetail() {
   var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
   var canManage = isOwnerOfTournament(t);
   
-  var H = '<button class="back-btn" onclick="backToList()">← Quay lại</button>';
+  var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
   H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
@@ -1119,7 +1119,7 @@ function renderEventDetail() {
   
   var km = DATA.matches.filter(function(m){ return !m.group_id; }).sort(function(a,b){ return Number(a.bracket_slot)-Number(b.bracket_slot); });
   if (km.length) {
-    H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px;color:var(--mu);font-size:11px">💡 Tên đội sẽ tự động điền khi vòng bảng có kết quả.</div>';
+    H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3><div class="hint" style="margin-bottom:8px;color:var(--mu);font-size:11px">💡 PICKLEBALL SCORE</div>';
     var r16 = km.filter(function(m){ return Number(m.round)===1; });
     var tk = km.filter(function(m){ return Number(m.round)===2; });
     var bk = km.filter(function(m){ return Number(m.round)===3; });
