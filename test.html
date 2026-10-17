@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🏆 PICKLEBALL CUP</title>
+<title>🏆 HỆ THỐNG QUẢN LÝ GIẢI ĐẤU PICKLEBALL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -15,8 +15,9 @@
   --bg-dark: #0a0e1a; --bg-deeper: #050810; --bg-card: rgba(20, 26, 43, 0.9);
   --bg-card-solid: #141a2b; --bg-card-hover: #1c2438; --border: rgba(255, 255, 255, 0.08);
   --text: #e8ecf4; --text-dim: #7a8ba5; --green: #22c55e; --red: #ef4444;
+  --cup-1: #ff6b35; --cup-2: #dc2626; --cup-glow: rgba(255, 107, 53, 0.4);
   --capdoi-1: #16a34a; --capdoi-2: #15803d; --capdoi-glow: rgba(22, 163, 74, 0.4);
-  --canhan-1: #ff6b35; --canhan-2: #dc2626; --canhan-glow: rgba(255, 107, 53, 0.4);
+  --canhan-1: #8b5cf6; --canhan-2: #7c3aed; --canhan-glow: rgba(139, 92, 246, 0.4);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body {
@@ -71,8 +72,8 @@ body::after {
 }
 @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 53, 0.4); } 50% { box-shadow: 0 0 35px rgba(255, 107, 53, 0.6); } }
 .hero-title {
-  font-family: 'Oswald', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem);
-  font-weight: 700; text-transform: uppercase; letter-spacing: 2px; line-height: 1; margin-bottom: 10px;
+  font-family: 'Oswald', sans-serif; font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 2px; line-height: 1.1; margin-bottom: 10px;
   background: linear-gradient(135deg, #fff 0%, #fff 30%, var(--accent) 60%, var(--primary) 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   filter: drop-shadow(0 4px 15px rgba(255, 107, 53, 0.2));
@@ -101,14 +102,16 @@ body::after {
 .btn-sm { padding: 6px 10px; font-size: 0.72rem; min-height: 32px; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.section { margin-bottom: 60px; }
+.section { margin-bottom: 50px; }
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border);
   position: relative; flex-wrap: wrap; gap: 12px;
 }
 .section-header::before { content: ''; position: absolute; bottom: -2px; left: 0; width: 120px; height: 2px; }
-.section-header.cup::before { background: linear-gradient(90deg, var(--accent), transparent); }
+.section-header.cup::before { background: linear-gradient(90deg, var(--cup-1), transparent); }
+.section-header.capdoi::before { background: linear-gradient(90deg, var(--capdoi-1), transparent); }
+.section-header.canhan::before { background: linear-gradient(90deg, var(--canhan-1), transparent); }
 
 .section-title-wrap { display: flex; align-items: center; gap: 14px; }
 .section-icon {
@@ -116,7 +119,9 @@ body::after {
   font-size: 1.6rem; flex-shrink: 0; transition: transform 0.3s;
 }
 .section-icon:hover { transform: scale(1.1); }
-.section-icon.cup { background: linear-gradient(135deg, var(--accent), var(--primary)); box-shadow: 0 8px 20px rgba(255, 209, 102, 0.4); }
+.section-icon.cup { background: linear-gradient(135deg, var(--cup-1), var(--cup-2)); box-shadow: 0 8px 20px var(--cup-glow); }
+.section-icon.capdoi { background: linear-gradient(135deg, var(--capdoi-1), var(--capdoi-2)); box-shadow: 0 8px 20px var(--capdoi-glow); }
+.section-icon.canhan { background: linear-gradient(135deg, var(--canhan-1), var(--canhan-2)); box-shadow: 0 8px 20px var(--canhan-glow); }
 .section-title { font-family: 'Oswald', sans-serif; font-size: clamp(1.3rem, 4vw, 2rem); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
 .section-title span { display: block; font-size: 0.8rem; font-weight: 400; color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
 .section-count { background: var(--bg-card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; color: var(--text-dim); }
@@ -130,10 +135,14 @@ body::after {
 }
 @keyframes cardEntry { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .tour-card:hover { transform: translateY(-6px); border-color: rgba(255, 255, 255, 0.15); }
-.tour-card.cup:hover { box-shadow: 0 15px 30px -10px rgba(255, 209, 102, 0.4); border-color: var(--accent); }
+.tour-card.cup:hover { box-shadow: 0 15px 30px -10px var(--cup-glow); border-color: var(--cup-1); }
+.tour-card.capdoi:hover { box-shadow: 0 15px 30px -10px var(--capdoi-glow); border-color: var(--capdoi-1); }
+.tour-card.canhan:hover { box-shadow: 0 15px 30px -10px var(--canhan-glow); border-color: var(--canhan-1); }
 
 .tour-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 18px 18px 0 0; }
-.tour-card.cup::after { background: linear-gradient(90deg, var(--accent), var(--primary)); }
+.tour-card.cup::after { background: linear-gradient(90deg, var(--cup-1), var(--cup-2)); }
+.tour-card.capdoi::after { background: linear-gradient(90deg, var(--capdoi-1), var(--capdoi-2)); }
+.tour-card.canhan::after { background: linear-gradient(90deg, var(--canhan-1), var(--canhan-2)); }
 
 .tour-type-badge {
   position: absolute; top: 14px; right: 14px; font-family: 'Oswald', sans-serif; font-size: 0.68rem; font-weight: 600;
@@ -161,7 +170,9 @@ body::after {
   width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 1.1rem; transition: all 0.3s;
 }
-.tour-card.cup .tour-arrow { background: linear-gradient(135deg, var(--accent), var(--primary)); color: #000; }
+.tour-card.cup .tour-arrow { background: linear-gradient(135deg, var(--cup-1), var(--cup-2)); color: #fff; }
+.tour-card.capdoi .tour-arrow { background: linear-gradient(135deg, var(--capdoi-1), var(--capdoi-2)); color: #fff; }
+.tour-card.canhan .tour-arrow { background: linear-gradient(135deg, var(--canhan-1), var(--canhan-2)); color: #fff; }
 .tour-card:hover .tour-arrow { transform: translateX(4px); }
 
 .empty-state { text-align: center; padding: 50px 20px; color: var(--text-dim); grid-column: 1 / -1; background: var(--bg-card); border-radius: 18px; border: 1px dashed var(--border); }
@@ -178,7 +189,7 @@ body::after {
 @keyframes rotate { to { transform: rotate(360deg); } }
 .loading-text { font-family: 'Oswald', sans-serif; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; color: var(--text-dim); }
 
-/* SCORE Detail View Styles */
+/* Detail View Styles */
 .t-detail{background: var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:14px;}
 .t-detail-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--border);}
 .t-detail-header h2{margin:0 0 6px;color: var(--text);font-size:1.5rem;font-family: 'Oswald', sans-serif;}
@@ -380,9 +391,9 @@ td.pf{font-family:monospace;color:var(--secondary);}
 <div class="wrapper">
   <section class="hero">
     <div class="auth-btns" id="authBtns"></div>
-    <div class="hero-badge">🏆 PICKLEBALL CUP</div>
-    <h1 class="hero-title"><br>GIẢI ĐẤU PICKLEBALL</h1>
-    <div class="hero-subtitle">Cạnh tranh · Đam mê · Chiến thắng</div>
+    <div class="hero-badge">🏆 HỆ THỐNG QUẢN LÝ GIẢI ĐẤU</div>
+    <h1 class="hero-title">PICKLEBALL TOURNAMENTS</h1>
+    <div class="hero-subtitle">Cup · Robin Đội · Robin Cá Nhân</div>
     <div class="hero-divider"></div>
     <p style="font-size: 0.95rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; line-height: 1.6;">
       Bứt phá giới hạn – Lan tỏa niềm vui
@@ -392,29 +403,78 @@ td.pf{font-family:monospace;color:var(--secondary);}
         <div class="hero-stat-value" id="totalTours">0</div>
         <div class="hero-stat-label">Tổng giải</div>
       </div>
-    </div>
-  </section>
-
-  <!-- PICKLEBALL CUP SECTION -->
-  <section class="section" id="cupSection">
-    <div class="section-header cup">
-      <div class="section-title-wrap">
-        <div class="section-icon cup">🏆</div>
-        <div>
-          <h2 class="section-title">
-            PICKLEBALL CUP
-            <span>Danh sách các giải đấu · Theo dõi trực tiếp</span>
-          </h2>
-        </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" id="cupCount">0</div>
+        <div class="hero-stat-label">Giải Cup</div>
       </div>
-      <div class="section-count"><b id="cupCount">0</b> giải</div>
-    </div>
-    <div class="tour-grid" id="cupGrid">
-      <div class="loading"><div class="loading-spinner"></div><div class="loading-text">Đang tải...</div></div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" id="robinCount">0</div>
+        <div class="hero-stat-label">Giải Robin</div>
+      </div>
     </div>
   </section>
 
-  <!-- DETAIL SECTION (Hidden by default) -->
+  <!-- HOME VIEW: 3 SECTIONS -->
+  <div id="homeView">
+    <!-- CUP SECTION -->
+    <section class="section" id="cupSection">
+      <div class="section-header cup">
+        <div class="section-title-wrap">
+          <div class="section-icon cup">🏆</div>
+          <div>
+            <h2 class="section-title">
+              PICKLEBALL CUP
+              <span>Giải đấu tiêu chuẩn · Loại trực tiếp</span>
+            </h2>
+          </div>
+        </div>
+        <div class="section-count"><b id="cupGridCount">0</b> giải</div>
+      </div>
+      <div class="tour-grid" id="cupGrid">
+        <div class="loading"><div class="loading-spinner"></div><div class="loading-text">Đang tải...</div></div>
+      </div>
+    </section>
+
+    <!-- TEAM ROBIN SECTION -->
+    <section class="section" id="teamRobinSection">
+      <div class="section-header capdoi">
+        <div class="section-title-wrap">
+          <div class="section-icon capdoi">🤝</div>
+          <div>
+            <h2 class="section-title">
+              TEAM ROUND ROBIN
+              <span>Thể thức đôi · Vòng tròn tính điểm</span>
+            </h2>
+          </div>
+        </div>
+        <div class="section-count"><b id="teamRobinGridCount">0</b> giải</div>
+      </div>
+      <div class="tour-grid" id="teamRobinGrid">
+        <div class="loading"><div class="loading-spinner"></div><div class="loading-text">Đang tải...</div></div>
+      </div>
+    </section>
+
+    <!-- INDIVIDUAL ROBIN SECTION -->
+    <section class="section" id="individualRobinSection">
+      <div class="section-header canhan">
+        <div class="section-title-wrap">
+          <div class="section-icon canhan">🎾</div>
+          <div>
+            <h2 class="section-title">
+              ROBIN CÁ NHÂN 2V2
+              <span>Thể thức ghép cặp đôi luân phiên · Tính điểm cá nhân</span>
+            </h2>
+          </div>
+        </div>
+        <div class="section-count"><b id="individualRobinGridCount">0</b> giải</div>
+      </div>
+      <div class="tour-grid" id="individualRobinGrid">
+        <div class="loading"><div class="loading-spinner"></div><div class="loading-text">Đang tải...</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- DETAIL VIEW (Hidden by default) -->
   <section class="section hidden" id="detailSection">
     <div id="detailContent"></div>
   </section>
@@ -427,16 +487,17 @@ td.pf{font-family:monospace;color:var(--secondary);}
 
 <!-- LOGIN MODAL -->
 <div id="loginModal" class="modal-bg">
-  <div class="modal-box">
+  <div class="modal">
     <button class="modal-close-x" onclick="closeModal('loginModal')" title="Đóng (ESC)">✕</button>
-    <h2>🔑 Đăng nhập</h2>
-    <div class="input-row">
+    <h3>🔑 Đăng nhập</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;">
       <input type="text" id="loginUser" placeholder="Tên đăng nhập" autocomplete="username">
-    </div>
-    <div class="input-row">
       <input type="password" id="loginPass" placeholder="Mật khẩu" autocomplete="current-password" onkeypress="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; margin-top: 10px;" onclick="doLogin()">Đăng nhập</button>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="closeModal('loginModal')">Đóng</button>
+      <button class="btn btn-primary" id="loginSubmitBtn" style="flex:1;" onclick="doLogin()">Đăng nhập</button>
+    </div>
     <p style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-dim);">
       Chưa có tài khoản? <span class="modal-link" onclick="closeModal('loginModal'); showModal('registerModal')">Đăng ký ngay</span>
     </p>
@@ -445,22 +506,20 @@ td.pf{font-family:monospace;color:var(--secondary);}
 
 <!-- REGISTER MODAL -->
 <div id="registerModal" class="modal-bg">
-  <div class="modal-box">
+  <div class="modal">
     <button class="modal-close-x" onclick="closeModal('registerModal')" title="Đóng (ESC)">✕</button>
-    <h2>📝 Đăng ký tài khoản</h2>
-    <div class="input-row">
+    <h3>📝 Đăng ký tài khoản</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;">
       <input type="text" id="regUser" placeholder="Tên đăng nhập (3-20 ký tự, chữ thường, số, _)" autocomplete="username">
-    </div>
-    <div class="input-row">
+      <div class="hint">Chỉ chứa chữ thường, số, dấu _ (3-20 ký tự).</div>
       <input type="password" id="regPass" placeholder="Mật khẩu (tối thiểu 3 ký tự)" autocomplete="new-password">
-    </div>
-    <div class="input-row">
       <input type="password" id="regPassConfirm" placeholder="Nhập lại mật khẩu" autocomplete="new-password" onkeypress="if(event.key==='Enter')doRegister()">
     </div>
-    <button class="btn btn-primary" id="regSubmitBtn" style="width: 100%; margin-top: 10px;" onclick="doRegister()">Tạo tài khoản</button>
-    <p style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-dim);">
-      Đã có tài khoản? <span class="modal-link" onclick="closeModal('registerModal'); showModal('loginModal')">Đăng nhập</span>
-    </p>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="closeModal('registerModal')">Đóng</button>
+      <button class="btn btn-primary" id="regSubmitBtn" style="flex:1;" onclick="doRegister()">Tạo tài khoản</button>
+    </div>
+    <div id="rmsg" class="msg"></div>
   </div>
 </div>
 
@@ -495,6 +554,7 @@ let DATA = {
   teams: [], players: [], stages: [], groups: [], groupTeams: [], matches: [],
   gStage: null, kStage: null, sponsors: [], rallies: []
 };
+let ALL_TOURNAMENTS = []; // Unified list of all tournaments
 let allUsersMap = {};
 let realtimeInterval = null;
 let currentTimelineMatchId = null;
@@ -521,13 +581,15 @@ function closeModal(id) {
   modal.querySelectorAll('input').forEach(input => {
     if (input.type === 'password' || input.type === 'text') input.value = '';
   });
+  const msg = document.getElementById("rmsg");
+  if(msg) { msg.className = "msg"; msg.textContent = ""; }
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+  if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
 });
 
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
+document.querySelectorAll('.modal-bg').forEach(overlay => {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
 });
 
@@ -562,11 +624,42 @@ function formatDate(dateStr) {
   catch { return 'Chưa cập nhật'; }
 }
 
-function renderTournamentCard(t) {
-  const ngay = formatDate(t.start_date);
+function checkTournamentStatus(tMatches) {
+  let ckMatch = tMatches.find(function(m){ 
+    return Number(m.round) === 4 || (m.match_code && m.match_code.includes('CK')); 
+  });
+  
+  if (ckMatch) {
+    const h = Number(ckMatch.home_score) || 0;
+    const a = Number(ckMatch.away_score) || 0;
+    if (h > 0 || a > 0) return "completed";
+  }
+  
+  const hasLive = tMatches.some(function(m){ return m.match_status === 'live'; });
+  const hasAnyScore = tMatches.some(function(m){ return (Number(m.home_score) > 0 || Number(m.away_score) > 0); });
+  
+  if (!hasAnyScore) return "not_started";
+  if (hasLive) return "in_progress";
+  return "in_progress";
+}
+
+function renderTourCard(t) {
+  const ngay = formatDate(t.start_date || t.ngay_to_chuc);
   const diaDiem = t.location_name || 'Chưa cập nhật';
-  const icon = '🏆';
-  const typeName = 'Giải đấu';
+  
+  let icon = '🏆';
+  let typeName = 'Giải đấu';
+  let cardClass = 'cup';
+  
+  if (t.type === 'robin_team') {
+    icon = '🤝';
+    typeName = 'Team Robin';
+    cardClass = 'capdoi';
+  } else if (t.type === 'robin_individual') {
+    icon = '🎾';
+    typeName = 'Robin Cá Nhân';
+    cardClass = 'canhan';
+  }
   
   let creatorBadge = '';
   if (CURRENT_USER) {
@@ -579,7 +672,7 @@ function renderTournamentCard(t) {
   const statusCls = t.display_status || "not_started";
   const statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
 
-  return `<div class="tour-card cup" style="animation-delay: ${Math.random() * 0.2}s" onclick="viewTournament('${t.id}')">
+  return `<div class="tour-card ${cardClass}" style="animation-delay: ${Math.random() * 0.2}s" onclick="viewTournament('${t.id}')">
       ${creatorBadge}
       <div class="tour-type-badge">${typeName}</div>
       <div class="tour-icon">${icon}</div>
@@ -596,65 +689,78 @@ function renderTournamentCard(t) {
     </div>`;
 }
 
-function checkTournamentStatus(tMatches) {
-  let ckMatch = tMatches.find(function(m){ 
-    return Number(m.round) === 4 || (m.match_code && m.match_code.includes('CK')); 
-  });
-  
-  if (ckMatch) {
-    const h = Number(ckMatch.home_score) || 0;
-    const a = Number(ckMatch.away_score) || 0;
-    if (h > 0 || a > 0) {
-      return "completed";
-    }
-  }
-  
-  const hasLive = tMatches.some(function(m){ return m.match_status === 'live'; });
-  const hasAnyScore = tMatches.some(function(m){ return (Number(m.home_score) > 0 || Number(m.away_score) > 0); });
-  
-  if (!hasAnyScore) return "not_started";
-  if (hasLive) return "in_progress";
-  
-  return "in_progress";
-}
-
-async function loadTournaments() {
+async function loadAllData() {
   try {
     await loadAllUsers();
-    const { data, error } = await sb.from('tournaments').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
     
-    DATA.tournaments = data || [];
+    // Fetch from all 3 tables concurrently
+    const [cupRes, teamRes, indRes] = await Promise.all([
+      sb.from('tournaments').select('*').order('created_at', { ascending: false }),
+      sb.from('robin_tour').select('*').order('ngay_to_chuc', { ascending: false }),
+      sb.from('robin_canhan_tour').select('*').order('ngay_to_chuc', { ascending: false })
+    ]);
+
+    // Normalize data and add 'type' property
+    const cups = (cupRes.data || []).map(t => ({...t, type: 'cup'}));
+    const teams = (teamRes.data || []).map(t => ({...t, type: 'robin_team'}));
+    const individuals = (indRes.data || []).map(t => ({...t, type: 'robin_individual'}));
     
+    // Combine and sort by date
+    ALL_TOURNAMENTS = [...cups, ...teams, ...individuals].sort((a, b) => {
+      const dateA = new Date(a.created_at || a.ngay_to_chuc);
+      const dateB = new Date(b.created_at || b.ngay_to_chuc);
+      return dateB - dateA;
+    });
+
+    // Calculate statuses for all
     const allEvents = await sb.from('events').select('id, tournament_id');
     const allMatches = await sb.from('matches').select('*');
     
-    DATA.tournaments.forEach(t => {
+    ALL_TOURNAMENTS.forEach(t => {
       const tEvents = (allEvents.data || []).filter(e => e.tournament_id === t.id);
       const eids = tEvents.map(e => e.id);
       const tMatches = (allMatches.data || []).filter(m => eids.includes(m.event_id));
       t.display_status = checkTournamentStatus(tMatches);
     });
 
-    document.getElementById('totalTours').textContent = DATA.tournaments.length;
-    document.getElementById('cupCount').textContent = DATA.tournaments.length;
-    
-    const grid = document.getElementById('cupGrid');
-    if (DATA.tournaments.length === 0) {
-      grid.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h3>Chưa có giải đấu nào</h3><p>Hãy là người đầu tiên tạo giải đấu!</p></div>`;
-    } else {
-      grid.innerHTML = DATA.tournaments.map(t => renderTournamentCard(t)).join('');
-    }
+    renderHome();
   } catch (e) {
     toast('Lỗi tải dữ liệu: ' + e.message, true);
   }
 }
 
+function renderHome() {
+  const cups = ALL_TOURNAMENTS.filter(t => t.type === 'cup');
+  const teams = ALL_TOURNAMENTS.filter(t => t.type === 'robin_team');
+  const individuals = ALL_TOURNAMENTS.filter(t => t.type === 'robin_individual');
+
+  document.getElementById('totalTours').textContent = ALL_TOURNAMENTS.length;
+  document.getElementById('cupCount').textContent = cups.length;
+  document.getElementById('robinCount').textContent = teams.length + individuals.length;
+
+  document.getElementById('cupGridCount').textContent = cups.length;
+  document.getElementById('cupGrid').innerHTML = cups.length === 0 
+    ? `<div class="empty-state"><div class="icon">📭</div><h3>Chưa có giải Cup</h3></div>` 
+    : cups.map(t => renderTourCard(t)).join('');
+
+  document.getElementById('teamRobinGridCount').textContent = teams.length;
+  document.getElementById('teamRobinGrid').innerHTML = teams.length === 0 
+    ? `<div class="empty-state"><div class="icon">📭</div><h3>Chưa có giải Team Robin</h3></div>` 
+    : teams.map(t => renderTourCard(t)).join('');
+
+  document.getElementById('individualRobinGridCount').textContent = individuals.length;
+  document.getElementById('individualRobinGrid').innerHTML = individuals.length === 0 
+    ? `<div class="empty-state"><div class="icon">📭</div><h3>Chưa có giải Robin Cá Nhân</h3></div>` 
+    : individuals.map(t => renderTourCard(t)).join('');
+}
+
 function viewTournament(tid) {
-  DATA.tournament = DATA.tournaments.find(t => t.id === tid) || null;
-  if (!DATA.tournament) return;
+  const tournament = ALL_TOURNAMENTS.find(t => t.id === tid);
+  if (!tournament) return;
   
-  document.getElementById('cupSection').classList.add('hidden');
+  DATA.tournament = tournament;
+  
+  document.getElementById('homeView').classList.add('hidden');
   document.getElementById('detailSection').classList.remove('hidden');
   
   loadTournamentDetail(tid);
@@ -675,28 +781,25 @@ function backToList() {
   DATA.rallies = [];
   
   document.getElementById('detailSection').classList.add('hidden');
-  document.getElementById('cupSection').classList.remove('hidden');
+  document.getElementById('homeView').classList.remove('hidden');
   
-  render();
   window.scrollTo(0, 0);
 }
 
 async function loadTournamentDetail(tid) {
   try {
-    DATA.tournament = DATA.tournaments.find(function(t){ return t.id===tid; });
-    if (!DATA.tournament) return;
     var e = await sb.from("events").select("*").eq("tournament_id", tid);
     DATA.events = e.data || [];
     var sp = await sb.from('sponsors').select('*').eq('tournament_id', tid).order('display_order');
     DATA.sponsors = sp.data || [];
     if (DATA.events.length) await loadEventDetail(DATA.events[0].id);
-    else { DATA.eid = null; DATA.teams = []; DATA.players = []; DATA.matches = []; render(); }
+    else { DATA.eid = null; DATA.teams = []; DATA.players = []; DATA.matches = []; renderDetail(); }
   } catch(e) { console.error("Load tournament detail error:", e); }
 }
 
 async function loadEventDetail(eid) {
   DATA.eid = eid || null;
-  if (!DATA.eid) { render(); return; }
+  if (!DATA.eid) { renderDetail(); return; }
   try {
     var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name))").eq("event_id", eid);
     DATA.teams = (t.data || []).map(function(x) {
@@ -727,7 +830,7 @@ async function loadEventDetail(eid) {
     var m = await sb.from("matches").select("*").eq("event_id", eid).order("match_seq");
     DATA.matches = m.data || [];
     
-    render();
+    renderDetail();
     startRealtime();
   } catch(e) { console.error("Load event detail error:", e); }
 }
@@ -1016,16 +1119,16 @@ function computeKOTeams() {
   return result;
 }
 
-function renderTournamentDetail() {
+function renderDetail() {
   var t = DATA.tournament;
-  if (!t) return '';
+  if (!t) return;
   var statusCls = t.display_status || "not_started";
   var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
-  var canManage = isSuperAdmin(); // Simplified for this view
+  var canManage = isSuperAdmin();
   
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
-  H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
+  H += '<div class="meta"><span>📅 ' + esc(t.start_date || t.ngay_to_chuc || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-size:0.8rem;">' + statusText + '</span></div>';
   if (canManage) H += '<div class="manage-bar"><a class="btn btn-primary" href="admin.html?tournament=' + encodeURIComponent(t.id) + '">⚙ Quản lý</a></div>';
@@ -1055,7 +1158,8 @@ function renderTournamentDetail() {
     H += '</div></div>';
   }
   H += '</div>';
-  return H;
+  
+  document.getElementById('detailContent').innerHTML = H;
 }
 
 function renderEventDetail() {
@@ -1175,20 +1279,6 @@ function renderKOGroup(title, cls, matches) {
   return H;
 }
 
-function render() {
-  if (DATA.tournament) {
-    document.getElementById('detailContent').innerHTML = renderTournamentDetail();
-  } else {
-    document.getElementById('cupCount').textContent = DATA.tournaments.length;
-    const grid = document.getElementById('cupGrid');
-    if (DATA.tournaments.length === 0) {
-      grid.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h3>Chưa có giải đấu nào</h3><p>Hãy là người đầu tiên tạo giải đấu!</p></div>`;
-    } else {
-      grid.innerHTML = DATA.tournaments.map(t => renderTournamentCard(t)).join('');
-    }
-  }
-}
-
 function openTimelineModal(matchId) {
   currentTimelineMatchId = matchId;
   var m = DATA.matches.find(function(x) { return x.id === matchId; });
@@ -1215,7 +1305,7 @@ function doLogout() {
   localStorage.removeItem('pb_admin');
   updateAuthUI();
   toast('Đã đăng xuất');
-  loadTournaments();
+  loadAllData();
 }
 
 async function doLogin() {
@@ -1244,7 +1334,7 @@ async function doLogin() {
     closeModal('loginModal');
     updateAuthUI();
     toast('✅ Chào, ' + CURRENT_USER.username);
-    loadTournaments();
+    loadAllData();
   } catch (e) {
     toast('Lỗi: ' + e.message, true);
   } finally {
@@ -1307,7 +1397,7 @@ async function doRegister() {
     closeModal('registerModal');
     updateAuthUI();
     toast("✅ Chào mừng " + CURRENT_USER.username + "!");
-    loadTournaments();
+    loadAllData();
   } catch(e) {
     msg.className = "msg";
     msg.textContent = "❌ " + e.message;
@@ -1335,8 +1425,7 @@ function startRealtime() {
         }
         if (changed) {
           DATA.matches = m.data;
-          // Simple DOM update for performance could be added here, but full render is safe for now
-          if (DATA.tournament) render();
+          if (DATA.tournament) renderDetail();
           if (currentTimelineMatchId) {
             await loadRallies(currentTimelineMatchId);
           }
@@ -1356,8 +1445,7 @@ function stopRealtime() {
     try { CURRENT_USER = JSON.parse(u); } catch (e) { localStorage.removeItem('pb_admin'); }
   }
   updateAuthUI();
-  document.getElementById('regUser').value = ''; // Reset register form
-  loadTournaments();
+  loadAllData();
 })();
 </script>
 </body>
