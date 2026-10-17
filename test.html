@@ -522,6 +522,9 @@ let allUsersMap = {};
 let realtimeInterval = null;
 let currentTimelineMatchId = null;
 
+// 🌟 ĐÃ BỔ SUNG: Hàm esc bị thiếu ở phiên bản trước
+function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
 function toast(msg, err = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -586,7 +589,6 @@ function checkTournamentStatus(tMatches) {
   return "not_started";
 }
 
-// 🌟 ĐÃ SỬA: Tương thích cả 2 cách đặt tên cột và gộp dữ liệu từ 3 bảng an toàn
 function renderTourCard(t) {
   const ngay = formatDate(t.start_date || t.ngay_to_chuc);
   const diaDiem = t.location_name || t.dia_diem || 'Chưa cập nhật';
@@ -622,7 +624,6 @@ function renderTourCard(t) {
     </div>`;
 }
 
-// 🌟 ĐÃ SỬA: Query riêng biệt 3 bảng để tránh lỗi schema, sau đó gộp lại
 async function loadAllData() {
   try {
     await loadAllUsers();
@@ -914,7 +915,6 @@ function computeKOTeams() {
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } else {
-    // Logic 5+ bảng giữ nguyên
     var firstPlaces = advancing.map(a => a.pos1), secondPlaces = advancing.map(a => a.pos2), thirdPlaces = advancing.map(a => a.pos3);
     var sortedFirst = firstPlaces.slice().sort((a, b) => {
       if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
@@ -968,7 +968,6 @@ function computeKOTeams() {
   return result;
 }
 
-// 🌟 ĐÃ SỬA: Tương thích cả 2 cách đặt tên cột cho chi tiết giải
 function renderDetail() {
   var t = DATA.tournament;
   if (!t) return;
@@ -1156,7 +1155,7 @@ async function doLogin() {
     if (error) throw error;
     if (!data) { toast('❌ Sai tên đăng nhập hoặc mật khẩu', true); btn.disabled = false; btn.innerHTML = 'Đăng nhập'; return; }
     CURRENT_USER = data;
-    localStorage.setItem('pb_admin', JSON.stringify(data));
+    localStorage.setItem('pb_admin', JSON.stringify(CURRENT_USER));
     closeModal('loginModal'); updateAuthUI(); toast('✅ Chào, ' + CURRENT_USER.username); loadAllData();
   } catch (e) { toast('Lỗi: ' + e.message, true); } 
   finally { btn.disabled = false; btn.innerHTML = 'Đăng nhập'; }
