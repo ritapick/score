@@ -458,7 +458,7 @@ td.pf{font-family:monospace;color:var(--secondary);}
     <section class="section" id="individualRobinSection">
       <div class="section-header canhan">
         <div class="section-title-wrap">
-          <div class="section-icon canhan"></div>
+          <div class="section-icon canhan">🎾</div>
           <div>
             <h2 class="section-title">
               ROBIN CÁ NHÂN 2V2
@@ -507,8 +507,8 @@ td.pf{font-family:monospace;color:var(--secondary);}
 <!-- REGISTER MODAL -->
 <div id="registerModal" class="modal-bg">
   <div class="modal">
-    <button class="modal-close-x" onclick="closeModal('registerModal')" title="Đóng (ESC)"></button>
-    <h3> Đăng ký tài khoản</h3>
+    <button class="modal-close-x" onclick="closeModal('registerModal')" title="Đóng (ESC)">✕</button>
+    <h3>📝 Đăng ký tài khoản</h3>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <input type="text" id="regUser" placeholder="Tên đăng nhập (3-20 ký tự, chữ thường, số, _)" autocomplete="username">
       <div class="hint">Chỉ chứa chữ thường, số, dấu _ (3-20 ký tự).</div>
@@ -531,12 +531,12 @@ td.pf{font-family:monospace;color:var(--secondary);}
     <button class="close-btn" onclick="closeTimelineModal()">×</button>
   </div>
   <div class="timeline-subheader">
-    <span class="icon"></span>
+    <span class="icon">📈</span>
     <h4 id="timeline-title">Đang tải...</h4>
   </div>
   <div class="timeline-body" id="timeline-body">
     <div class="timeline-empty">
-      <div class="icon"></div>
+      <div class="icon">⏳</div>
       <p>Đang tải diễn biến...</p>
     </div>
   </div>
@@ -554,7 +554,7 @@ let DATA = {
   teams: [], players: [], stages: [], groups: [], groupTeams: [], matches: [],
   gStage: null, kStage: null, sponsors: [], rallies: []
 };
-let ALL_TOURNAMENTS = []; // Unified list of all tournaments
+let ALL_TOURNAMENTS = [];
 let allUsersMap = {};
 let realtimeInterval = null;
 let currentTimelineMatchId = null;
@@ -604,7 +604,7 @@ function updateAuthUI() {
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Thoát</button>`;
   } else {
     c.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="showModal('loginModal')">🔑 Đăng nhập</button>
-      <button class="btn btn-primary btn-sm" onclick="showModal('registerModal')"> Đăng ký</button>`;
+      <button class="btn btn-primary btn-sm" onclick="showModal('registerModal')">📝 Đăng ký</button>`;
   }
 }
 
@@ -643,19 +643,23 @@ function checkTournamentStatus(tMatches) {
   return "in_progress";
 }
 
+// 🌟 ĐÃ SỬA: Xử lý linh hoạt cả 2 trường hợp tên cột (name/start_date hoặc ten_giai/ngay_to_chuc)
 function renderTourCard(t) {
   const ngay = formatDate(t.start_date || t.ngay_to_chuc);
-  const diaDiem = t.location_name || 'Chưa cập nhật';
+  const diaDiem = t.location_name || t.dia_diem || 'Chưa cập nhật';
+  const tenGiai = t.name || t.ten_giai || 'Giải đấu';
+  const maGiai = t.code || t.ma_giai || 'N/A';
   
   let icon = '🏆';
   let typeName = 'Giải đấu';
   let cardClass = 'cup';
   
-  if (t.type === 'robin_team') {
+  const loai = (t.loai || t.type || 'cup').toLowerCase();
+  if (loai === 'robin_team') {
     icon = '🤝';
     typeName = 'Team Robin';
     cardClass = 'capdoi';
-  } else if (t.type === 'robin_individual') {
+  } else if (loai === 'robin_individual') {
     icon = '🎾';
     typeName = 'Robin Cá Nhân';
     cardClass = 'canhan';
@@ -670,17 +674,17 @@ function renderTourCard(t) {
   }
 
   const statusCls = t.display_status || "not_started";
-  const statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? " Đang diễn ra" : "✅ Đã kết thúc");
+  const statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
 
   return `<div class="tour-card ${cardClass}" style="animation-delay: ${Math.random() * 0.2}s" onclick="viewTournament('${t.id}')">
       ${creatorBadge}
       <div class="tour-type-badge">${typeName}</div>
       <div class="tour-icon">${icon}</div>
-      <h3 class="tour-name">${t.name || 'Giải đấu'}</h3>
+      <h3 class="tour-name">${esc(tenGiai)}</h3>
       <div class="tour-meta">
-        <div class="tour-meta-item"><span class="icon"></span><span>${diaDiem}</span></div>
+        <div class="tour-meta-item"><span class="icon">📍</span><span>${esc(diaDiem)}</span></div>
         <div class="tour-meta-item"><span class="icon">📅</span><span>${ngay}</span></div>
-        <div class="tour-meta-item"><span class="icon">🏷️</span><span>Mã: <b>${t.code}</b></span></div>
+        <div class="tour-meta-item"><span class="icon">🏷️</span><span>Mã: <b>${esc(maGiai)}</b></span></div>
         <div class="tour-meta-item"><span class="icon">📊</span><span>${statusText}</span></div>
       </div>
       <div class="tour-footer">
@@ -689,40 +693,29 @@ function renderTourCard(t) {
     </div>`;
 }
 
-// 🌟 LOGIC MỚI: Lọc giải đấu dựa trên quyền của user
-function getVisibleTournaments() {
-  if (!CURRENT_USER) {
-    // Khách vãng lai: xem TẤT CẢ
-    return ALL_TOURNAMENTS;
-  }
-  if (isSuperAdmin()) {
-    // Admin: xem TẤT CẢ
-    return ALL_TOURNAMENTS;
-  }
-  // User thường: chỉ xem giải do mình tạo
-  return ALL_TOURNAMENTS.filter(t => t.admin_id === CURRENT_USER.id);
-}
-
+// 🌟 ĐÃ SỬA: Query từ bảng 'tournaments' chính và phân loại theo cột 'loai' hoặc 'type'
 async function loadAllData() {
   try {
     await loadAllUsers();
     
-    // Fetch from all 3 tables concurrently
-    const [cupRes, teamRes, indRes] = await Promise.all([
-      sb.from('tournaments').select('*').order('created_at', { ascending: false }),
-      sb.from('robin_tour').select('*').order('ngay_to_chuc', { ascending: false }),
-      sb.from('robin_canhan_tour').select('*').order('ngay_to_chuc', { ascending: false })
-    ]);
-
-    // Normalize data and add 'type' property
-    const cups = (cupRes.data || []).map(t => ({...t, type: 'cup'}));
-    const teams = (teamRes.data || []).map(t => ({...t, type: 'robin_team'}));
-    const individuals = (indRes.data || []).map(t => ({...t, type: 'robin_individual'}));
+    // Fetch ALL tournaments from the main 'tournaments' table
+    const { data: allData, error } = await sb.from('tournaments').select('*').order('created_at', { ascending: false });
     
-    // Combine and sort by date
+    if (error) throw error;
+    
+    const allTournaments = allData || [];
+    
+    // Categorize by 'loai' or 'type' (default to 'cup' if not specified)
+    const cups = allTournaments.filter(t => {
+      const loai = (t.loai || t.type || 'cup').toLowerCase();
+      return loai === 'cup' || loai === '';
+    });
+    const teams = allTournaments.filter(t => (t.loai || t.type || '').toLowerCase() === 'robin_team');
+    const individuals = allTournaments.filter(t => (t.loai || t.type || '').toLowerCase() === 'robin_individual');
+    
     ALL_TOURNAMENTS = [...cups, ...teams, ...individuals].sort((a, b) => {
-      const dateA = new Date(a.created_at || a.ngay_to_chuc);
-      const dateB = new Date(b.created_at || b.ngay_to_chuc);
+      const dateA = new Date(a.created_at || a.ngay_to_chuc || a.start_date || 0);
+      const dateB = new Date(b.created_at || b.ngay_to_chuc || b.start_date || 0);
       return dateB - dateA;
     });
 
@@ -744,12 +737,11 @@ async function loadAllData() {
 }
 
 function renderHome() {
-  // Lọc giải đấu dựa trên quyền user
   const visibleTournaments = getVisibleTournaments();
   
-  const cups = visibleTournaments.filter(t => t.type === 'cup');
-  const teams = visibleTournaments.filter(t => t.type === 'robin_team');
-  const individuals = visibleTournaments.filter(t => t.type === 'robin_individual');
+  const cups = visibleTournaments.filter(t => (t.loai || t.type || 'cup').toLowerCase() === 'cup' || !(t.loai || t.type));
+  const teams = visibleTournaments.filter(t => (t.loai || t.type || '').toLowerCase() === 'robin_team');
+  const individuals = visibleTournaments.filter(t => (t.loai || t.type || '').toLowerCase() === 'robin_individual');
 
   document.getElementById('totalTours').textContent = visibleTournaments.length;
   document.getElementById('cupCount').textContent = cups.length;
@@ -762,7 +754,7 @@ function renderHome() {
 
   document.getElementById('teamRobinGridCount').textContent = teams.length;
   document.getElementById('teamRobinGrid').innerHTML = teams.length === 0 
-    ? `<div class="empty-state"><div class="icon"></div><h3>Chưa có giải Team Robin</h3></div>` 
+    ? `<div class="empty-state"><div class="icon">📭</div><h3>Chưa có giải Team Robin</h3></div>` 
     : teams.map(t => renderTourCard(t)).join('');
 
   document.getElementById('individualRobinGridCount').textContent = individuals.length;
@@ -771,10 +763,18 @@ function renderHome() {
     : individuals.map(t => renderTourCard(t)).join('');
 }
 
+function getVisibleTournaments() {
+  if (!CURRENT_USER) return ALL_TOURNAMENTS;
+  if (isSuperAdmin()) return ALL_TOURNAMENTS;
+  return ALL_TOURNAMENTS.filter(t => t.admin_id === CURRENT_USER.id);
+}
+
 function viewTournament(tid) {
-  // Tìm giải trong TẤT CẢ giải (không lọc theo user) để ai cũng xem được chi tiết
   const tournament = ALL_TOURNAMENTS.find(t => t.id === tid);
-  if (!tournament) return;
+  if (!tournament) {
+    console.error("Tournament not found:", tid);
+    return;
+  }
   
   DATA.tournament = tournament;
   
@@ -905,7 +905,7 @@ function renderTimeline() {
     H += '<span class="rally-badge ' + badge.cls + '">' + badge.text + '</span>';
     H += '</div>';
     H += '<div class="rally-score">';
-    H += '<div class="rally-score-col"><div class="rally-score-label server-label"> ' + esc(serverName) + '</div><div class="rally-score-circle server">' + serverScore + '</div></div>';
+    H += '<div class="rally-score-col"><div class="rally-score-label server-label">🏓 ' + esc(serverName) + '</div><div class="rally-score-circle server">' + serverScore + '</div></div>';
     H += '<span class="rally-score-sep">-</span>';
     H += '<div class="rally-score-col"><div class="rally-score-label">' + esc(receiverName) + '</div><div class="rally-score-circle receiver">' + receiverScore + '</div></div>';
     H += '<span class="rally-score-sep">-</span>';
@@ -1137,21 +1137,23 @@ function computeKOTeams() {
   return result;
 }
 
-// 🌟 ĐÃ SỬA: Tách biệt phần hiển thị công khai và phần quản lý admin
+// 🌟 ĐÃ SỬA: Xử lý linh hoạt tên cột (name/ten_giai, start_date/ngay_to_chuc)
 function renderDetail() {
   var t = DATA.tournament;
   if (!t) return;
   var statusCls = t.display_status || "not_started";
   var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
   
-  // Phần thông tin giải đấu: AI CŨNG XEM ĐƯỢC
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
-  H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
-  H += '<div class="meta"><span>📅 ' + esc(t.start_date || t.ngay_to_chuc || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
-  if (t.location_name) H += '<span> ' + esc(t.location_name) + '</span>';
+  H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name || t.ten_giai || 'Giải đấu') + '</h2>';
+  const startDate = t.start_date || t.ngay_to_chuc || "—";
+  const endDate = t.end_date;
+  const location = t.location_name || t.dia_diem;
+  
+  H += '<div class="meta"><span>📅 ' + esc(startDate) + (endDate && endDate !== startDate ? ' → ' + esc(endDate) : '') + '</span>';
+  if (location) H += '<span>📍 ' + esc(location) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-size:0.8rem;">' + statusText + '</span></div>';
   
-  // Phần nút quản lý: CHỈ ADMIN MỚI THẤY
   if (isSuperAdmin()) {
     H += '<div class="manage-bar"><a class="btn btn-primary" href="admin.html?tournament=' + encodeURIComponent(t.id) + '">⚙ Quản lý giải đấu</a></div>';
   }
@@ -1171,7 +1173,7 @@ function renderDetail() {
   }
   
   if (DATA.sponsors.length) {
-    H += '<div class="sponsor-section"><h4> NHÀ TÀI TRỢ</h4><div class="sponsor-list">';
+    H += '<div class="sponsor-section"><h4>🤝 NHÀ TÀI TRỢ</h4><div class="sponsor-list">';
     DATA.sponsors.forEach(function(sp) {
       var href = sp.website_url || "#";
       H += '<a class="sponsor-item" href="' + esc(href) + '" target="_blank" rel="noopener">';
@@ -1244,9 +1246,9 @@ function renderEventDetail() {
     var bk = km.filter(function(m){ return Number(m.round)===3; });
     var ck = km.filter(function(m){ return Number(m.round)===4; });
     
-    if (r16.length) H += renderKOGroup(" VÒNG 1/16", "r16", r16);
+    if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16);
     if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
-    if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
+    if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
     if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
     H += '</div>';
   }
@@ -1283,7 +1285,7 @@ function renderMatchItem(m, isKO) {
   H += '<div class="m-score">' + scoreHtml + '</div>';
   H += '<div class="m-team away ' + awayLeadingClass + '">' + esc(an) + awayIcon + '</div>';
   H += '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
-  H += '<button class="timeline-btn" onclick="event.stopPropagation();openTimelineModal(\'' + m.id + '\')"></button>';
+  H += '<button class="timeline-btn" onclick="event.stopPropagation();openTimelineModal(\'' + m.id + '\')">📈</button>';
   H += '</div>';
   
   if (status === 'live' && m.serving_player_id) {
@@ -1392,7 +1394,7 @@ async function doRegister() {
   msg.className = "msg";
   msg.textContent = "";
   
-  if (!user || !pass || !confirm) { msg.textContent = "️ Vui lòng nhập đầy đủ thông tin."; return; }
+  if (!user || !pass || !confirm) { msg.textContent = "⚠️ Vui lòng nhập đầy đủ thông tin."; return; }
   if (!/^[a-z0-9_]{3,20}$/.test(user)) { msg.textContent = "⚠️ Tên chỉ chứa chữ thường, số, _ (3-20 ký tự)."; return; }
   if (user === 'admin') { msg.textContent = "⚠️ Tên 'admin' đã được hệ thống sử dụng."; return; }
   if (pass.length < 3) { msg.textContent = "⚠️ Mật khẩu tối thiểu 3 ký tự."; return; }
@@ -1423,7 +1425,7 @@ async function doRegister() {
     loadAllData();
   } catch(e) {
     msg.className = "msg";
-    msg.textContent = " " + e.message;
+    msg.textContent = "❌ " + e.message;
   } finally {
     btn.disabled = false;
     btn.innerHTML = 'Tạo tài khoản';
