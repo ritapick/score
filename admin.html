@@ -492,16 +492,35 @@ async function deletePlayer(pid) {
   } catch(e) { alert("❌ " + e.message); }
 }
 
+// 🌟 ĐÃ CẬP NHẬT: Cho phép tạo nhiều giải, tự động chọn giải mới tạo
 async function createT() {
-  var n = el("t-name").value.trim(); var d = el("t-start").value;
-  if (!n || !d) { alert("Nhập tên + ngày"); return; }
-  var code = pad(DATA.tournaments.length + 1, 3);
-  var payload = { code: code, name: n, start_date: d, end_date: el("t-end").value || d, location_name: el("t-loc").value || null, status: "in_progress", admin_id: CURRENT_USER.id };
+  var n = el("t-name").value.trim(); 
+  var d = el("t-start").value;
+  if (!n || !d) { alert("Nhập tên + ngày bắt đầu"); return; }
+  var code = "G" + pad(DATA.tournaments.length + 1, 3);
+  var payload = { 
+    code: code, 
+    name: n, 
+    start_date: d, 
+    end_date: el("t-end").value || d, 
+    location_name: el("t-loc").value || null, 
+    status: "in_progress", 
+    admin_id: CURRENT_USER.id 
+  };
   var r = await sb.from("tournaments").insert(payload).select().single();
   if (r.error) { alert(r.error.message); return; }
   for (var i=1; i<=4; i++) await sb.from("courts").insert({tournament_id: r.data.id, name: "Sân "+i, display_order: i});
-  toast("✅ Đã tạo giải"); await loadAll();
+  
+  // Xóa trắng form sau khi tạo
+  el("t-name").value = "";
+  el("t-loc").value = "";
+  el("t-start").value = "";
+  el("t-end").value = "";
+  
+  toast("✅ Đã tạo giải"); 
+  await loadAll(); // loadAll sẽ tự động chọn giải mới nhất (đầu tiên trong danh sách)
 }
+
 async function delT(id) {
   if (!confirm("Xóa giải + toàn bộ dữ liệu?")) return;
   try {
@@ -517,6 +536,7 @@ async function delT(id) {
     toast("✅ Đã xóa"); await loadAll();
   } catch(e) { alert("❌ " + e.message); }
 }
+
 async function quickCreateEvent() {
   var n = prompt("Tên nội dung (VD: Đôi Nam):"); if (!n) return;
   var lim = prompt("Tổng trình tối đa (để trống = Mở):");
@@ -713,16 +733,10 @@ function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
   return 2;
 }
 
-// 🌟 LOGIC MỚI: Ghép cặp Tứ Kết cố định cho 3 bảng
-// TK1: 1A vs 3-2
-// TK2: 1B vs 3-1
-// TK3: 2A vs 1C
-// TK4: 2B vs 2C
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
   
-  // Sắp xếp bảng theo mã (A, B, C...) để đảm bảo thứ tự cố định
   var sortedGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).sort((a, b) => a.code.localeCompare(b.code));
   
   var advancing = [], allSt = {};
@@ -754,26 +768,18 @@ function computeKOTeams() {
   var result = { matches: [] };
 
   if (numGroups === 2) {
-    // 2 bảng: BK1 = 1A vs 2B, BK2 = 1B vs 2A
     result.matches.push({round: 3, slot: 13, h: advancing[0].pos1.teamId, a: advancing[1].pos2.teamId, code: "BK1", h_pos: advancing[0].pos1.pos, a_pos: advancing[1].pos2.pos});
     result.matches.push({round: 3, slot: 14, h: advancing[1].pos1.teamId, a: advancing[0].pos2.teamId, code: "BK2", h_pos: advancing[1].pos1.pos, a_pos: advancing[0].pos2.pos});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } 
   else if (numGroups === 3) {
-    // 🌟 LOGIC MỚI CHO 3 BẢNG: Ghép cặp cố định
-    // TK1: 1A vs 3-2 (slot 9)
-    // TK2: 1B vs 3-1 (slot 10)
-    // TK3: 2A vs 1C (slot 11)
-    // TK4: 2B vs 2C (slot 12)
+    var team1A = advancing[0].pos1;
+    var team1B = advancing[1].pos1;
+    var team1C = advancing[2].pos1;
+    var team2A = advancing[0].pos2;
+    var team2B = advancing[1].pos2;
+    var team2C = advancing[2].pos2;
     
-    var team1A = advancing[0].pos1; // Nhất A
-    var team1B = advancing[1].pos1; // Nhất B
-    var team1C = advancing[2].pos1; // Nhất C
-    var team2A = advancing[0].pos2; // Nhì A
-    var team2B = advancing[1].pos2; // Nhì B
-    var team2C = advancing[2].pos2; // Nhì C
-    
-    // Lấy tất cả đội hạng 3 và sắp xếp theo thành tích
     var allThirdPlaces = [
       { teamId: advancing[0].pos3.teamId, pos: advancing[0].pos3.pos, stats: advancing[0].pos3.stats, groupCode: 'A' },
       { teamId: advancing[1].pos3.teamId, pos: advancing[1].pos3.pos, stats: advancing[1].pos3.stats, groupCode: 'B' },
@@ -790,9 +796,8 @@ function computeKOTeams() {
       return b.stats.pf - a.stats.pf;
     });
     
-    // Tạo đối tượng mới với mã cố định "3-1" và "3-2"
-    var team3_1 = null; // Hạng 3 tốt nhất
-    var team3_2 = null; // Hạng 3 tốt thứ 2
+    var team3_1 = null;
+    var team3_2 = null;
     
     if (sortedThirdPlaces.length >= 1) {
       team3_1 = { teamId: sortedThirdPlaces[0].teamId, pos: "3-1", stats: sortedThirdPlaces[0].stats };
@@ -801,19 +806,9 @@ function computeKOTeams() {
       team3_2 = { teamId: sortedThirdPlaces[1].teamId, pos: "3-2", stats: sortedThirdPlaces[1].stats };
     }
     
-    console.log("[computeKO] 3 bảng - Ghép cặp cố định:");
-    console.log("  TK1 (slot 9):", team1A.pos, "vs", team3_2 ? team3_2.pos : 'null');
-    console.log("  TK2 (slot 10):", team1B.pos, "vs", team3_1 ? team3_1.pos : 'null');
-    console.log("  TK3 (slot 11):", team2A.pos, "vs", team1C.pos);
-    console.log("  TK4 (slot 12):", team2B.pos, "vs", team2C.pos);
-    
-    // TK1: 1A vs 3-2 (slot 9)
     result.matches.push({round: 2, slot: 9, h: team1A.teamId, a: team3_2 ? team3_2.teamId : null, code: "TK1", h_pos: team1A.pos, a_pos: team3_2 ? team3_2.pos : "3-2"});
-    // TK2: 1B vs 3-1 (slot 10)
     result.matches.push({round: 2, slot: 10, h: team1B.teamId, a: team3_1 ? team3_1.teamId : null, code: "TK2", h_pos: team1B.pos, a_pos: team3_1 ? team3_1.pos : "3-1"});
-    // TK3: 2A vs 1C (slot 11)
     result.matches.push({round: 2, slot: 11, h: team2A.teamId, a: team1C.teamId, code: "TK3", h_pos: team2A.pos, a_pos: team1C.pos});
-    // TK4: 2B vs 2C (slot 12)
     result.matches.push({round: 2, slot: 12, h: team2B.teamId, a: team2C.teamId, code: "TK4", h_pos: team2B.pos, a_pos: team2C.pos});
     
     result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
@@ -1290,6 +1285,8 @@ function accH(num, title, key, status, txt) {
 function render() {
   if (!CURRENT_USER) return;
   var H = "";
+  
+  // 1. Quản lý VĐV
   var pStatus = DATA.players.length ? "done" : "empty";
   H += `<div class="acc">${accH(1, "Quản lý VĐV của tôi", "s1", pStatus, DATA.players.length + " VĐV")}<div class="acc-b${DATA.acc.s1?" open":""}">`;
   H += `<div class="fg"><input id="p-name" placeholder="Họ tên VĐV"/><input id="p-rating" type="number" step="0.05" placeholder="Trình"/><button class="btn btn-p" onclick="savePlayer(null,el('p-name').value,el('p-rating').value)">➕ Thêm</button></div>`;
@@ -1303,29 +1300,50 @@ function render() {
   }
   H += `</div></div>`;
 
-  var tStatus = DATA.tournament ? "done" : "empty";
-  H += `<div class="acc">${accH(2, "Giải đấu & Nội dung", "s2", tStatus, DATA.tournament ? DATA.tournament.name : "Chưa chọn")}<div class="acc-b${DATA.acc.s2?" open":""}">`;
-  if (!DATA.tournament) {
-    H += `<div class="fg"><input id="t-name" placeholder="Tên giải"/><input id="t-loc" placeholder="Địa điểm"/><input id="t-start" type="date"/><input id="t-end" type="date"/><button class="btn btn-p" onclick="createT()"> Tạo giải</button></div>`;
-  } else {
-    H += `<div class="fg"><select onchange="selT(this.value)">`;
-    DATA.tournaments.forEach(t => { H += `<option value="${t.id}" ${t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; });
-    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')"> Xóa giải</button></div>`;
-    H += `<div class="section-title"> Nội dung thi đấu</div>`;
-    H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
-    DATA.events.forEach(e => {
-      var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
-      H += `<option value="${e.id}" ${e.id===DATA.eid?"selected":""}>${esc(e.code)}. ${esc(e.name)}${rule}</option>`;
+  // 🌟 2. Quản lý Giải đấu & Nội dung (ĐÃ SỬA ĐỂ TẠO NHIỀU GIẢI)
+  var tStatus = DATA.tournaments.length > 0 ? "done" : "empty";
+  var currentTName = DATA.tournament ? DATA.tournament.name : (DATA.tournaments.length > 0 ? "Chọn một giải" : "Chưa có giải");
+  H += `<div class="acc">${accH(2, "Quản lý Giải đấu & Nội dung", "s2", tStatus, currentTName)}<div class="acc-b${DATA.acc.s2?" open":""}">`;
+  
+  // Form tạo giải mới luôn hiển thị
+  H += `<div class="fg" style="margin-bottom:12px; border-bottom:1px solid var(--ln); padding-bottom:12px;">
+          <input id="t-name" placeholder="Tên giải đấu mới"/>
+          <input id="t-loc" placeholder="Địa điểm (tùy chọn)"/>
+          <input id="t-start" type="date" placeholder="Ngày bắt đầu"/>
+          <input id="t-end" type="date" placeholder="Ngày kết thúc (tùy chọn)"/>
+          <button class="btn btn-p" onclick="createT()">➕ Tạo giải mới</button>
+        </div>`;
+
+  if (DATA.tournaments.length > 0) {
+    H += `<div class="fg">`;
+    H += `<select onchange="selT(this.value)" style="flex:1">`;
+    DATA.tournaments.forEach(t => { 
+      H += `<option value="${t.id}" ${DATA.tournament && t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; 
     });
-    H += `</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button></div>`;
-    if (DATA.events.length) {
-      H += `<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th></th></tr></thead><tbody>`;
-      DATA.events.forEach(e => { H += `<tr><td>${esc(e.code)}</td><td>${esc(e.name)}</td><td>${e.rating_limit||'Mở'}</td><td><button class="btn btn-d btn-xs" onclick="delE('${e.id}')">🗑</button></td></tr>`; });
-      H += `</tbody></table></div>`;
+    H += `</select>`;
+    if (DATA.tournament) {
+      H += `<button class="btn btn-d" onclick="delT('${DATA.tournament.id}')">🗑 Xóa giải đang chọn</button>`;
+    }
+    H += `</div>`;
+    
+    if (DATA.tournament) {
+      H += `<div class="section-title"> Nội dung thi đấu của: <span style="color:var(--li)">${esc(DATA.tournament.name)}</span></div>`;
+      H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
+      DATA.events.forEach(e => {
+        var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
+        H += `<option value="${e.id}" ${e.id===DATA.eid?"selected":""}>${esc(e.code)}. ${esc(e.name)}${rule}</option>`;
+      });
+      H += `</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button></div>`;
+      if (DATA.events.length) {
+        H += `<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th></th></tr></thead><tbody>`;
+        DATA.events.forEach(e => { H += `<tr><td>${esc(e.code)}</td><td>${esc(e.name)}</td><td>${e.rating_limit||'Mở'}</td><td><button class="btn btn-d btn-xs" onclick="delE('${e.id}')">🗑</button></td></tr>`; });
+        H += `</tbody></table></div>`;
+      }
     }
   }
   H += `</div></div>`;
 
+  // 3. Tạo đội
   var teamStatus = DATA.teams.length ? "done" : "empty";
   H += `<div class="acc">${accH(3, "Tạo đội", "s3", teamStatus, DATA.teams.length + " đội")}<div class="acc-b${DATA.acc.s3?" open":""}">`;
   if (!DATA.eid) {
@@ -1350,6 +1368,7 @@ function render() {
   }
   H += `</div></div>`;
 
+  // 4. Xếp lịch & Ghi điểm
   var matchCount = DATA.matches.length;
   var s4Status = matchCount ? "done" : "empty";
   H += `<div class="acc">${accH(4, "Xếp lịch & Ghi điểm", "s4", s4Status, matchCount + " trận")}<div class="acc-b${DATA.acc.s4?" open":""}">`;
@@ -1431,7 +1450,20 @@ function render() {
   }
   H += `</div></div>`;
   el("content").innerHTML = H;
+  
   setTimeout(() => {
+    // Tự động điền ngày hôm nay cho form tạo giải mới
+    var dateInput = document.getElementById('t-start');
+    if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
+    
+    // Scroll xuống phần xếp lịch nếu có param URL
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('tournament')) {
+      var accs = document.querySelectorAll('.acc');
+      if (accs[3]) accs[3].scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+    
+    // Restore draft selections
     DATA.draft.forEach((m, i) => {
       var rows = document.querySelectorAll(".mrow");
       if (rows[i]) {
@@ -1529,13 +1561,9 @@ window.addEventListener('storage', function(event) {
         if (t) {
           await selT(tid);
           DATA.acc.s4 = true;
-          render();
-          setTimeout(() => {
-            var accs = document.querySelectorAll('.acc');
-            if (accs[3]) accs[3].scrollIntoView({behavior: 'smooth', block: 'start'});
-          }, 300);
         }
       }
+      render();
     } else {
       el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập để quản trị.</div>';
     }
