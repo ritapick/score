@@ -121,7 +121,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 .modal .msg{font-size:12px;margin-top:8px;min-height:16px;text-align:center}
 
-/* 🌟 MỚI: Rule selector */
+/* 🌟 Rule selector */
 .ko-rules{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0}
 .ko-rule{background:var(--sf2);border:2px solid var(--ln);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;position:relative}
 .ko-rule:hover{border-color:var(--cy);background:rgba(34,211,238,.05)}
@@ -135,15 +135,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .ko-rule-match{background:rgba(13,22,38,.6);padding:5px 8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
 .ko-rule-match .code{color:var(--or);font-weight:800;font-family:monospace;font-size:10px}
 .ko-rule-match .teams{color:var(--tx);font-weight:700}
-
-.ko-preview{background:var(--sf2);border:1px solid var(--ln);border-radius:8px;padding:10px;margin:10px 0}
-.ko-preview h5{margin:0 0 8px;color:var(--cy);font-size:12px;font-weight:800}
-.ko-preview-item{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(13,22,38,.5);border-radius:6px;margin-bottom:4px;font-size:11px}
-.ko-preview-item .code{color:var(--or);font-weight:800;font-family:monospace;min-width:40px}
-.ko-preview-item .vs{color:var(--mu);font-weight:800;margin:0 8px}
-.ko-preview-item .team{flex:1;font-weight:700}
-.ko-preview-item .team.home{text-align:right;color:var(--li)}
-.ko-preview-item .team.away{text-align:left;color:var(--cy)}
 
 .ref-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--ln)}
 .ref-header .match-code{font-size:13px;font-weight:800;color:var(--cy)}
@@ -210,7 +201,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <a href="index.html" class="btn btn-l" style="text-decoration:none"> Trang chủ</a>
+  <a href="index.html" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
   <span class="logo">⚙ Quản trị</span>
 </div>
 <div>
@@ -247,32 +238,23 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 <div class="actions">
   <button class="btn btn-l" onclick="closeEditTournamentModal()">Hủy</button>
-  <button class="btn btn-p" onclick="saveEditTournament()"> Lưu thay đổi</button>
+  <button class="btn btn-p" onclick="saveEditTournament()">💾 Lưu thay đổi</button>
 </div>
 <div id="edit-t-msg" class="msg"></div>
 </div>
 </div>
 
-<!-- 🌟 MỚI: Modal cấu hình Tứ kết với 3 quy tắc -->
+<!-- 🌟 Modal cấu hình Tứ kết với 3 quy tắc (đã bỏ nút xem trước) -->
 <div id="ko-config-modal" class="modal-bg">
 <div class="modal wide">
   <h3>⚙️ Chọn quy tắc xếp lịch Tứ kết</h3>
-  <div class="hint">💡 Chọn 1 trong 3 quy tắc ghép đội từ 4 bảng (A, B, C, D) vào 4 trận Tứ kết. Hệ thống sẽ tự động lấy Nhất/Nhì mỗi bảng và ghi đè vào vị trí tương ứng.</div>
+  <div class="hint">💡 Chọn 1 trong 3 quy tắc. Hệ thống sẽ tự động áp dụng và điền đội vào Tứ kết khi vòng bảng hoàn thành.</div>
   
   <div id="ko-rules-container" class="ko-rules"></div>
   
-  <div id="ko-preview-section" style="display:none">
-    <div class="ko-preview">
-      <h5>👁 Xem trước kết quả áp dụng</h5>
-      <div id="ko-preview-content"></div>
-    </div>
-  </div>
-  
   <div id="ko-config-msg" class="msg"></div>
   <div class="actions">
-    <button class="btn btn-l" onclick="closeKOConfigModal()">Hủy</button>
-    <button class="btn btn-b" onclick="previewKORule()"> Xem trước</button>
-    <button class="btn btn-p" onclick="applyKORule()">✅ Tạo lịch Tứ kết</button>
+    <button class="btn btn-l" onclick="closeKOConfigModal()">Đóng</button>
   </div>
 </div>
 </div>
@@ -360,7 +342,7 @@ var DATA = {
   acc: {s1:false, s2:true, s3:false, s4:false},
   _creatingKO: false,
   _savedGroups: new Set(),
-  selectedKORule: 1 // 🌟 Quy tắc KO được chọn (1, 2, hoặc 3)
+  selectedKORule: 1 // Quy tắc KO được chọn (1, 2, hoặc 3)
 };
 var currentRefMatchId = null;
 var realtimeInterval = null;
@@ -368,7 +350,7 @@ var timeoutElapsed = 0;
 var timeoutInterval = null;
 var timeoutRunning = false;
 
-// 🌟 ĐỊNH NGHĨA 3 QUY TẮC XẾP LỊCH TỨ KẾT
+// 🌟 3 QUY TẮC XẾP LỊCH TỨ KẾT
 var KO_RULES = [
   {
     id: 1,
@@ -531,6 +513,8 @@ function startRealtime() {
           DATA.matches = m.data;
           updateMatchRowsDOM();
           updateAllStandingsDOM();
+          // 🌟 Tự động sync KO khi có thay đổi
+          await tryAutoSyncKO();
           if (currentRefMatchId) {
             var cm = DATA.matches.find(x => x.id === currentRefMatchId);
             if (cm) {
@@ -539,7 +523,7 @@ function startRealtime() {
               var statusEl = el("ref-match-status");
               var st = cm.match_status || 'scheduled';
               statusEl.className = 'match-status ' + st;
-              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '');
+              statusEl.textContent = st === 'live' ? ' LIVE' : (st === 'finished' ? '✅ FIN' : '');
               updateServeRadios(cm);
             }
           }
@@ -634,7 +618,7 @@ async function deletePlayer(pid) {
     var pl = await sb.from("players").select("*");
     DATA.players = (pl.data || []).filter(p => isOwnerOfPlayer(p));
     toast("✅ Đã xóa VĐV"); render();
-  } catch(e) { alert(" " + e.message); }
+  } catch(e) { alert("❌ " + e.message); }
 }
 
 async function createT() {
@@ -858,7 +842,7 @@ async function saveGroup(g) {
 }
 
 async function resetGroupsAndKO() {
-  if (!confirm("⚠️ XÓA TOÀN BỘ bảng đấu, trận đấu và kết quả?\n\nBạn có chắc chắn?")) return;
+  if (!confirm("️ XÓA TOÀN BỘ bảng đấu, trận đấu và kết quả?\n\nBạn có chắc chắn?")) return;
   try {
     await sb.from("matches").delete().eq("event_id", DATA.eid);
     if (DATA.gStage) {
@@ -930,7 +914,7 @@ function isTeamGroupComplete(teamId, groupId) {
   return finishedMatches >= requiredMatches;
 }
 
-//  MỚI: Lấy thông tin top 2 mỗi bảng (đã đấu đủ trận)
+// 🌟 Lấy thông tin top 2 mỗi bảng (đã đấu đủ trận)
 function getGroupTop2() {
   if (!DATA.gStage) return {};
   var result = {};
@@ -944,7 +928,7 @@ function getGroupTop2() {
         top2.push({
           id: team.id,
           name: tName(team.id),
-          position: (i + 1) + g.code, // "1A", "2B", ...
+          position: (i + 1) + g.code,
           rank: i + 1,
           groupCode: g.code
         });
@@ -955,7 +939,7 @@ function getGroupTop2() {
   return result;
 }
 
-//  MỚI: Tính toán đội cho 1 quy tắc cụ thể
+//  Tính toán đội cho 1 quy tắc cụ thể
 function computeTeamsForRule(ruleId) {
   var rule = KO_RULES.find(r => r.id === ruleId);
   if (!rule) return null;
@@ -963,10 +947,10 @@ function computeTeamsForRule(ruleId) {
   var result = [];
   
   rule.matches.forEach(function(m) {
-    var homePos = m.home; // "1A", "2B", ...
+    var homePos = m.home;
     var awayPos = m.away;
-    var homeGroup = homePos.slice(-1); // "A"
-    var homeRank = parseInt(homePos.slice(0, -1)); // 1 hoặc 2
+    var homeGroup = homePos.slice(-1);
+    var homeRank = parseInt(homePos.slice(0, -1));
     var awayGroup = awayPos.slice(-1);
     var awayRank = parseInt(awayPos.slice(0, -1));
     
@@ -984,21 +968,51 @@ function computeTeamsForRule(ruleId) {
   return result;
 }
 
-// 🌟 MỚI: Kiểm tra xem tất cả đội trong quy tắc có sẵn sàng không
-function validateKORule(ruleId) {
-  var teams = computeTeamsForRule(ruleId);
-  if (!teams) return { valid: false, message: "Không tìm thấy quy tắc" };
+// 🌟 Kiểm tra xem có đủ 8 đội cho tứ kết không
+function canAutoSyncKO() {
+  if (!DATA.kStage || !DATA.selectedKORule) return false;
+  var teams = computeTeamsForRule(DATA.selectedKORule);
+  if (!teams) return false;
   
-  var missing = [];
-  teams.forEach(function(m) {
-    if (!m.home) missing.push(m.homePos + " (chưa có đội)");
-    if (!m.away) missing.push(m.awayPos + " (chưa có đội)");
-  });
-  
-  if (missing.length > 0) {
-    return { valid: false, message: "Thiếu đội: " + missing.join(", ") };
+  // Kiểm tra tất cả 8 vị trí đều có đội
+  for (var i = 0; i < teams.length; i++) {
+    if (!teams[i].home || !teams[i].away) return false;
   }
-  return { valid: true, teams: teams };
+  return true;
+}
+
+// 🌟 Tự động sync KO khi có đủ điều kiện
+async function tryAutoSyncKO() {
+  if (!canAutoSyncKO()) return false;
+  
+  var teams = computeTeamsForRule(DATA.selectedKORule);
+  var tkMatches = DATA.matches.filter(m => m.stage_id === DATA.kStage.id && Number(m.round) === 2).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
+  
+  var updated = false;
+  for (var i = 0; i < teams.length; i++) {
+    var m = teams[i];
+    var match = tkMatches[i];
+    if (match && (match.home_team_id !== m.home.id || match.away_team_id !== m.away.id)) {
+      await sb.from("matches").update({
+        home_team_id: m.home.id,
+        away_team_id: m.away.id,
+        home_bracket_position: m.home.position,
+        away_bracket_position: m.away.position
+      }).eq("id", match.id);
+      
+      match.home_team_id = m.home.id;
+      match.away_team_id = m.away.id;
+      match.home_bracket_position = m.home.position;
+      match.away_bracket_position = m.away.position;
+      updated = true;
+    }
+  }
+  
+  if (updated) {
+    toast("✅ Tự động cập nhật đội vào Tứ kết");
+    render();
+  }
+  return updated;
 }
 
 function computeKOTeams() {
@@ -1112,13 +1126,12 @@ function computeKOTeams() {
   return result;
 }
 
-// 🌟 MỚI: Tạo KO từ quy tắc đã chọn (cho 4 bảng)
+// 🌟 Tạo KO từ quy tắc đã chọn (cho 4 bảng)
 function computeKOFromRule(ruleId) {
   var teams = computeTeamsForRule(ruleId);
   if (!teams) return null;
   
   var result = { matches: [] };
-  // 4 trận tứ kết
   teams.forEach(function(m, i) {
     result.matches.push({
       round: 2,
@@ -1130,7 +1143,6 @@ function computeKOFromRule(ruleId) {
       a_pos: m.away ? m.away.position : m.awayPos
     });
   });
-  // Bán kết và chung kết
   result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
   result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
   result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -1195,10 +1207,10 @@ async function syncKO() {
   return updated;
 }
 
-// 🌟 MỚI: Các hàm cho modal cấu hình KO với 3 quy tắc
+// 🌟 Modal cấu hình KO - CHỌN LÀ TỰ ĐỘNG ÁP DỤNG
 function openKOConfigModal() {
   if (!DATA.kStage) {
-    alert("️ Chưa có vòng KO. Vui lòng lưu tất cả bảng trước.");
+    alert("⚠️ Chưa có vòng KO. Vui lòng lưu tất cả bảng trước.");
     return;
   }
   var numGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
@@ -1207,7 +1219,6 @@ function openKOConfigModal() {
     return;
   }
   el("ko-config-msg").textContent = "";
-  el("ko-preview-section").style.display = "none";
   el("ko-config-modal").classList.add("show");
   renderKORules();
 }
@@ -1240,82 +1251,26 @@ function renderKORules() {
   container.innerHTML = html;
 }
 
-function selectKORule(ruleId) {
+// 🌟 CHỌN QUY TẮC → TỰ ĐỘNG ÁP DỤNG NGAY
+async function selectKORule(ruleId) {
   DATA.selectedKORule = ruleId;
-  el("ko-preview-section").style.display = "none";
-  el("ko-config-msg").textContent = "";
-  renderKORules();
-}
-
-function previewKORule() {
-  var ruleId = DATA.selectedKORule;
-  var validation = validateKORule(ruleId);
-  var previewContent = el("ko-preview-content");
-  
-  if (!validation.valid) {
-    el("ko-config-msg").textContent = "⚠️ " + validation.message;
-    el("ko-config-msg").style.color = "var(--or)";
-    el("ko-preview-section").style.display = "none";
-    return;
-  }
-  
-  var html = '';
-  validation.teams.forEach(function(m) {
-    html += '<div class="ko-preview-item">';
-    html += '<span class="code">' + m.code + '</span>';
-    html += '<span class="team home">' + esc(m.home ? m.home.name : 'TBD') + ' <small style="color:var(--mu)">(' + m.homePos + ')</small></span>';
-    html += '<span class="vs">VS</span>';
-    html += '<span class="team away"><small style="color:var(--mu)">(' + m.awayPos + ')</small> ' + esc(m.away ? m.away.name : 'TBD') + '</span>';
-    html += '</div>';
-  });
-  previewContent.innerHTML = html;
-  el("ko-preview-section").style.display = "block";
-  el("ko-config-msg").textContent = "✅ Sẵn sàng áp dụng";
-  el("ko-config-msg").style.color = "var(--li)";
-}
-
-async function applyKORule() {
-  var ruleId = DATA.selectedKORule;
-  var validation = validateKORule(ruleId);
-  
-  if (!validation.valid) {
-    el("ko-config-msg").textContent = "⚠️ " + validation.message;
-    el("ko-config-msg").style.color = "var(--or)";
-    return;
-  }
-  
-  if (!confirm("✅ Áp dụng quy tắc " + ruleId + " vào Tứ kết?\n\nHệ thống sẽ ghi đè đội vào 4 trận Tứ kết hiện tại.")) return;
+  el("ko-config-msg").textContent = " Đang áp dụng quy tắc " + ruleId + "...";
+  el("ko-config-msg").style.color = "var(--or)";
   
   try {
-    var tkMatches = DATA.matches.filter(m => m.stage_id === DATA.kStage.id && Number(m.round) === 2).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
+    // Tạo lại KO với quy tắc mới
+    await createKO();
     
-    for (var i = 0; i < validation.teams.length; i++) {
-      var m = validation.teams[i];
-      var match = tkMatches[i];
-      if (match) {
-        await sb.from("matches").update({
-          home_team_id: m.home.id,
-          away_team_id: m.away.id,
-          home_bracket_position: m.home.position,
-          away_bracket_position: m.away.position
-        }).eq("id", match.id);
-      }
-    }
+    // Thử sync ngay nếu có đủ đội
+    await tryAutoSyncKO();
     
-    // Cập nhật DATA.matches
-    validation.teams.forEach(function(m, i) {
-      var match = tkMatches[i];
-      if (match) {
-        match.home_team_id = m.home.id;
-        match.away_team_id = m.away.id;
-        match.home_bracket_position = m.home.position;
-        match.away_bracket_position = m.away.position;
-      }
-    });
+    el("ko-config-msg").textContent = "✅ Đã áp dụng quy tắc " + ruleId + ". Hệ thống sẽ tự động điền đội khi vòng bảng hoàn thành.";
+    el("ko-config-msg").style.color = "var(--li)";
     
-    toast("✅ Đã áp dụng quy tắc " + ruleId + " cho Tứ kết");
-    closeKOConfigModal();
-    render();
+    setTimeout(function() {
+      closeKOConfigModal();
+      render();
+    }, 1500);
   } catch(e) {
     el("ko-config-msg").textContent = "❌ " + e.message;
     el("ko-config-msg").style.color = "var(--rd)";
@@ -1340,7 +1295,7 @@ function openRefModal(matchId) {
   var status = m.match_status || 'scheduled';
   var statusEl = el("ref-match-status");
   statusEl.className = 'match-status ' + status;
-  statusEl.textContent = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : ''));
+  statusEl.textContent = status === 'live' ? ' LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : ''));
   var homePlayers = getTeamPlayers(m.home_team_id);
   var awayPlayers = getTeamPlayers(m.away_team_id);
   populateSelect('ref-home-slot1', homePlayers, m.home_player_slot1);
@@ -1393,11 +1348,12 @@ async function changeScore(team, delta) {
     el("ref-match-status").className = 'match-status live';
     el("ref-match-status").textContent = '🔴 LIVE';
     updateAllStandingsDOM();
+    await tryAutoSyncKO(); // 🌟 Tự động sync KO
     el("ref-msg").style.color = "var(--li)";
     el("ref-msg").textContent = "✅ Đã lưu: " + h + " - " + a;
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = "❌ Lỗi: " + e.message;
+    el("ref-msg").textContent = " Lỗi: " + e.message;
   }
 }
 
@@ -1421,7 +1377,7 @@ async function onSlotChange(teamSide, slotNum) {
     el("ref-msg").textContent = "✅ Đã cập nhật VĐV";
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = " " + e.message;
+    el("ref-msg").textContent = "❌ " + e.message;
   }
 }
 
@@ -1461,18 +1417,20 @@ async function finishMatch() {
     document.querySelectorAll('.serve-radio').forEach(r => r.checked = false);
     el("ref-msg").style.color = "var(--li)";
     el("ref-msg").textContent = "✅ Trận đấu đã kết thúc!";
-    await syncKO();
+    
     updateAllStandingsDOM();
-    setTimeout(function() { closeRefModal(); toast("🏁 Đã kết thúc trận đấu"); render(); }, 1000);
+    await tryAutoSyncKO(); // 🌟 Tự động sync KO khi kết thúc trận
+    
+    setTimeout(function() { closeRefModal(); toast(" Đã kết thúc trận đấu"); render(); }, 1000);
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = " Lỗi: " + e.message;
+    el("ref-msg").textContent = "❌ Lỗi: " + e.message;
   }
 }
 
 async function resetMatchScore(matchId, event) {
   if (event) event.stopPropagation();
-  if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
+  if (!confirm(" Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
   try {
     await sb.from("matches").update({ home_score: 0, away_score: 0 }).eq("id", matchId);
     var m = DATA.matches.find(x => x.id === matchId);
@@ -1549,12 +1507,12 @@ function render() {
   var H = "";
   var pStatus = DATA.players.length ? "done" : "empty";
   H += '<div class="acc">'+accH(1, "Quản lý VĐV của tôi", "s1", pStatus, DATA.players.length + " VĐV")+'<div class="acc-b'+(DATA.acc.s1?" open":"")+'">';
-  H += '<div class="fg"><input id="p-name" placeholder="Họ tên VĐV"/><input id="p-rating" type="number" step="0.05" placeholder="Trình"/><button class="btn btn-p" onclick="savePlayer(null,el(\'p-name\').value,el(\'p-rating\').value)"> Thêm</button></div>';
+  H += '<div class="fg"><input id="p-name" placeholder="Họ tên VĐV"/><input id="p-rating" type="number" step="0.05" placeholder="Trình"/><button class="btn btn-p" onclick="savePlayer(null,el(\'p-name\').value,el(\'p-rating\').value)">➕ Thêm</button></div>';
   if (DATA.players.length) {
     H += '<div class="tw"><table><thead><tr><th>Họ tên</th><th>Trình</th><th>Thao tác</th></tr></thead><tbody>';
     DATA.players.forEach(p => {
-      H += '<tr><td style="text-align:left;font-weight:700">'+esc(p.full_name)+'</td><td>'+p.skill_rating+'-</td>';
-      H += '<td><button class="btn btn-b btn-xs" onclick="var n=prompt(\'Sửa tên:\', \''+esc(p.full_name)+'\'); var r=prompt(\'Sửa trình:\', \''+p.skill_rating+'0\'); if(n) savePlayer(\''+p.id+'\', n, r)">✎</button> <button class="btn btn-d btn-xs" onclick="deletePlayer(\''+p.id+'\')">🗑</button></td></tr>';
+      H += '<tr><td style="text-align:left;font-weight:700">'+esc(p.full_name)+'</td><td>'+p.skill_rating||'-'+'</td>';
+      H += '<td><button class="btn btn-b btn-xs" onclick="var n=prompt(\'Sửa tên:\', \''+esc(p.full_name)+'\'); var r=prompt(\'Sửa trình:\', \''+p.skill_rating||0+'\'); if(n) savePlayer(\''+p.id+'\', n, r)">✎</button> <button class="btn btn-d btn-xs" onclick="deletePlayer(\''+p.id+'\')">🗑</button></td></tr>';
     });
     H += '</tbody></table></div>';
   }
@@ -1573,7 +1531,7 @@ function render() {
     H += '<button class="btn btn-b btn-s" onclick="openEditTournamentModal(\''+DATA.tournament.id+'\')">✏️ Sửa</button>';
     H += '<button class="btn btn-d btn-s" onclick="delT(\''+DATA.tournament.id+'\')">🗑 Xóa</button>';
     H += '</div>';
-    H += '<div class="section-title"> Nội dung thi đấu</div>';
+    H += '<div class="section-title">📋 Nội dung thi đấu</div>';
     H += '<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>';
     DATA.events.forEach(e => {
       var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
@@ -1595,9 +1553,9 @@ function render() {
   } else {
     var avail = getAvailablePlayers();
     H += '<div class="fg"><select id="tp1"><option value="">-- VĐV 1 --</option>';
-    avail.forEach(p => H += '<option value="'+p.id+'">'+esc(p.full_name)+' ('+p.skill_rating+'0)</option>');
+    avail.forEach(p => H += '<option value="'+p.id+'">'+esc(p.full_name)+' ('+p.skill_rating||0+')</option>');
     H += '</select><select id="tp2"><option value="">-- VĐV 2 --</option>';
-    avail.forEach(p => H += '<option value="'+p.id+'">'+esc(p.full_name)+' ('+p.skill_rating+'0)</option>');
+    avail.forEach(p => H += '<option value="'+p.id+'">'+esc(p.full_name)+' ('+p.skill_rating||0+')</option>');
     H += '</select><button class="btn btn-p" onclick="saveTeam()">➕ Tạo đội</button></div>';
     if (DATA.teams.length) {
       H += '<div class="tw"><table><thead><tr><th>Đội</th><th>VĐV 1</th><th>VĐV 2</th><th>Tổng trình</th><th></th></tr></thead><tbody>';
@@ -1659,7 +1617,7 @@ function render() {
           });
           H += '<div style="display:flex;gap:6px;margin-top:6px">';
           if (d.length < mb.length * (mb.length - 1) / 2) H += '<button class="btn btn-l btn-s" onclick="addDraft(\''+g.id+'\')">➕ Trận</button>';
-          H += '<button class="btn btn-b btn-s" onclick="autoRR(\''+g.id+'\')">⚡ Auto</button>';
+          H += '<button class="btn btn-b btn-s" onclick="autoRR(\''+g.id+'\')"> Auto</button>';
           if (!valDraft(g.id)) H += '<button class="btn btn-p btn-s" onclick="saveGroup(\''+g.id+'\')">💾 Lưu bảng</button>';
           H += '</div>';
         } else {
@@ -1676,12 +1634,11 @@ function render() {
     var km = DATA.matches.filter(m => !m.group_id).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
     if (km.length) {
       H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
-      // 🌟 MỚI: Nút cấu hình tứ kết với 3 quy tắc (chỉ hiện khi có 4 bảng)
       if (totalGroups === 4 && DATA.kStage) {
         var ruleName = KO_RULES.find(r => r.id === DATA.selectedKORule)?.name || 'Chưa chọn';
         H += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">';
-        H += '<div class="hint" style="margin:0">💡 Quy tắc hiện tại: <b style="color:var(--or)">' + esc(ruleName) + '</b></div>';
-        H += '<button class="btn btn-w btn-s" onclick="openKOConfigModal()">⚙️ Chọn quy tắc Tứ kết</button>';
+        H += '<div class="hint" style="margin:0">💡 Quy tắc: <b style="color:var(--or)">' + esc(ruleName) + '</b> · Tự động điền khi đủ điều kiện</div>';
+        H += '<button class="btn btn-w btn-s" onclick="openKOConfigModal()">⚙️ Đổi quy tắc</button>';
         H += '</div>';
       } else {
         H += '<div class="hint" style="margin-bottom:8px">💡 Đội sẽ tự động điền khi hoàn thành đủ số trận vòng bảng theo logic xếp hạng.</div>';
@@ -1690,7 +1647,7 @@ function render() {
       if (r16.length) H += renderKOGroup("🎾 VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
       if (bk.length) H += renderKOGroup("🥈 BÁN KẾT", "bk", bk);
-      if (ck.length) H += renderKOGroup("🥇 CHUNG KẾT", "ck", ck);
+      if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
       H += '</div>';
     }
   }
@@ -1779,6 +1736,7 @@ async function upMatchScoreDirect(id, field, val) {
   var m = DATA.matches.find(x => x.id === id);
   if (m) { m[field] = num; }
   updateAllStandingsDOM();
+  await tryAutoSyncKO(); // 🌟 Tự động sync KO
   toast("✅ Đã cập nhật tỷ số");
 }
 
@@ -1794,7 +1752,7 @@ window.addEventListener('storage', function(event) {
     } else {
       CURRENT_USER = null;
       applyUI();
-      toast(" Đã đồng bộ trạng thái đăng xuất từ tab khác");
+      toast("👋 Đã đồng bộ trạng thái đăng xuất từ tab khác");
     }
   }
 });
