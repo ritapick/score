@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch Thi Đấu Pickle - Đang Bảo Trì</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f5132 0%, #198754 50%, #ffc107 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      color: #333;
+    }
+
+    /* Hiệu ứng quả bóng Pickleball bay lơ lửng */
+    .pickleball {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      background: radial-gradient(circle at 30% 30%, #fff700, #e6d800);
+      border-radius: 50%;
+      box-shadow: inset -4px -4px 12px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.2);
+      opacity: 0.6;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .pickleball::before {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 50%;
+      top: 15px;
+      left: 18px;
+      box-shadow: 
+        14px 4px 0 rgba(0,0,0,0.25),
+        6px 18px 0 rgba(0,0,0,0.25),
+        22px 22px 0 rgba(0,0,0,0.25),
+        10px 32px 0 rgba(0,0,0,0.25),
+        28px 12px 0 rgba(0,0,0,0.25);
+    }
+
+    .pickleball:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; width: 60px; height: 60px; }
+    .pickleball:nth-child(2) { top: 75%; left: 85%; animation-delay: 2s; width: 45px; height: 45px; }
+    .pickleball:nth-child(3) { top: 80%; left: 15%; animation-delay: 4s; width: 55px; height: 55px; }
+    .pickleball:nth-child(4) { top: 15%; left: 80%; animation-delay: 1s; width: 40px; height: 40px; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-40px) rotate(180deg); }
+    }
+
+    /* Khung chính */
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 45px 35px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      position: relative;
+      z-index: 10;
+      animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .icon-wrapper {
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #198754, #20c997);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 45px;
+      box-shadow: 0 8px 20px rgba(25, 135, 84, 0.3);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(32, 201, 151, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(32, 201, 151, 0); }
+    }
+
+    h1 {
+      color: #0f5132;
+      font-size: 2em;
+      margin-bottom: 15px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      background: linear-gradient(90deg, #dc3545, #fd7e14);
+      color: white;
+      padding: 8px 24px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1em;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .message {
+      color: #495057;
+      font-size: 1.15em;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+
+    .highlight-text {
+      color: #0f5132;
+      font-weight: 800;
+      font-size: 1.3em;
+      margin: 20px 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .see-you {
+      font-size: 1.8em;
+      font-weight: 900;
+      background: linear-gradient(90deg, #198754, #ffc107);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 15px 0 25px;
+      letter-spacing: 2px;
+    }
+
+    /* Thanh tiến trình giả lập */
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 25px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, #198754, #ffc107);
+      border-radius: 10px;
+      animation: loading 2.5s ease-in-out infinite;
+    }
+
+    @keyframes loading {
+      0% { width: 20%; margin-left: 0%; }
+      50% { width: 60%; margin-left: 20%; }
+      100% { width: 20%; margin-left: 80%; }
+    }
+
+    /* Khu vực cộng đồng */
+    .community-box {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 25px;
+      border: 2px dashed #198754;
+    }
+
+    .community-title {
+      font-weight: 700;
+      color: #0f5132;
+      margin-bottom: 12px;
+      font-size: 1.1em;
+    }
+
+    .fb-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #1877f2;
+      color: white;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1em;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
+    }
+
+    .fb-button:hover {
+      background: #166fe5;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(24, 119, 242, 0.4);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #dee2e6;
+      color: #6c757d;
+      font-size: 0.95em;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .footer-name {
+      color: #0f5132;
+      font-weight: 800;
+      font-size: 1.1em;
+      margin-top: 5px;
+      display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container { padding: 35px 25px; width: 92%; }
+      h1 { font-size: 1.6em; }
+      .see-you { font-size: 1.4em; }
+      .pickleball { display: none; } /* Ẩn bóng trên mobile nhỏ để tập trung nội dung */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hiệu ứng nền -->
+  <div class="pickleball"></div>
+  <div class="pickleball"></div>
+  <div class="pickleball"></div>
+  <div class="pickleball"></div>
+
+  <div class="container">
+    <div class="icon-wrapper">🏓</div>
+    
+    <h1>LỊCH THI ĐẤU PICKLEBALL</h1>
+    <div class="status-badge">⚙️ ĐANG BẢO TRÌ</div>
+    
+    <p class="message">
+      Website của chúng tôi hiện đang được nâng cấp và bảo trì.
+    </p>
+    
+    <p class="highlight-text">
+      Chúng tôi sẽ sớm đem đến trải nghiệm tốt hơn!
+    </p>
+    
+    <div class="see-you">👋 SEE YOU AGAIN 👋</div>
+    
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+    </div>
+
+    <!-- Khu vực nhóm cộng đồng -->
+    <div class="community-box">
+      <div class="community-title">🏘️ Tham gia ngay nhóm cộng đồng</div>
+      <div style="font-weight: 700; color: #333; margin-bottom: 15px; font-size: 1.1em;">
+        PICKLEBALL SOCIAL ĐỨC TRỌNG
+      </div>
+      <a href="https://www.facebook.com/share/g/1CNPRhKavr/?mibextid=wwXIfr" target="_blank" class="fb-button">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        Tham gia nhóm Facebook
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Trân trọng cảm ơn!</p>
+      <span class="footer-name">LY DUNG RITA</span>
+    </div>
+  </div>
+
+</body>
+</html>
