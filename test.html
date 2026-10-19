@@ -292,7 +292,7 @@ var timeoutInterval = null;
 var timeoutRunning = false;
 
 function el(id) { return document.getElementById(id); }
-// 🌟 ĐÃ BỔ SUNG: Hàm esc bị thiếu ở phiên bản trước gây lỗi
+// 🌟 ĐÃ BỔ SUNG: Hàm esc để tránh lỗi ReferenceError
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function pad(n,l) { return String(n).padStart(l,"0"); }
 function r2(n) { return Math.round(n*100)/100; }
@@ -344,13 +344,17 @@ function applyUI() {
   }
 }
 
+// 🌟 ĐÃ CẬP NHẬT: Sắp xếp giảm dần theo created_at để giải mới nhất luôn ở trên cùng
 async function loadAll() {
   try {
-    var tr = await sb.from("tournaments").select("*").order("created_at", {ascending:false});
+    var tr = await sb.from("tournaments").select("*").order("created_at", {ascending: false});
+    // Lọc chỉ lấy các giải thuộc về user hiện tại (cho phép 1 user tạo nhiều giải)
     DATA.tournaments = (tr.data || []).filter(t => isOwnerOfTournament(t));
+    
     var pl = await sb.from("players").select("*");
     DATA.players = (pl.data || []).filter(p => isOwnerOfPlayer(p));
-    if (DATA.tournaments.length) await selT(DATA.tournaments[0].id);
+    
+    if (DATA.tournaments.length) await selT(DATA.tournaments[0].id); // Tự động chọn giải mới nhất
     else { DATA.tournament = null; DATA.events = []; DATA.eid = null; DATA.teams = []; DATA.matches = []; DATA.groups = []; render(); }
   } catch(e) { console.error(e); el("content").innerHTML = '<div style="padding:20px;color:var(--rd)">❌ Lỗi tải: '+esc(e.message)+'</div>'; }
 }
@@ -493,14 +497,14 @@ async function deletePlayer(pid) {
   } catch(e) { alert("❌ " + e.message); }
 }
 
-// 🌟 ĐÃ SỬA: Tạo mã code duy nhất bằng timestamp để tránh lỗi duplicate key
+// 🌟 ĐÃ CẬP NHẬT: Tạo mã code duy nhất bằng timestamp để tuyệt đối tránh lỗi duplicate key
 async function createT() {
   var n = el("t-name").value.trim(); 
   var d = el("t-start").value;
   if (!n || !d) { alert("Nhập tên + ngày"); return; }
   
-  // Tạo mã duy nhất (ví dụ: G459102) để không bao giờ bị trùng lặp trong DB
-  var code = "G" + Date.now().toString().slice(-6);
+  // Tạo mã duy nhất (ví dụ: G-K7X9Z2) để không bao giờ bị trùng lặp trong DB
+  var code = "G-" + Date.now().toString(36).toUpperCase();
   
   var payload = { 
     code: code, 
@@ -515,16 +519,12 @@ async function createT() {
   try {
     var r = await sb.from("tournaments").insert(payload).select().single();
     if (r.error) {
-      if (r.error.code === '23505') {
-        alert("Mã giải đấu đã tồnat. Vui lòng thử lại.");
-      } else {
-        alert(r.error.message);
-      }
+      alert("Lỗi tạo giải: " + r.error.message);
       return;
     }
     for (var i=1; i<=4; i++) await sb.from("courts").insert({tournament_id: r.data.id, name: "Sân "+i, display_order: i});
     toast("✅ Đã tạo giải"); 
-    await loadAll();
+    await loadAll(); // Tải lại để giải mới nhất hiện lên đầu danh sách
   } catch(e) { 
     alert("❌ " + e.message); 
   }
