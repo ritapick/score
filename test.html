@@ -121,14 +121,15 @@ td.pf{font-family:monospace;color:var(--cy)}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 .modal .msg{font-size:12px;margin-top:8px;min-height:16px;text-align:center}
 
-/* 🌟 Style cho cấu hình Tứ kết */
-.ko-rule-option{background:var(--sf2);border:2px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer;transition:.15s;display:flex;align-items:flex-start;gap:10px}
+/* 🌟 Style cho cấu hình Tứ kết - đã tối ưu cho mobile */
+.ko-rule-option{background:var(--sf2);border:2px solid var(--ln);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px}
 .ko-rule-option:hover{border-color:var(--cy);background:rgba(34,211,238,.05)}
 .ko-rule-option.selected{border-color:var(--li);background:rgba(163,230,53,.08)}
-.ko-rule-option input[type="radio"]{margin-top:3px;accent-color:var(--li)}
-.ko-rule-title{font-weight:800;font-size:13px;color:var(--tx);margin-bottom:4px}
-.ko-rule-desc{font-size:11px;color:var(--mu);line-height:1.4}
-.ko-rule-desc span{color:var(--cy);font-weight:700}
+.ko-rule-option input[type="radio"]{width:16px;height:16px;margin:0;accent-color:var(--li);flex-shrink:0}
+.ko-rule-content{flex:1;min-width:0}
+.ko-rule-title{font-weight:700;font-size:12px;color:var(--tx);margin-bottom:2px}
+.ko-rule-desc{font-size:10px;color:var(--mu);line-height:1.3}
+.ko-rule-desc span{color:var(--cy);font-weight:600}
 
 .ref-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--ln)}
 .ref-header .match-code{font-size:13px;font-weight:800;color:var(--cy)}
@@ -188,6 +189,11 @@ td.pf{font-family:monospace;color:var(--cy)}
   .score-val{font-size:24px;min-width:36px}
   .ref-serve-row{grid-template-columns:1fr;gap:8px}
   .match-row { align-items: flex-start; }
+  /* Modal nhỏ hơn trên mobile */
+  .modal{width:calc(100% - 32px);padding:12px}
+  .ko-rule-option{padding:8px;margin-bottom:6px}
+  .ko-rule-title{font-size:11px}
+  .ko-rule-desc{font-size:9px}
 }
 </style>
 </head>
@@ -195,11 +201,11 @@ td.pf{font-family:monospace;color:var(--cy)}
 <nav class="topnav">
 <div class="brand-row">
   <a href="index.html" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
-  <span class="logo">⚙ Quản trị</span>
+  <span class="logo"> Quản trị</span>
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
-  <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
+  <button id="login-btn" class="btn btn-p" onclick="openLogin()"> Đăng nhập</button>
   <button id="logout-btn" class="btn btn-l hidden" onclick="doLogout()">Thoát</button>
 </div>
 </nav>
@@ -231,54 +237,48 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 <div class="actions">
   <button class="btn btn-l" onclick="closeEditTournamentModal()">Hủy</button>
-  <button class="btn btn-p" onclick="saveEditTournament()">💾 Lưu thay đổi</button>
+  <button class="btn btn-p" onclick="saveEditTournament()"> Lưu thay đổi</button>
 </div>
 <div id="edit-t-msg" class="msg"></div>
 </div>
 </div>
 
-<!-- 🌟 MODAL CẤU HÌNH TỨ KẾT 4 BẢNG -->
+<!-- 🌟 MODAL CẤU HÌNH TỨ KẾT 4 BẢNG - Đã tối ưu cho mobile -->
 <div id="ko-config-modal" class="modal-bg">
-<div class="modal wide">
-  <h3>⚙️ Cấu hình quy tắc Tứ kết (4 Bảng)</h3>
-  <div class="hint">💡 Chọn quy tắc ghép đội cho 4 trận Tứ kết. Hệ thống sẽ tự động điền đội vào vị trí tương ứng ngay khi họ hoàn thành đủ số trận vòng bảng.</div>
+<div class="modal">
+  <h3>️ Quy tắc Tứ kết</h3>
+  <div class="hint">💡 Chọn quy tắc ghép đội cho 4 trận Tứ kết</div>
   
   <div id="ko-rules-container">
     <label class="ko-rule-option" onclick="selectKoRule(1)">
       <input type="radio" name="ko_rule" value="1">
-      <div>
-        <div class="ko-rule-title">Quy tắc 1: Cross bảng liền kề</div>
+      <div class="ko-rule-content">
+        <div class="ko-rule-title">1. Cross bảng liền kề</div>
         <div class="ko-rule-desc">
-          <span>TK1:</span> 1A vs 2B &nbsp;|&nbsp; 
-          <span>TK2:</span> 2A vs 1B <br>
-          <span>TK3:</span> 1C vs 2D &nbsp;|&nbsp; 
-          <span>TK4:</span> 1D vs 2C
+          <span>TK1:</span> 1A vs 2B | <span>TK2:</span> 2A vs 1B<br>
+          <span>TK3:</span> 1C vs 2D | <span>TK4:</span> 1D vs 2C
         </div>
       </div>
     </label>
     
     <label class="ko-rule-option" onclick="selectKoRule(2)">
       <input type="radio" name="ko_rule" value="2">
-      <div>
-        <div class="ko-rule-title">Quy tắc 2: Cross A-C và B-D</div>
+      <div class="ko-rule-content">
+        <div class="ko-rule-title">2. Cross A-C và B-D</div>
         <div class="ko-rule-desc">
-          <span>TK1:</span> 1A vs 2C &nbsp;|&nbsp; 
-          <span>TK2:</span> 1C vs 2A <br>
-          <span>TK3:</span> 1B vs 2D &nbsp;|&nbsp; 
-          <span>TK4:</span> 1D vs 2B
+          <span>TK1:</span> 1A vs 2C | <span>TK2:</span> 1C vs 2A<br>
+          <span>TK3:</span> 1B vs 2D | <span>TK4:</span> 1D vs 2B
         </div>
       </div>
     </label>
     
     <label class="ko-rule-option" onclick="selectKoRule(3)">
       <input type="radio" name="ko_rule" value="3">
-      <div>
-        <div class="ko-rule-title">Quy tắc 3: Cross A-D và B-C</div>
+      <div class="ko-rule-content">
+        <div class="ko-rule-title">3. Cross A-D và B-C</div>
         <div class="ko-rule-desc">
-          <span>TK1:</span> 1A vs 2D &nbsp;|&nbsp; 
-          <span>TK2:</span> 1D vs 2A <br>
-          <span>TK3:</span> 1B vs 2C &nbsp;|&nbsp; 
-          <span>TK4:</span> 1C vs 2B
+          <span>TK1:</span> 1A vs 2D | <span>TK2:</span> 1D vs 2A<br>
+          <span>TK3:</span> 1B vs 2C | <span>TK4:</span> 1C vs 2B
         </div>
       </div>
     </label>
@@ -287,7 +287,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   <div id="ko-config-msg" class="msg"></div>
   <div class="actions">
     <button class="btn btn-l" onclick="closeKoConfigModal()">Hủy</button>
-    <button class="btn btn-p" onclick="applyKoRule()">✅ Lưu và Tạo lịch Tứ kết</button>
+    <button class="btn btn-p" onclick="applyKoRule()">✅ Lưu</button>
   </div>
 </div>
 </div>
@@ -329,7 +329,7 @@ td.pf{font-family:monospace;color:var(--cy)}
         </div>
       </div>
       <div class="ref-serve-group">
-        <div class="ref-serve-title">🏓 Lượt giao (Team B)</div>
+        <div class="ref-serve-title"> Lượt giao (Team B)</div>
         <div class="ref-serve-options">
           <label class="serve-radio-label"><input type="radio" name="serve-away" value="1" class="serve-radio" onchange="onServeCheck('away',1)"><span class="serve-radio-custom">L1</span></label>
           <label class="serve-radio-label"><input type="radio" name="serve-away" value="2" class="serve-radio" onchange="onServeCheck('away',2)"><span class="serve-radio-custom">L2</span></label>
@@ -525,7 +525,7 @@ function startRealtime() {
               var statusEl = el("ref-match-status");
               var st = cm.match_status || 'scheduled';
               statusEl.className = 'match-status ' + st;
-              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '⏳');
+              statusEl.textContent = st === 'live' ? '🔴 LIVE' : (st === 'finished' ? '✅ FIN' : '');
               updateServeRadios(cm);
             }
           }
@@ -555,7 +555,7 @@ function updateMatchRowsDOM() {
     else if (status === 'bye') row.classList.add('bye');
     if (statusBadge) {
       statusBadge.className = 'm-status-badge ' + status;
-      if (status === 'live') statusBadge.textContent = '🔴 LIVE';
+      if (status === 'live') statusBadge.textContent = ' LIVE';
       else if (status === 'finished') statusBadge.textContent = '✅ FIN';
       else if (status === 'bye') statusBadge.textContent = '🎟 BYE';
       else statusBadge.textContent = '';
@@ -611,7 +611,7 @@ async function savePlayer(pid, name, rating) {
     var pl = await sb.from("players").select("*");
     DATA.players = (pl.data || []).filter(p => isOwnerOfPlayer(p));
     toast("✅ Đã lưu VĐV"); render();
-  } catch(e) { alert("❌ " + e.message); }
+  } catch(e) { alert(" " + e.message); }
 }
 async function deletePlayer(pid) {
   if (!confirm("Xóa VĐV này?")) return;
@@ -703,7 +703,7 @@ async function delT(id) {
     }
     await sb.from("tournaments").delete().eq("id", id);
     toast("✅ Đã xóa"); await loadAll();
-  } catch(e) { alert("❌ " + e.message); }
+  } catch(e) { alert(" " + e.message); }
 }
 
 async function quickCreateEvent() {
@@ -1136,7 +1136,7 @@ async function tryAutoSyncKO() {
 // 🌟 CÁC HÀM MODAL CẤU HÌNH TỨ KẾT
 function openKoConfigModal() {
   if (!DATA.kStage) {
-    alert("⚠️ Chưa có vòng KO. Vui lòng lưu tất cả bảng trước.");
+    alert("️ Chưa có vòng KO. Vui lòng lưu tất cả bảng trước.");
     return;
   }
   var numGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
@@ -1272,7 +1272,7 @@ async function changeScore(team, delta) {
     el("ref-msg").textContent = "✅ Đã lưu: " + h + " - " + a;
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = "❌ Lỗi: " + e.message;
+    el("ref-msg").textContent = " Lỗi: " + e.message;
   }
 }
 
@@ -1310,7 +1310,7 @@ async function onServeCheck(teamSide, turn) {
     el("ref-match-status").className = 'match-status live';
     el("ref-match-status").textContent = '🔴 LIVE';
     el("ref-msg").style.color = "var(--or)";
-    el("ref-msg").textContent = "🏓 " + (teamSide === 'home' ? el("ref-team-a-name").textContent : el("ref-team-b-name").textContent) + " giao L" + turn;
+    el("ref-msg").textContent = " " + (teamSide === 'home' ? el("ref-team-a-name").textContent : el("ref-team-b-name").textContent) + " giao L" + turn;
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
     el("ref-msg").textContent = "❌ " + e.message;
@@ -1349,7 +1349,7 @@ async function finishMatch() {
 
 async function resetMatchScore(matchId, event) {
   if (event) event.stopPropagation();
-  if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
+  if (!confirm(" Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
   try {
     await sb.from("matches").update({ home_score: 0, away_score: 0 }).eq("id", matchId);
     var m = DATA.matches.find(x => x.id === matchId);
@@ -1440,7 +1440,7 @@ function render() {
   var tStatus = DATA.tournament ? "done" : "empty";
   H += '<div class="acc">'+accH(2, "Giải đấu & Nội dung", "s2", tStatus, DATA.tournament ? DATA.tournament.name : "Chưa chọn")+'<div class="acc-b'+(DATA.acc.s2?" open":"")+'">';
   if (!DATA.tournament) {
-    H += '<div class="fg"><input id="t-name" placeholder="Tên giải"/><input id="t-loc" placeholder="Địa điểm"/><input id="t-start" type="date"/><input id="t-end" type="date"/><button class="btn btn-p" onclick="createT()">➕ Tạo giải</button></div>';
+    H += '<div class="fg"><input id="t-name" placeholder="Tên giải"/><input id="t-loc" placeholder="Địa điểm"/><input id="t-start" type="date"/><input id="t-end" type="date"/><button class="btn btn-p" onclick="createT()"> Tạo giải</button></div>';
   } else {
     H += '<div class="fg" style="grid-template-columns: 1fr auto auto auto;">';
     H += '<select onchange="selT(this.value)">';
@@ -1448,7 +1448,7 @@ function render() {
     H += '</select>';
     H += '<button class="btn btn-p btn-s" onclick="resetToCreateT()">➕ Thêm giải</button>';
     H += '<button class="btn btn-b btn-s" onclick="openEditTournamentModal(\''+DATA.tournament.id+'\')">✏️ Sửa</button>';
-    H += '<button class="btn btn-d btn-s" onclick="delT(\''+DATA.tournament.id+'\')">🗑 Xóa</button>';
+    H += '<button class="btn btn-d btn-s" onclick="delT(\''+DATA.tournament.id+'\')"> Xóa</button>';
     H += '</div>';
     H += '<div class="section-title">📋 Nội dung thi đấu</div>';
     H += '<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>';
@@ -1456,7 +1456,7 @@ function render() {
       var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
       H += '<option value="'+e.id+'" '+(e.id===DATA.eid?"selected":"")+'>'+esc(e.code)+'. '+esc(e.name)+rule+'</option>';
     });
-    H += '</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button></div>';
+    H += '</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()"> Tạo nội dung</button></div>';
     if (DATA.events.length) {
       H += '<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th></th></tr></thead><tbody>';
       DATA.events.forEach(e => { H += '<tr><td>'+esc(e.code)+'</td><td>'+esc(e.name)+'</td><td>'+(e.rating_limit||'Mở')+'</td><td><button class="btn btn-d btn-xs" onclick="delE(\''+e.id+'\')">🗑</button></td></tr>'; });
@@ -1562,13 +1562,13 @@ function render() {
         H += '<button class="btn btn-w btn-s" onclick="openKoConfigModal()">⚙️ Đổi quy tắc Tứ kết</button>';
         H += '</div>';
       } else {
-        H += '<div class="hint" style="margin-bottom:8px">💡 Đội sẽ tự động điền khi hoàn thành đủ số trận vòng bảng theo logic xếp hạng.</div>';
+        H += '<div class="hint" style="margin-bottom:8px"> Đội sẽ tự động điền khi hoàn thành đủ số trận vòng bảng theo logic xếp hạng.</div>';
       }
       
       var r16 = km.filter(m => Number(m.round)===1), tk = km.filter(m => Number(m.round)===2), bk = km.filter(m => Number(m.round)===3), ck = km.filter(m => Number(m.round)===4);
       if (r16.length) H += renderKOGroup("🎾 VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
-      if (bk.length) H += renderKOGroup("🥈 BÁN KẾT", "bk", bk);
+      if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
       if (ck.length) H += renderKOGroup("🥇 CHUNG KẾT", "ck", ck);
       H += '</div>';
     }
@@ -1640,7 +1640,7 @@ function renderMatchRow(m, isKO) {
   var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : '⏳'));
   H += '<span class="m-status-badge '+status+'">'+statusText+'</span>';
   var btnTitle = status === 'finished' ? 'Chỉnh sửa kết quả' : (status === 'live' ? 'Tiếp tục ghi điểm' : (status === 'bye' ? 'Trận miễn' : 'Bắt đầu ghi điểm'));
-  H += '<button class="m-ref-btn" onclick="openRefModal(\''+m.id+'\')" title="'+btnTitle+'">⚖️</button>';
+  H += '<button class="m-ref-btn" onclick="openRefModal(\''+m.id+'\')" title="'+btnTitle+'">️</button>';
   H += '</div>';
   return H;
 }
@@ -1673,7 +1673,7 @@ window.addEventListener('storage', function(event) {
     } else {
       CURRENT_USER = null;
       applyUI();
-      toast("👋 Đã đồng bộ trạng thái đăng xuất từ tab khác");
+      toast(" Đã đồng bộ trạng thái đăng xuất từ tab khác");
     }
   }
 });
