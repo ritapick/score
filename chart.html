@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sơ đồ thi đấu Pickleball</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    min-height: 100vh;
+    padding: 30px 20px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #ffd700;
+    margin-bottom: 30px;
+    font-style: italic;
+  }
+
+  .bracket {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    overflow-x: auto;
+    padding: 20px;
+  }
+
+  .round {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 20px;
+    min-width: 220px;
+  }
+
+  .round-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #ffd700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .match {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+  }
+
+  .match:hover { transform: translateY(-2px); }
+
+  .player {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .player:last-child { border-bottom: none; }
+
+  .player:hover { background: rgba(255,215,0,0.15); }
+
+  .player.winner {
+    background: linear-gradient(90deg, #28a745, #20c997);
+    font-weight: bold;
+  }
+
+  .player.loser {
+    opacity: 0.4;
+    text-decoration: line-through;
+  }
+
+  .seed {
+    background: #ffd700;
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  .player-name {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.95rem;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .player-name::placeholder { color: rgba(255,255,255,0.4); }
+
+  .score {
+    background: rgba(0,0,0,0.3);
+    width: 32px;
+    height: 28px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    color: #fff;
+    text-align: center;
+    margin-left: 8px;
+    font-weight: bold;
+  }
+
+  /* Chung kết - nổi bật */
+  .final .match {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    border-color: #fff;
+    box-shadow: 0 0 25px rgba(255,215,0,0.6);
+  }
+
+  .final .player { color: #000; }
+  .final .player-name { color: #000; }
+  .final .player-name::placeholder { color: rgba(0,0,0,0.5); }
+  .final .score { background: rgba(255,255,255,0.3); color: #000; border-color: rgba(0,0,0,0.2); }
+
+  .trophy {
+    text-align: center;
+    font-size: 2rem;
+    margin-top: 10px;
+  }
+
+  .champion-box {
+    min-width: 220px;
+    text-align: center;
+  }
+
+  .champion {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #000;
+    padding: 20px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    box-shadow: 0 0 30px rgba(255,215,0,0.7);
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .controls {
+    text-align: center;
+    margin-top: 30px;
+  }
+
+  button {
+    background: #ffd700;
+    color: #000;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: transform 0.2s;
+  }
+
+  button:hover { transform: scale(1.05); }
+
+  @media (max-width: 768px) {
+    .bracket { flex-direction: column; gap: 20px; }
+    .round { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🏓 SƠ ĐỒ THI ĐẤU PICKLEBALL 🏓</h1>
+<p class="subtitle">Giải đấu Tứ kết - Bán kết - Chung kết</p>
+
+<div class="bracket" id="bracket">
+  <!-- Tứ kết -->
+  <div class="round">
+    <div class="round-title">Tứ kết</div>
+    <div class="match" data-match="Q1">
+      <div class="player"><span class="seed">1</span><input class="player-name" placeholder="Đội 1"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">8</span><input class="player-name" placeholder="Đội 8"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+    <div class="match" data-match="Q2">
+      <div class="player"><span class="seed">4</span><input class="player-name" placeholder="Đội 4"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">5</span><input class="player-name" placeholder="Đội 5"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+    <div class="match" data-match="Q3">
+      <div class="player"><span class="seed">3</span><input class="player-name" placeholder="Đội 3"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">6</span><input class="player-name" placeholder="Đội 6"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+    <div class="match" data-match="Q4">
+      <div class="player"><span class="seed">2</span><input class="player-name" placeholder="Đội 2"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">7</span><input class="player-name" placeholder="Đội 7"><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+  </div>
+
+  <!-- Bán kết -->
+  <div class="round">
+    <div class="round-title">Bán kết</div>
+    <div class="match" data-match="S1">
+      <div class="player"><span class="seed">-</span><input class="player-name" placeholder="Thắng TK1" readonly><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">-</span><input class="player-name" placeholder="Thắng TK2" readonly><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+    <div class="match" data-match="S2">
+      <div class="player"><span class="seed">-</span><input class="player-name" placeholder="Thắng TK3" readonly><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">-</span><input class="player-name" placeholder="Thắng TK4" readonly><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+  </div>
+
+  <!-- Chung kết -->
+  <div class="round final">
+    <div class="round-title">🏆 Chung kết 🏆</div>
+    <div class="match" data-match="F">
+      <div class="player"><span class="seed">-</span><input class="player-name" placeholder="Thắng BK1" readonly><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+      <div class="player"><span class="seed">-</span><input class="player-name" placeholder="Thắng BK2" readonly><input type="number" class="score" min="0" max="21" placeholder="-"></div>
+    </div>
+    <div class="trophy">🏆</div>
+  </div>
+
+  <!-- Vô địch -->
+  <div class="champion-box">
+    <div class="round-title">Vô địch</div>
+    <div class="champion" id="champion">👑 Đang chờ...</div>
+  </div>
+</div>
+
+<div class="controls">
+  <button onclick="resetBracket()">🔄 Reset giải đấu</button>
+</div>
+
+<script>
+  // Cấu hình luồng đi tiếp: match nguồn -> match đích & slot
+  const flow = {
+    Q1: { target: 'S1', slot: 0 },
+    Q2: { target: 'S1', slot: 1 },
+    Q3: { target: 'S2', slot: 0 },
+    Q4: { target: 'S2', slot: 1 },
+    S1: { target: 'F',  slot: 0 },
+    S2: { target: 'F',  slot: 1 }
+  };
+
+  function getMatch(matchId) {
+    return document.querySelector(`.match[data-match="${matchId}"]`);
+  }
+
+  function getPlayers(matchEl) {
+    return matchEl.querySelectorAll('.player');
+  }
+
+  function handleMatchClick(matchEl) {
+    const players = getPlayers(matchEl);
+    const inputs = [players[0].querySelector('.player-name'), players[1].querySelector('.player-name')];
+    const scores = [players[0].querySelector('.score'), players[1].querySelector('.score')];
+
+    // Không cho click nếu chưa có tên
+    if (!inputs[0].value.trim() || !inputs[1].value.trim()) {
+      alert('Vui lòng nhập đầy đủ tên 2 đội/cặp trước khi chọn người thắng!');
+      return;
+    }
+
+    const s0 = parseFloat(scores[0].value);
+    const s1 = parseFloat(scores[1].value);
+
+    if (isNaN(s0) || isNaN(s1)) {
+      alert('Vui lòng nhập điểm số cho cả 2 đội!');
+      return;
+    }
+
+    let winnerIdx;
+    if (s0 > s1) winnerIdx = 0;
+    else if (s1 > s0) winnerIdx = 1;
+    else {
+      alert('Hai đội bằng điểm - Pickleball phải có đội thắng (cách biệt 2 điểm ở game 11)!');
+      return;
+    }
+
+    // Đánh dấu thắng/thua
+    players.forEach((p, i) => {
+      p.classList.remove('winner', 'loser');
+      if (i === winnerIdx) p.classList.add('winner');
+      else p.classList.add('loser');
+    });
+
+    // Đẩy tên người thắng lên vòng sau
+    const matchId = matchEl.dataset.match;
+    const next = flow[matchId];
+    if (next) {
+      const nextMatch = getMatch(next.target);
+      const nextPlayers = getPlayers(nextMatch);
+      const nextInput = nextPlayers[next.slot].querySelector('.player-name');
+      nextInput.value = inputs[winnerIdx].value;
+
+      // Reset trạng thái trận sau
+      nextPlayers.forEach(p => p.classList.remove('winner', 'loser'));
+      nextPlayers[next.slot].querySelector('.score').value = '';
+
+      // Kiểm tra xem trận sau đã đủ 2 người chưa
+      const otherIdx = 1 - next.slot;
+      const otherInput = nextPlayers[otherIdx].querySelector('.player-name');
+      if (!otherInput.value.trim()) {
+        nextPlayers[next.slot].classList.remove('winner', 'loser');
+      }
+
+      // Nếu là chung kết và đã có đủ 2 người -> sẵn sàng
+      if (matchId === 'S1' || matchId === 'S2') updateChampion();
+    }
+  }
+
+  function updateChampion() {
+    const finalMatch = getMatch('F');
+    const players = getPlayers(finalMatch);
+    const winner = finalMatch.querySelector('.player.winner');
+    const champBox = document.getElementById('champion');
+
+    if (winner) {
+      const name = winner.querySelector('.player-name').value;
+      champBox.innerHTML = `👑 ${name} 👑`;
+    } else {
+      const p0 = players[0].querySelector('.player-name').value;
+      const p1 = players[1].querySelector('.player-name').value;
+      if (p0 && p1) champBox.innerHTML = '🔥 Sẵn sàng tranh cúp! 🔥';
+      else champBox.innerHTML = '👑 Đang chờ...';
+    }
+  }
+
+  // Gắn sự kiện click cho từng .player
+  document.querySelectorAll('.match').forEach(match => {
+    getPlayers(match).forEach((player, idx) => {
+      player.addEventListener('click', () => {
+        // Chỉ xử lý khi click nếu trận này chưa có winner
+        if (match.querySelector('.player.winner')) return;
+        // Tự động chọn người có điểm cao hơn làm winner
+        handleMatchClick(match);
+      });
+    });
+  });
+
+  function resetBracket() {
+    if (!confirm('Bạn có chắc muốn reset toàn bộ giải đấu?')) return;
+    document.querySelectorAll('.player-name').forEach((input, i) => {
+      // Giữ lại 8 đội hạt giống ban đầu
+      const defaults = ['Đội 1','Đội 8','Đội 4','Đội 5','Đội 3','Đội 6','Đội 2','Đội 7'];
+      if (i < 8) input.value = defaults[i];
+      else input.value = '';
+      input.placeholder = input.placeholder; // giữ nguyên
+    });
+    document.querySelectorAll('.score').forEach(s => s.value = '');
+    document.querySelectorAll('.player').forEach(p => p.classList.remove('winner', 'loser'));
+    document.getElementById('champion').innerHTML = '👑 Đang chờ...';
+
+    // Reset placeholder cho bán kết & chung kết
+    const placeholders = ['Thắng TK1','Thắng TK2','Thắng TK3','Thắng TK4','Thắng BK1','Thắng BK2'];
+    document.querySelectorAll('.match:not([data-match^="Q"]) .player-name').forEach((input, i) => {
+      input.placeholder = placeholders[i] || '';
+    });
+  }
+
+  // Khởi tạo placeholder cho các vòng sau
+  window.addEventListener('DOMContentLoaded', () => {
+    const ph = ['Thắng TK1','Thắng TK2','Thắng TK3','Thắng TK4','Thắng BK1','Thắng BK2'];
+    document.querySelectorAll('.match:not([data-match^="Q"]) .player-name').forEach((input, i) => {
+      input.placeholder = ph[i];
+    });
+  });
+</script>
+
+</body>
+</html>
