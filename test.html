@@ -115,21 +115,17 @@ td.pf{font-family:monospace;color:var(--cy)}
 .modal-bg{position:fixed;inset:0;background:rgba(4,8,16,.85);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-bg.show{display:flex}
 .modal{width:min(460px,100%);background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:16px}
-.modal.wide{width:min(600px,100%)}
 .modal h3{margin:0 0 4px;color:var(--li);font-size:16px}
 .modal .hint{font-size:10px;color:var(--mu);margin-bottom:12px;font-style:italic}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 .modal .msg{font-size:12px;margin-top:8px;min-height:16px;text-align:center}
 
-/* 🌟 Style cho cấu hình Tứ kết - đã tối ưu cho mobile */
-.ko-rule-option{background:var(--sf2);border:2px solid var(--ln);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px}
-.ko-rule-option:hover{border-color:var(--cy);background:rgba(34,211,238,.05)}
+/* 🌟 Style cho cấu hình Tứ kết - tối ưu cho mobile */
+.ko-rule-option{background:var(--sf2);border:1px solid var(--ln);border-radius:6px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px}
+.ko-rule-option:hover{border-color:var(--cy)}
 .ko-rule-option.selected{border-color:var(--li);background:rgba(163,230,53,.08)}
-.ko-rule-option input[type="radio"]{width:16px;height:16px;margin:0;accent-color:var(--li);flex-shrink:0}
-.ko-rule-content{flex:1;min-width:0}
-.ko-rule-title{font-weight:700;font-size:12px;color:var(--tx);margin-bottom:2px}
-.ko-rule-desc{font-size:10px;color:var(--mu);line-height:1.3}
-.ko-rule-desc span{color:var(--cy);font-weight:600}
+.ko-rule-option input[type="radio"]{width:14px;height:14px;margin:0;accent-color:var(--li);flex-shrink:0}
+.ko-rule-option span{font-size:11px;font-weight:600;color:var(--tx);line-height:1.3}
 
 .ref-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--ln)}
 .ref-header .match-code{font-size:13px;font-weight:800;color:var(--cy)}
@@ -189,11 +185,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   .score-val{font-size:24px;min-width:36px}
   .ref-serve-row{grid-template-columns:1fr;gap:8px}
   .match-row { align-items: flex-start; }
-  /* Modal nhỏ hơn trên mobile */
   .modal{width:calc(100% - 32px);padding:12px}
-  .ko-rule-option{padding:8px;margin-bottom:6px}
-  .ko-rule-title{font-size:11px}
-  .ko-rule-desc{font-size:9px}
 }
 </style>
 </head>
@@ -243,20 +235,33 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 </div>
 
-<!-- 🌟 MODAL CẤU HÌNH TỨ KẾT (Dùng chung cho 3 & 4 bảng, render động) -->
+<!-- 🌟 MODAL CẤU HÌNH TỨ KẾT 3 BẢNG -->
 <div id="ko-config-modal" class="modal-bg">
-<div class="modal">
-  <h3 id="ko-config-title">⚙️ Quy tắc Tứ kết</h3>
-  <div class="hint" id="ko-config-hint">💡 Chọn quy tắc ghép đội cho các trận Tứ kết</div>
-  
-  <div id="ko-rules-container"></div>
-  
-  <div id="ko-config-msg" class="msg"></div>
-  <div class="actions">
-    <button class="btn btn-l" onclick="closeKoConfigModal()">Hủy</button>
-    <button class="btn btn-p" onclick="applyKoRule()">✅ Tạo lịch</button>
+  <div class="modal" style="width:min(340px, 100%); padding:12px;">
+    <h3 style="font-size:14px; margin-bottom:4px;">⚙️ Quy tắc Tứ kết (3 Bảng)</h3>
+    <div class="hint" style="margin-bottom:10px; font-size:10px;">Chọn quy tắc ghép đội cho 4 trận Tứ kết</div>
+    
+    <label class="ko-rule-option" onclick="selectKoRule3(1)">
+      <input type="radio" name="ko_rule_3" value="1">
+      <span>1. 1A vs 3-1, 2A vs 1B, 1C vs 3-2, 2B vs 2C</span>
+    </label>
+    
+    <label class="ko-rule-option" onclick="selectKoRule3(2)">
+      <input type="radio" name="ko_rule_3" value="2">
+      <span>2. 1A vs 2C, 1C vs 3-1, 1B vs 3-2, 2A vs 2B</span>
+    </label>
+    
+    <label class="ko-rule-option" onclick="selectKoRule3(3)">
+      <input type="radio" name="ko_rule_3" value="3">
+      <span>3. 1A vs 3-2, 2C vs 2A, 1B vs 3-1, 1C vs 2B</span>
+    </label>
+
+    <div id="ko-config-msg" class="msg"></div>
+    <div class="actions" style="margin-top:10px;">
+      <button class="btn btn-l btn-s" onclick="closeKoConfigModal()">Đóng</button>
+      <button class="btn btn-p btn-s" onclick="applyKoRule3()">✅ Tạo lịch</button>
+    </div>
   </div>
-</div>
 </div>
 
 <div id="ref-modal" class="modal-bg">
@@ -342,8 +347,7 @@ var DATA = {
   acc: {s1:false, s2:true, s3:false, s4:false},
   _creatingKO: false,
   _savedGroups: new Set(),
-  koRule: 1,   // Quy tắc Tứ kết cho 4 bảng
-  koRule3: 1   // 🌟 Quy tắc Tứ kết cho 3 bảng
+  koRule3: 1 // 🌟 Quy tắc Tứ kết mặc định cho 3 bảng
 };
 var currentRefMatchId = null;
 var realtimeInterval = null;
@@ -432,9 +436,7 @@ async function selE(eid) {
   DATA._savedGroups = new Set();
   if (!DATA.eid) { render(); return; }
   try {
-    // 🌟 Load koRule từ localStorage cho event này (phân biệt 3 bảng và 4 bảng)
-    var savedRule4 = localStorage.getItem('ko_rule_4_' + eid);
-    DATA.koRule = savedRule4 ? parseInt(savedRule4) : 1;
+    // 🌟 Load quy tắc Tứ kết cho 3 bảng từ localStorage
     var savedRule3 = localStorage.getItem('ko_rule_3_' + eid);
     DATA.koRule3 = savedRule3 ? parseInt(savedRule3) : 1;
 
@@ -886,104 +888,90 @@ function isTeamGroupComplete(teamId, groupId) {
   return finishedMatches >= requiredMatches;
 }
 
-// 🌟 HÀM LẤY ĐỘI THEO VỊ TRÍ (VD: "1A", "2B")
-function getTeamByPosition(groupCode, position) {
-  var group = DATA.groups.find(g => g.stage_id === DATA.gStage.id && g.code === groupCode);
-  if (!group) return null;
-  var st = standings(group.id);
-  if (st.length >= position) {
-    var team = st[position - 1];
-    if (isTeamGroupComplete(team.id, group.id)) {
-      return { id: team.id, name: tName(team.id), pos: position + groupCode };
-    }
-  }
-  return null; // Chưa hoàn thành đủ trận hoặc không tồn tại
-}
-
-// 🌟 HÀM LẤY DANH SÁCH ĐỘI HẠNG 3 ĐÃ SẮP XẾP THEO THÀNH TÍCH (cho 3 bảng)
-function getSortedThirdPlaceTeams() {
+// 🌟 HÀM LẤY 2 ĐỘI HẠNG 3 TỐT NHẤT (CHO 3 BẢNG)
+function getBestThirdPlaces() {
   var thirdPlaces = [];
-  DATA.groups.filter(g => g.stage_id === DATA.gStage.id).forEach(function(g) {
-    var st = standings(g.id);
-    if (st.length >= 3) {
-      var team = st[2];
-      var isComplete = isTeamGroupComplete(team.id, g.id);
-      thirdPlaces.push({
-        teamId: isComplete ? team.id : null,
-        pos: "3" + g.code,
-        stats: isComplete ? team : null,
-        groupCode: g.code
-      });
-    } else {
-      thirdPlaces.push({
-        teamId: null,
-        pos: "3" + g.code,
-        stats: null,
-        groupCode: g.code
-      });
+  ['A', 'B', 'C'].forEach(function(code) {
+    var group = DATA.groups.find(g => g.stage_id === DATA.gStage.id && g.code === code);
+    if (group) {
+      var st = standings(group.id);
+      if (st.length >= 3) {
+        var team = st[2]; // Đội hạng 3
+        if (isTeamGroupComplete(team.id, group.id)) {
+          thirdPlaces.push({
+            id: team.id,
+            groupCode: code,
+            stats: team,
+            pos: "3-" + (thirdPlaces.length + 1) // Tạm thời, sẽ được sort lại
+          });
+        }
+      }
     }
   });
-  // Sắp xếp theo thành tích: W > HS > GF
+  
+  // Sắp xếp theo: Thắng (W) > Hiệu số (HS) > Số bàn thắng (GF)
   thirdPlaces.sort(function(a, b) {
-    if (!a.stats && !b.stats) return a.groupCode.localeCompare(b.groupCode);
-    if (!a.stats) return 1;
-    if (!b.stats) return -1;
     if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
     var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
     if (db !== da) return db - da;
     return b.stats.pf - a.stats.pf;
   });
+  
+  // Gán nhãn 3-1 và 3-2
+  if (thirdPlaces.length >= 1) thirdPlaces[0].pos = "3-1";
+  if (thirdPlaces.length >= 2) thirdPlaces[1].pos = "3-2";
+  
   return thirdPlaces;
 }
 
-// 🌟 HÀM LẤY ĐỘI THEO VỊ TRÍ LINHOẠT (cho 3 bảng, xử lý cả "3-1", "3-2")
-function getTeamFor3Groups(pos, thirdPlaces) {
-  if (pos === "3-1") {
-    var t1 = thirdPlaces[0];
-    return t1 && t1.teamId ? { id: t1.teamId, pos: "3-1" } : { id: null, pos: "3-1" };
-  }
-  if (pos === "3-2") {
-    var t2 = thirdPlaces[1];
-    return t2 && t2.teamId ? { id: t2.teamId, pos: "3-2" } : { id: null, pos: "3-2" };
-  }
-  // Dạng "1A", "2B", "1C"...
-  var groupCode = pos.slice(-1);
-  var rank = parseInt(pos[0]);
-  var team = getTeamByPosition(groupCode, rank);
-  return team ? { id: team.id, pos: team.pos } : { id: null, pos: pos };
-}
-
-// 🌟 LOGIC XẾP LỊCH KO NÂNG CẤP CHO 3 BẢNG VÀ 4 BẢNG
+// 🌟 LOGIC XẾP LỊCH KO NÂNG CẤP CHO 3 BẢNG
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
   
-  // 🌟 Xử lý riêng cho 3 bảng với quy tắc đã chọn
   if (numGroups === 3) {
-    var thirdPlaces = getSortedThirdPlaceTeams();
     var rule = DATA.koRule3 || 1;
+    var thirdPlaces = getBestThirdPlaces();
     
-    var rules = {
-      1: [ { code: 'TK1', home: '1A', away: '3-1' }, { code: 'TK2', home: '2A', away: '1B' }, { code: 'TK3', home: '1C', away: '3-2' }, { code: 'TK4', home: '2B', away: '2C' } ],
-      2: [ { code: 'TK1', home: '1A', away: '2C' }, { code: 'TK2', home: '1C', away: '3-1' }, { code: 'TK3', home: '1B', away: '3-2' }, { code: 'TK4', home: '2A', away: '2B' } ],
-      3: [ { code: 'TK1', home: '1A', away: '3-2' }, { code: 'TK2', home: '2C', away: '2A' }, { code: 'TK3', home: '1B', away: '3-1' }, { code: 'TK4', home: '1C', away: '2B' } ]
+    var getTeam = function(pos) {
+      if (pos === '3-1') return thirdPlaces.length >= 1 ? { id: thirdPlaces[0].id, pos: '3-1' } : { id: null, pos: '3-1' };
+      if (pos === '3-2') return thirdPlaces.length >= 2 ? { id: thirdPlaces[1].id, pos: '3-2' } : { id: null, pos: '3-2' };
+      
+      var groupCode = pos.slice(-1);
+      var rank = parseInt(pos[0]);
+      var group = DATA.groups.find(g => g.stage_id === DATA.gStage.id && g.code === groupCode);
+      if (!group) return { id: null, pos: pos };
+      
+      var st = standings(group.id);
+      if (st.length >= rank) {
+        var team = st[rank - 1];
+        if (isTeamGroupComplete(team.id, group.id)) {
+          return { id: team.id, pos: pos };
+        }
+      }
+      return { id: null, pos: pos };
     };
-    
+
+    var rules = {
+      1: [ {h: '1A', a: '3-1'}, {h: '2A', a: '1B'}, {h: '1C', a: '3-2'}, {h: '2B', a: '2C'} ],
+      2: [ {h: '1A', a: '2C'}, {h: '1C', a: '3-1'}, {h: '1B', a: '3-2'}, {h: '2A', a: '2B'} ],
+      3: [ {h: '1A', a: '3-2'}, {h: '2C', a: '2A'}, {h: '1B', a: '3-1'}, {h: '1C', a: '2B'} ]
+    };
+
     var selectedRules = rules[rule];
     var matches = [];
     
-    selectedRules.forEach(function(r, index) {
-      var homeTeam = getTeamFor3Groups(r.home, thirdPlaces);
-      var awayTeam = getTeamFor3Groups(r.away, thirdPlaces);
-      
+    selectedRules.forEach(function(m, index) {
+      var home = getTeam(m.h);
+      var away = getTeam(m.a);
       matches.push({
         round: 2,
         slot: 9 + index,
-        h: homeTeam ? homeTeam.id : null,
-        a: awayTeam ? awayTeam.id : null,
-        code: r.code,
-        h_pos: homeTeam ? homeTeam.pos : r.home,
-        a_pos: awayTeam ? awayTeam.pos : r.away
+        h: home.id,
+        a: away.id,
+        code: "TK" + (index + 1),
+        h_pos: home.pos,
+        a_pos: away.pos
       });
     });
     
@@ -994,40 +982,7 @@ function computeKOTeams() {
     return { matches: matches };
   }
   
-  // 🌟 Xử lý riêng cho 4 bảng với quy tắc đã chọn
-  if (numGroups === 4 && DATA.koRule) {
-    var rules4 = {
-      1: [ { code: 'TK1', home: '1A', away: '2B' }, { code: 'TK2', home: '2A', away: '1B' }, { code: 'TK3', home: '1C', away: '2D' }, { code: 'TK4', home: '1D', away: '2C' } ],
-      2: [ { code: 'TK1', home: '1A', away: '2C' }, { code: 'TK2', home: '1C', away: '2A' }, { code: 'TK3', home: '1B', away: '2D' }, { code: 'TK4', home: '1D', away: '2B' } ],
-      3: [ { code: 'TK1', home: '1A', away: '2D' }, { code: 'TK2', home: '1D', away: '2A' }, { code: 'TK3', home: '1B', away: '2C' }, { code: 'TK4', home: '1C', away: '2B' } ]
-    };
-    
-    var selectedRules4 = rules4[DATA.koRule];
-    var matches4 = [];
-    
-    selectedRules4.forEach(function(rule, index) {
-      var homeTeam = getTeamByPosition(rule.home.slice(-1), parseInt(rule.home[0]));
-      var awayTeam = getTeamByPosition(rule.away.slice(-1), parseInt(rule.away[0]));
-      
-      matches4.push({
-        round: 2,
-        slot: 9 + index,
-        h: homeTeam ? homeTeam.id : null,
-        a: awayTeam ? awayTeam.id : null,
-        code: rule.code,
-        h_pos: homeTeam ? homeTeam.pos : rule.home,
-        a_pos: awayTeam ? awayTeam.pos : rule.away
-      });
-    });
-    
-    matches4.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
-    matches4.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
-    matches4.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-    
-    return { matches: matches4 };
-  }
-  
-  // Logic mặc định cho 2 hoặc >4 bảng (giữ nguyên)
+  // Logic mặc định cho 2 hoặc >3 bảng (giữ nguyên)
   var advancing = [], allSt = {};
   DATA.groups.forEach(g => {
     if (!DATA.gStage || g.stage_id !== DATA.gStage.id) return;
@@ -1162,95 +1117,46 @@ async function tryAutoSyncKO() {
   }
   if (updated) {
     toast("✅ Đã tự động cập nhật đội vào vòng KO");
-    render(); // Re-render để cập nhật UI
+    render();
   }
   return updated;
 }
 
-// 🌟 CÁC HÀM MODAL CẤU HÌNH TỨ KẾT (Dùng chung cho 3 & 4 bảng)
+// 🌟 CÁC HÀM MODAL CẤU HÌNH TỨ KẾT (CHO 3 BẢNG)
 function openKoConfigModal() {
   if (!DATA.kStage) {
     alert("⚠️ Chưa có vòng KO. Vui lòng lưu tất cả bảng trước.");
     return;
   }
   var numGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
-  if (numGroups !== 3 && numGroups !== 4) {
-    alert("⚠️ Chức năng này chỉ dành cho trường hợp 3 hoặc 4 bảng.");
+  if (numGroups !== 3) {
+    alert("⚠️ Chức năng này chỉ dành cho trường hợp 3 bảng.");
     return;
   }
   
-  renderKoConfigModalContent(numGroups);
+  var radios = document.querySelectorAll('input[name="ko_rule_3"]');
+  radios.forEach(function(r) {
+    r.checked = (parseInt(r.value) === (DATA.koRule3 || 1));
+  });
+  updateKoRule3UI();
   
   el("ko-config-msg").textContent = "";
   el("ko-config-modal").classList.add("show");
-}
-
-function renderKoConfigModalContent(numGroups) {
-  var container = el("ko-rules-container");
-  var currentRule = numGroups === 3 ? (DATA.koRule3 || 1) : (DATA.koRule || 1);
-  
-  var titleText = numGroups === 3 ? "⚙️ Quy tắc Tứ kết (3 Bảng)" : "⚙️ Quy tắc Tứ kết (4 Bảng)";
-  var hintText = numGroups === 3 
-    ? "💡 Chọn quy tắc ghép đội cho 4 trận Tứ kết. 3-1, 3-2 là 2 đội hạng 3 có thành tích tốt nhất."
-    : "💡 Chọn quy tắc ghép đội cho 4 trận Tứ kết.";
-  
-  el("ko-config-title").textContent = titleText;
-  el("ko-config-hint").textContent = hintText;
-  
-  var rules = [];
-  if (numGroups === 3) {
-    rules = [
-      { title: "1. Cross hạng 3 & bảng liền kề", 
-        desc: '<span>TK1:</span> 1A vs 3-1 | <span>TK2:</span> 2A vs 1B<br><span>TK3:</span> 1C vs 3-2 | <span>TK4:</span> 2B vs 2C' },
-      { title: "2. Cross A-C & hạng 3",
-        desc: '<span>TK1:</span> 1A vs 2C | <span>TK2:</span> 1C vs 3-1<br><span>TK3:</span> 1B vs 3-2 | <span>TK4:</span> 2A vs 2B' },
-      { title: "3. Cross ngược & hạng 3",
-        desc: '<span>TK1:</span> 1A vs 3-2 | <span>TK2:</span> 2C vs 2A<br><span>TK3:</span> 1B vs 3-1 | <span>TK4:</span> 1C vs 2B' }
-    ];
-  } else {
-    rules = [
-      { title: "1. Cross bảng liền kề",
-        desc: '<span>TK1:</span> 1A vs 2B | <span>TK2:</span> 2A vs 1B<br><span>TK3:</span> 1C vs 2D | <span>TK4:</span> 1D vs 2C' },
-      { title: "2. Cross A-C và B-D",
-        desc: '<span>TK1:</span> 1A vs 2C | <span>TK2:</span> 1C vs 2A<br><span>TK3:</span> 1B vs 2D | <span>TK4:</span> 1D vs 2B' },
-      { title: "3. Cross A-D và B-C",
-        desc: '<span>TK1:</span> 1A vs 2D | <span>TK2:</span> 1D vs 2A<br><span>TK3:</span> 1B vs 2C | <span>TK4:</span> 1C vs 2B' }
-    ];
-  }
-  
-  var html = '';
-  rules.forEach(function(rule, index) {
-    var ruleId = index + 1;
-    var selected = ruleId === currentRule ? ' selected' : '';
-    var checked = ruleId === currentRule ? ' checked' : '';
-    html += '<label class="ko-rule-option' + selected + '" onclick="selectKoRule(' + ruleId + ',' + numGroups + ')">';
-    html += '<input type="radio" name="ko_rule" value="' + ruleId + '"' + checked + '>';
-    html += '<div class="ko-rule-content">';
-    html += '<div class="ko-rule-title">' + rule.title + '</div>';
-    html += '<div class="ko-rule-desc">' + rule.desc + '</div>';
-    html += '</div></label>';
-  });
-  container.innerHTML = html;
 }
 
 function closeKoConfigModal() {
   el("ko-config-modal").classList.remove("show");
 }
 
-function selectKoRule(ruleId, numGroups) {
-  if (numGroups === 3) {
-    DATA.koRule3 = ruleId;
-  } else {
-    DATA.koRule = ruleId;
-  }
-  updateKoRuleUI(numGroups);
+function selectKoRule3(ruleId) {
+  DATA.koRule3 = ruleId;
+  updateKoRule3UI();
 }
 
-function updateKoRuleUI(numGroups) {
-  var currentRule = numGroups === 3 ? (DATA.koRule3 || 1) : (DATA.koRule || 1);
+function updateKoRule3UI() {
   var options = document.querySelectorAll('.ko-rule-option');
   options.forEach(function(opt, index) {
-    if (index + 1 === currentRule) {
+    if (index + 1 === (DATA.koRule3 || 1)) {
       opt.classList.add('selected');
       opt.querySelector('input').checked = true;
     } else {
@@ -1260,12 +1166,8 @@ function updateKoRuleUI(numGroups) {
   });
 }
 
-async function applyKoRule() {
-  var numGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
-  var ruleToSave = numGroups === 3 ? DATA.koRule3 : DATA.koRule;
-  var storageKey = numGroups === 3 ? 'ko_rule_3_' : 'ko_rule_4_';
-  localStorage.setItem(storageKey + DATA.eid, ruleToSave);
-  
+async function applyKoRule3() {
+  localStorage.setItem('ko_rule_3_' + DATA.eid, DATA.koRule3);
   el("ko-config-msg").textContent = "⏳ Đang tạo lịch theo quy tắc...";
   el("ko-config-msg").style.color = "var(--or)";
   
@@ -1640,24 +1542,15 @@ function render() {
     if (km.length) {
       H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
       
-      // 🌟 HIỂN THỊ NÚT CẤU HÌNH TỨ KẾT CHO 3 HOẶC 4 BẢNG
-      if ((totalGroups === 3 || totalGroups === 4) && DATA.kStage) {
-        var ruleTexts3 = { 
+      // 🌟 HIỂN THỊ NÚT CẤU HÌNH TỨ KẾT CHO 3 BẢNG
+      if (totalGroups === 3 && DATA.kStage) {
+        var ruleTexts = { 
           1: "1A vs 3-1, 2A vs 1B, 1C vs 3-2, 2B vs 2C", 
           2: "1A vs 2C, 1C vs 3-1, 1B vs 3-2, 2A vs 2B", 
           3: "1A vs 3-2, 2C vs 2A, 1B vs 3-1, 1C vs 2B" 
         };
-        var ruleTexts4 = { 
-          1: "1A vs 2B, 2A vs 1B, 1C vs 2D, 1D vs 2C", 
-          2: "1A vs 2C, 1C vs 2A, 1B vs 2D, 1D vs 2B", 
-          3: "1A vs 2D, 1D vs 2A, 1B vs 2C, 1C vs 2B" 
-        };
-        var currentRule = totalGroups === 3 ? (DATA.koRule3 || 1) : (DATA.koRule || 1);
-        var ruleTexts = totalGroups === 3 ? ruleTexts3 : ruleTexts4;
-        var ruleLabel = totalGroups === 3 ? "3 bảng" : "4 bảng";
-        
         H += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">';
-        H += '<div class="hint" style="margin:0">💡 Quy tắc (' + ruleLabel + '): <b style="color:var(--or)">QC ' + currentRule + '</b> · ' + ruleTexts[currentRule] + '</div>';
+        H += '<div class="hint" style="margin:0; font-size:10px;">💡 Quy tắc: <b style="color:var(--or)">Quy tắc ' + (DATA.koRule3 || 1) + '</b> (' + ruleTexts[DATA.koRule3 || 1] + ')</div>';
         H += '<button class="btn btn-w btn-s" onclick="openKoConfigModal()">⚙️ Đổi quy tắc</button>';
         H += '</div>';
       } else {
