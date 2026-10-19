@@ -34,7 +34,7 @@ main{max-width:1200px;margin:0 auto;padding:12px}
 .acc-b{display:none;padding:12px}
 .acc-b.open{display:block}
 .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
-.fg-3{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:10px;align-items:end}
+.fg-3{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:10px;align-items:end}
 input,select{background:#0d1626;border:1px solid var(--ln);border-radius:8px;padding:8px;color:var(--tx);width:100%;font-size:13px}
 input[type="number"]{color-scheme:dark}
 .hint{font-size:10px;color:var(--mu);margin-top:-4px;margin-bottom:8px;font-style:italic}
@@ -54,7 +54,7 @@ td.diff.pos{color:var(--li)}
 td.diff.neg{color:var(--rd)}
 td.pf{font-family:monospace;color:var(--cy)}
 
-.match-row{display:flex;align-items:center;gap:5px;padding:7px;background:var(--sf2);border-radius:8px;margin-bottom:5px;border:1px solid var(--ln);position:relative}
+.match-row{display:flex;align-items:center;gap:5px;padding:7px;background:var(--sf2);border-radius:8px;margin-bottom:5px;border:1px solid var(--ln);position:relative;flex-wrap:wrap}
 .match-row.live{border-left:3px solid var(--rd);background:rgba(248,113,113,.06);animation:pulseLive 2s infinite}
 .match-row.finished{border-left:3px solid var(--li);opacity:.9}
 .match-row.ko{border-left:3px solid var(--or)}
@@ -65,14 +65,14 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-row.ko .m-code{color:var(--or)}
 .match-row.ck .m-code{color:var(--li);font-size:12px}
 .match-row.bye .m-code{color:var(--cy)}
-.m-team{flex:1;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-team{flex:1;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .m-team.home{color:var(--li);text-align:right}
 .m-team.away{color:var(--cy);text-align:left}
 .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
 .m-team.tbd-placeholder{color:var(--mu);font-style:italic;font-weight:600}
 
-.m-score-box{display:flex;align-items:center;gap:2px;background:#0d1626;padding:3px 5px;border-radius:6px;border:1px solid var(--ln);flex-shrink:0}
-.m-score-input{width:26px;text-align:center;background:transparent;border:none;color:var(--tx);font-weight:800;font-size:16px;font-family:monospace}
+.m-score-box{display:flex;align-items:center;gap:2px;background:#0d1626;padding:3px 8px;border-radius:6px;border:1px solid var(--ln);flex-shrink:0;min-width:80px}
+.m-score-input{width:32px;text-align:center;background:transparent;border:none;color:var(--tx);font-weight:800;font-size:16px;font-family:monospace}
 .m-score-input:focus{outline:none;border-bottom:1px solid var(--cy)}
 .m-sep{color:var(--mu);font-weight:800;font-size:14px}
 .m-ref-btn{background:var(--cy);color:#0b1220;border:none;border-radius:6px;padding:5px 7px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
@@ -159,19 +159,24 @@ td.pf{font-family:monospace;color:var(--cy)}
 .timeout-controls{display:flex;gap:8px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
 .timeout-info{font-size:11px;color:var(--mu);text-align:center;margin-bottom:8px;font-style:italic}
 
+/* Mobile responsive */
 @media(max-width:480px){
   main{padding:8px}
   .fg{grid-template-columns:1fr 1fr}
-  .fg-3{grid-template-columns:1fr}
+  .fg-3{grid-template-columns:1fr;gap:6px}
   .group-assign{grid-template-columns:1fr}
-  .m-team{font-size:10px;max-width:70px}
-  .m-score-input{width:24px;font-size:15px}
+  .m-team{font-size:9px;max-width:none;white-space:normal;line-height:1.2}
+  .m-team.home,.m-team.away{text-align:center}
+  .m-score-input{width:36px;font-size:18px}
+  .m-score-box{min-width:90px;padding:4px 10px}
   .m-ref-btn{padding:5px 6px;font-size:9px}
   .m-serving-info{max-width:60px;font-size:8px}
   .ref-score-center{min-width:100px;padding:6px 4px}
   .score-btn{width:34px;height:34px;font-size:20px}
   .score-val{font-size:24px;min-width:36px}
   .ref-serve-row{grid-template-columns:1fr;gap:8px}
+  .match-row{flex-direction:column;align-items:stretch;gap:6px}
+  .m-code{min-width:40px;font-size:10px}
 }
 </style>
 </head>
@@ -251,7 +256,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   <div class="ref-actions">
     <button class="btn btn-l" onclick="closeRefModal()">✕ Đóng</button>
     <button class="btn btn-w" onclick="openTimeoutModal()"> Timeout</button>
-    <button class="btn btn-d" onclick="finishMatch()"> Kết thúc</button>
+    <button class="btn btn-d" onclick="finishMatch()">🏁 Kết thúc</button>
   </div>
   <div id="ref-msg" class="msg"></div>
 </div>
@@ -259,7 +264,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 
 <div id="timeout-modal" class="modal-bg">
 <div class="modal">
-  <h3> THỜI GIAN TIMEOUT</h3>
+  <h3>⏱ THỜI GIAN TIMEOUT</h3>
   <div class="timeout-info">Thời gian đã trôi qua kể từ khi bắt đầu timeout</div>
   <div class="timeout-display" id="timeout-display">00:00</div>
   <div class="timeout-controls">
@@ -493,7 +498,7 @@ async function deletePlayer(pid) {
   } catch(e) { alert("❌ " + e.message); }
 }
 
-// 🌟 HÀM TẠO GIẢI MỚI - luôn tạo mã duy nhất bằng timestamp
+//  TẠO GIẢI MỚI - Mã duy nhất bằng timestamp
 async function createT() {
   var n = el("t-name").value.trim(); 
   var d = el("t-start").value;
@@ -515,6 +520,18 @@ async function createT() {
     toast("✅ Đã tạo giải: " + n); 
     DATA._showNewTForm = false;
     await loadAll();
+  } catch(e) { alert("❌ " + e.message); }
+}
+
+//  SỬA TÊN GIẢI
+async function editTName() {
+  var newName = prompt("Sửa tên giải:", DATA.tournament ? DATA.tournament.name : "");
+  if (!newName || newName.trim() === "") return;
+  try {
+    await sb.from("tournaments").update({ name: newName.trim() }).eq("id", DATA.tournament.id);
+    DATA.tournament.name = newName.trim();
+    toast("✅ Đã cập nhật tên giải");
+    render();
   } catch(e) { alert("❌ " + e.message); }
 }
 
@@ -616,7 +633,7 @@ async function initGroupsFlexible() {
       await sb.from("groups").insert({stage_id: gs.data.id, code: code, name: "Bảng " + code, max_teams: 20});
     }
     toast("✅ Đã tạo " + num + " bảng"); await selE(DATA.eid);
-  } catch(e) { alert("❌ " + e.message); }
+  } catch(e) { alert(" " + e.message); }
 }
 async function toGroup(tid, gid) {
   await sb.from("group_teams").delete().eq("team_id", tid).eq("stage_id", DATA.gStage.id);
@@ -982,7 +999,7 @@ async function onSlotChange(teamSide, slotNum) {
   var slot1 = el("ref-" + teamSide + "-slot1").value;
   var slot2 = el("ref-" + teamSide + "-slot2").value;
   if (slot1 && slot2 && slot1 === slot2) {
-    alert("⚠️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
+    alert("️ 2 VĐV ở ô 1 và ô 2 phải khác nhau!");
     el("ref-" + teamSide + "-slot" + slotNum).value = "";
     return;
   }
@@ -1096,7 +1113,18 @@ function accH(num, title, key, status, txt) {
   return `<div class="acc-h" onclick="DATA.acc['${key}']=!DATA.acc['${key}'];render()"><span>${num}. ${esc(title)}</span><span style="display:flex;gap:6px;align-items:center"><span class="st ${stCls}">${esc(txt)}</span><span>▼</span></span></div>`;
 }
 
-// 🌟 ĐÃ SỬA: Luôn hiển thị nút " Tạo giải mới" bất kể đang chọn giải nào
+// 🌟 HÀM TOGGLE FORM TẠO GIẢI MỚI
+function toggleNewTForm() {
+  DATA._showNewTForm = !DATA._showNewTForm;
+  render();
+  if (DATA._showNewTForm) {
+    setTimeout(() => {
+      var nameInput = el("t-name");
+      if (nameInput) nameInput.focus();
+    }, 50);
+  }
+}
+
 function render() {
   if (!CURRENT_USER) return;
   var H = "";
@@ -1117,7 +1145,7 @@ function render() {
   var tStatus = DATA.tournament ? "done" : "empty";
   H += `<div class="acc">${accH(2, "Giải đấu & Nội dung", "s2", tStatus, DATA.tournament ? DATA.tournament.name : "Chưa chọn")}<div class="acc-b${DATA.acc.s2?" open":""}">`;
   
-  // Hàng 1: Dropdown chọn giải + Nút Xóa + Nút Tạo giải mới
+  // Hàng 1: Dropdown chọn giải + Nút Sửa tên + Nút Xóa + Nút Tạo giải mới
   H += `<div class="fg-3">`;
   if (DATA.tournaments.length) {
     H += `<select onchange="selT(this.value)">`;
@@ -1126,9 +1154,10 @@ function render() {
   } else {
     H += `<select disabled><option>-- Chưa có giải nào --</option></select>`;
   }
-  H += `<button class="btn btn-d" onclick="delT('${DATA.tournament ? DATA.tournament.id : ''}')" ${!DATA.tournament?'disabled style="opacity:.5"':''}>🗑 Xóa giải</button>`;
+  H += `<button class="btn btn-b btn-s" onclick="editTName()" ${!DATA.tournament?'disabled style="opacity:.5"':''}>✏️ Sửa tên</button>`;
+  H += `<button class="btn btn-d btn-s" onclick="delT('${DATA.tournament ? DATA.tournament.id : ''}')" ${!DATA.tournament?'disabled style="opacity:.5"':''}>🗑 Xóa</button>`;
   // 🌟 NÚT TẠO GIẢI MỚI - LUÔN HIỂN THỊ
-  H += `<button class="btn btn-p" onclick="toggleNewTForm()">➕ Tạo giải mới</button>`;
+  H += `<button class="btn btn-p btn-s" onclick="toggleNewTForm()">➕ Giải mới</button>`;
   H += `</div>`;
   
   // Form tạo giải mới (ẩn/hiện bằng toggle)
@@ -1141,7 +1170,7 @@ function render() {
   
   // Phần nội dung thi đấu (chỉ hiện khi đã chọn giải)
   if (DATA.tournament) {
-    H += `<div class="section-title">📋 Nội dung thi đấu</div>`;
+    H += `<div class="section-title"> Nội dung thi đấu</div>`;
     H += `<div class="fg-3">`;
     H += `<select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
     DATA.events.forEach(e => {
@@ -1194,7 +1223,7 @@ function render() {
   } else {
     var totalGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
     var savedCount = DATA._savedGroups.size;
-    H += `<div class="reset-bar"><div class="info-text">📊 Đang có <b>${totalGroups} bảng</b> · <b>${matchCount} trận</b> · <b>Đã lưu: ${savedCount}/${totalGroups} bảng</b></div><button class="btn btn-d btn-s" onclick="resetGroupsAndKO()">🗑 Xóa toàn bộ</button></div>`;
+    H += `<div class="reset-bar"><div class="info-text"> Đang có <b>${totalGroups} bảng</b> · <b>${matchCount} trận</b> · <b>Đã lưu: ${savedCount}/${totalGroups} bảng</b></div><button class="btn btn-d btn-s" onclick="resetGroupsAndKO()"> Xóa toàn bộ</button></div>`;
     var un = unassigned();
     if (un.length) H += `<div style="color:var(--or);font-size:11px;margin-bottom:8px">⚠ Chưa xếp: ${un.length} đội</div>`;
     H += `<div class="group-assign">`;
@@ -1256,7 +1285,7 @@ function render() {
       if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
       if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
-      if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
+      if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
       H += `</div>`;
     }
   }
@@ -1272,18 +1301,6 @@ function render() {
       }
     });
   }, 50);
-}
-
-// 🌟 HÀM TOGGLE FORM TẠO GIẢI MỚI
-function toggleNewTForm() {
-  DATA._showNewTForm = !DATA._showNewTForm;
-  render();
-  if (DATA._showNewTForm) {
-    setTimeout(() => {
-      var nameInput = el("t-name");
-      if (nameInput) nameInput.focus();
-    }, 50);
-  }
 }
 
 function renderMatchRow(m, isKO) {
