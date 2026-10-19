@@ -184,7 +184,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 <body>
 <nav class="topnav">
 <div class="brand-row">
-  <a href="index.html" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a>
+  <a href="index.html" class="btn btn-l" style="text-decoration:none"> Trang chủ</a>
   <span class="logo">⚙ Quản trị</span>
 </div>
 <div>
@@ -347,7 +347,7 @@ async function doLogin() {
   try {
     var { data, error } = await sb.from('admin_users').select('*').eq('username', u).eq('password', p).maybeSingle();
     if (error) throw error;
-    if (!data) { el("lmsg").textContent="❌ Sai thông tin!"; return; }
+    if (!data) { el("lmsg").textContent=" Sai thông tin!"; return; }
     CURRENT_USER = data;
     localStorage.setItem('pb_admin', JSON.stringify(CURRENT_USER));
     closeLogin(); applyUI(); await loadAll();
@@ -573,7 +573,7 @@ async function createT() {
     for (var i=1; i<=4; i++) await sb.from("courts").insert({tournament_id: r.data.id, name: "Sân "+i, display_order: i});
     toast("✅ Đã tạo giải"); 
     await loadAll();
-  } catch(e) { alert("❌ " + e.message); }
+  } catch(e) { alert(" " + e.message); }
 }
 
 function resetToCreateT() {
@@ -614,7 +614,7 @@ async function saveEditTournament() {
     closeEditTournamentModal();
     await loadAll();
   } catch(e) {
-    el("edit-t-msg").textContent = "❌ " + e.message;
+    el("edit-t-msg").textContent = " " + e.message;
     el("edit-t-msg").style.color = "var(--rd)";
   }
 }
@@ -787,13 +787,11 @@ async function resetGroupsAndKO() {
   } catch(e) { alert(" " + e.message); }
 }
 
-// 🌟 ĐÃ SỬA: Đếm cả trận có tỷ số (dù status chưa finished)
 function countTeamFinishedMatches(teamId, groupId) {
   var teamMatches = DATA.matches.filter(m => 
     m.group_id === groupId && 
     (m.home_team_id === teamId || m.away_team_id === teamId)
   );
-  // Đếm trận có tỷ số HOẶC đã finished/completed
   return teamMatches.filter(m => 
     (Number(m.home_score) > 0 || Number(m.away_score) > 0) || 
     m.match_status === 'finished' || 
@@ -804,7 +802,6 @@ function countTeamFinishedMatches(teamId, groupId) {
 function standings(g) {
   var t = teamsInG(g), st = {};
   t.forEach(x => st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0});
-  // 🌟 Đếm cả trận có tỷ số (dù status chưa finished)
   DATA.matches.filter(m => m.group_id === g && ((Number(m.home_score)>0 || Number(m.away_score)>0) || m.match_status === 'finished' || m.match_status === 'completed')).forEach(m => {
     var h = st[m.home_team_id], a = st[m.away_team_id]; if (!h || !a) return;
     h.pf += Number(m.home_score)||0; h.pa += Number(m.away_score)||0; h.played++;
@@ -840,7 +837,6 @@ function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
   return 2;
 }
 
-// 🌟 ĐÃ SỬA: Kiểm tra đội đã đấu đủ trận (đếm cả trận có tỷ số)
 function isTeamGroupComplete(teamId, groupId) {
   var groupTeams = DATA.groupTeams.filter(gt => gt.group_id === groupId);
   var totalTeams = groupTeams.length;
@@ -849,6 +845,7 @@ function isTeamGroupComplete(teamId, groupId) {
   return finishedMatches >= requiredMatches;
 }
 
+// 🌟 ĐÃ SỬA: Logic bán kết 2 bảng - cross-over đúng: 1A vs 2B, 1B vs 2A
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
@@ -865,10 +862,18 @@ function computeKOTeams() {
     });
   });
   var result = { matches: [] };
+  
+  //  SỬA: Trường hợp 2 bảng - cross-over: 1A vs 2B, 1B vs 2A
   if (numGroups === 2) {
-    var seeds = [advancing[0].pos1, advancing[1].pos2, advancing[1].pos1, advancing[0].pos2];
-    result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
-    result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
+    var pos1A = advancing[0].pos1;  // Nhất bảng A
+    var pos2A = advancing[0].pos2;  // Nhì bảng A
+    var pos1B = advancing[1].pos1;  // Nhất bảng B
+    var pos2B = advancing[1].pos2;  // Nhì bảng B
+    
+    // BK1: Nhất A vs Nhì B
+    result.matches.push({round: 3, slot: 13, h: pos1A.teamId, a: pos2B.teamId, code: "BK1", h_pos: pos1A.pos, a_pos: pos2B.pos});
+    // BK2: Nhất B vs Nhì A
+    result.matches.push({round: 3, slot: 14, h: pos1B.teamId, a: pos2A.teamId, code: "BK2", h_pos: pos1B.pos, a_pos: pos2A.pos});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } else if (numGroups === 3) {
     var team1A = advancing[0].pos1, team1B = advancing[1].pos1, team1C = advancing[2].pos1;
@@ -1160,7 +1165,7 @@ async function finishMatch() {
       home_score: h, away_score: a, match_status: 'finished',
       serving_player_id: null, serving_team: null, serving_turn: null
     }).eq("id", currentRefMatchId);
-    if (error) { el("ref-msg").style.color = "var(--rd)"; el("ref-msg").textContent = "❌ Lỗi: " + error.message; return; }
+    if (error) { el("ref-msg").style.color = "var(--rd)"; el("ref-msg").textContent = " Lỗi: " + error.message; return; }
     m.home_score = h; m.away_score = a; m.match_status = 'finished';
     m.serving_player_id = null; m.serving_team = null; m.serving_turn = null;
     el("ref-match-status").className = 'match-status finished';
@@ -1177,7 +1182,6 @@ async function finishMatch() {
   }
 }
 
-// 🌟 ĐÃ SỬA: Nút xóa tỷ số hoạt động đúng
 async function resetMatchScore(matchId, event) {
   if (event) event.stopPropagation();
   if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
@@ -1186,7 +1190,6 @@ async function resetMatchScore(matchId, event) {
     var m = DATA.matches.find(x => x.id === matchId);
     if (m) { m.home_score = 0; m.away_score = 0; }
     updateAllStandingsDOM();
-    // Cập nhật trực tiếp ô input trong DOM
     var row = document.querySelector('[data-match-id="' + matchId + '"]');
     if (row) {
       var scoreH = row.querySelector('.m-score-input[data-field="home_score"]');
@@ -1263,7 +1266,7 @@ function render() {
     H += '<div class="tw"><table><thead><tr><th>Họ tên</th><th>Trình</th><th>Thao tác</th></tr></thead><tbody>';
     DATA.players.forEach(p => {
       H += '<tr><td style="text-align:left;font-weight:700">'+esc(p.full_name)+'</td><td>'+p.skill_rating+'-</td>';
-      H += '<td><button class="btn btn-b btn-xs" onclick="var n=prompt(\'Sửa tên:\', \''+esc(p.full_name)+'\'); var r=prompt(\'Sửa trình:\', \''+p.skill_rating+'0\'); if(n) savePlayer(\''+p.id+'\', n, r)">✎</button> <button class="btn btn-d btn-xs" onclick="deletePlayer(\''+p.id+'\')">🗑</button></td></tr>';
+      H += '<td><button class="btn btn-b btn-xs" onclick="var n=prompt(\'Sửa tên:\', \''+esc(p.full_name)+'\'); var r=prompt(\'Sửa trình:\', \''+p.skill_rating+'0\'); if(n) savePlayer(\''+p.id+'\', n, r)">✎</button> <button class="btn btn-d btn-xs" onclick="deletePlayer(\''+p.id+'\')"></button></td></tr>';
     });
     H += '</tbody></table></div>';
   }
@@ -1291,7 +1294,7 @@ function render() {
     H += '</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()"> Tạo nội dung</button></div>';
     if (DATA.events.length) {
       H += '<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th></th></tr></thead><tbody>';
-      DATA.events.forEach(e => { H += '<tr><td>'+esc(e.code)+'</td><td>'+esc(e.name)+'</td><td>'+(e.rating_limit||'Mở')+'</td><td><button class="btn btn-d btn-xs" onclick="delE(\''+e.id+'\')">🗑</button></td></tr>'; });
+      DATA.events.forEach(e => { H += '<tr><td>'+esc(e.code)+'</td><td>'+esc(e.name)+'</td><td>'+(e.rating_limit||'Mở')+'</td><td><button class="btn btn-d btn-xs" onclick="delE(\''+e.id+'\')"></button></td></tr>'; });
       H += '</tbody></table></div>';
     }
   }
@@ -1389,7 +1392,7 @@ function render() {
       if (r16.length) H += renderKOGroup("🎾 VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
       if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
-      if (ck.length) H += renderKOGroup("🥇 CHUNG KẾT", "ck", ck);
+      if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
       H += '</div>';
     }
   }
@@ -1449,7 +1452,6 @@ function renderMatchRow(m, isKO) {
   H += '<span class="m-sep">:</span>';
   H += '<input class="m-score-input" type="number" min="0" max="99" data-field="away_score" value="'+(m.away_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'away_score\',this.value)"/>';
   H += '</div>';
-  // 🌟 Nút xóa tỷ số ngay sau ô tỷ số
   H += '<button class="m-reset-btn" onclick="resetMatchScore(\''+m.id+'\', event)" title="Xóa tỷ số">🗑</button>';
   H += '<div class="m-team '+awayClass+'">'+esc(an)+'</div>';
   var servingText = '';
