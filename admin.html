@@ -292,6 +292,7 @@ var timeoutInterval = null;
 var timeoutRunning = false;
 
 function el(id) { return document.getElementById(id); }
+// 🌟 ĐÃ BỔ SUNG: Hàm esc bị thiếu ở phiên bản trước gây lỗi
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function pad(n,l) { return String(n).padStart(l,"0"); }
 function r2(n) { return Math.round(n*100)/100; }
@@ -457,7 +458,7 @@ function updateMatchRowsDOM() {
       statusBadge.className = 'm-status-badge ' + status;
       if (status === 'live') statusBadge.textContent = '🔴 LIVE';
       else if (status === 'finished') statusBadge.textContent = '✅ FIN';
-      else if (status === 'bye') statusBadge.textContent = ' BYE';
+      else if (status === 'bye') statusBadge.textContent = '🎟 BYE';
       else statusBadge.textContent = '';
     }
     if (servingInfo) {
@@ -492,12 +493,15 @@ async function deletePlayer(pid) {
   } catch(e) { alert("❌ " + e.message); }
 }
 
-// 🌟 ĐÃ CẬP NHẬT: Cho phép tạo nhiều giải, tự động chọn giải mới tạo
+// 🌟 ĐÃ SỬA: Tạo mã code duy nhất bằng timestamp để tránh lỗi duplicate key
 async function createT() {
   var n = el("t-name").value.trim(); 
   var d = el("t-start").value;
-  if (!n || !d) { alert("Nhập tên + ngày bắt đầu"); return; }
-  var code = "G" + pad(DATA.tournaments.length + 1, 3);
+  if (!n || !d) { alert("Nhập tên + ngày"); return; }
+  
+  // Tạo mã duy nhất (ví dụ: G459102) để không bao giờ bị trùng lặp trong DB
+  var code = "G" + Date.now().toString().slice(-6);
+  
   var payload = { 
     code: code, 
     name: n, 
@@ -507,18 +511,23 @@ async function createT() {
     status: "in_progress", 
     admin_id: CURRENT_USER.id 
   };
-  var r = await sb.from("tournaments").insert(payload).select().single();
-  if (r.error) { alert(r.error.message); return; }
-  for (var i=1; i<=4; i++) await sb.from("courts").insert({tournament_id: r.data.id, name: "Sân "+i, display_order: i});
   
-  // Xóa trắng form sau khi tạo
-  el("t-name").value = "";
-  el("t-loc").value = "";
-  el("t-start").value = "";
-  el("t-end").value = "";
-  
-  toast("✅ Đã tạo giải"); 
-  await loadAll(); // loadAll sẽ tự động chọn giải mới nhất (đầu tiên trong danh sách)
+  try {
+    var r = await sb.from("tournaments").insert(payload).select().single();
+    if (r.error) {
+      if (r.error.code === '23505') {
+        alert("Mã giải đấu đã tồnat. Vui lòng thử lại.");
+      } else {
+        alert(r.error.message);
+      }
+      return;
+    }
+    for (var i=1; i<=4; i++) await sb.from("courts").insert({tournament_id: r.data.id, name: "Sân "+i, display_order: i});
+    toast("✅ Đã tạo giải"); 
+    await loadAll();
+  } catch(e) { 
+    alert("❌ " + e.message); 
+  }
 }
 
 async function delT(id) {
@@ -737,30 +746,28 @@ function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
   
-  var sortedGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).sort((a, b) => a.code.localeCompare(b.code));
-  
   var advancing = [], allSt = {};
-  sortedGroups.forEach(g => {
+  DATA.groups.forEach(g => {
+    if (!DATA.gStage || g.stage_id !== DATA.gStage.id) return;
     var st = standings(g.id);
     st.forEach(s => allSt[s.id] = s);
-    var complete = isGroupComplete(g.id);
     
     advancing.push({
       groupCode: g.code,
       pos1: { 
-        teamId: (complete && st.length > 0) ? st[0].id : null, 
+        teamId: (st.length > 0) ? st[0].id : null, 
         pos: "1" + g.code, 
-        stats: (complete && st.length > 0) ? allSt[st[0].id] : null 
+        stats: (st.length > 0) ? allSt[st[0].id] : null 
       },
       pos2: { 
-        teamId: (complete && st.length > 1) ? st[1].id : null, 
+        teamId: (st.length > 1) ? st[1].id : null, 
         pos: "2" + g.code, 
-        stats: (complete && st.length > 1) ? allSt[st[1].id] : null 
+        stats: (st.length > 1) ? allSt[st[1].id] : null 
       },
       pos3: { 
-        teamId: (complete && st.length > 2) ? st[2].id : null, 
+        teamId: (st.length > 2) ? st[2].id : null, 
         pos: "3" + g.code, 
-        stats: (complete && st.length > 2) ? allSt[st[2].id] : null 
+        stats: (st.length > 2) ? allSt[st[2].id] : null 
       }
     });
   });
@@ -768,8 +775,9 @@ function computeKOTeams() {
   var result = { matches: [] };
 
   if (numGroups === 2) {
-    result.matches.push({round: 3, slot: 13, h: advancing[0].pos1.teamId, a: advancing[1].pos2.teamId, code: "BK1", h_pos: advancing[0].pos1.pos, a_pos: advancing[1].pos2.pos});
-    result.matches.push({round: 3, slot: 14, h: advancing[1].pos1.teamId, a: advancing[0].pos2.teamId, code: "BK2", h_pos: advancing[1].pos1.pos, a_pos: advancing[0].pos2.pos});
+    var seeds = [advancing[0].pos1, advancing[1].pos2, advancing[1].pos1, advancing[0].pos2];
+    result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
+    result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   } 
   else if (numGroups === 3) {
@@ -798,7 +806,6 @@ function computeKOTeams() {
     
     var team3_1 = null;
     var team3_2 = null;
-    
     if (sortedThirdPlaces.length >= 1) {
       team3_1 = { teamId: sortedThirdPlaces[0].teamId, pos: "3-1", stats: sortedThirdPlaces[0].stats };
     }
@@ -1172,7 +1179,7 @@ async function onServeCheck(teamSide, turn) {
     el("ref-msg").textContent = " " + (teamSide === 'home' ? el("ref-team-a-name").textContent : el("ref-team-b-name").textContent) + " giao L" + turn;
   } catch(e) {
     el("ref-msg").style.color = "var(--rd)";
-    el("ref-msg").textContent = " " + e.message;
+    el("ref-msg").textContent = "❌ " + e.message;
   }
 }
 
@@ -1285,8 +1292,6 @@ function accH(num, title, key, status, txt) {
 function render() {
   if (!CURRENT_USER) return;
   var H = "";
-  
-  // 1. Quản lý VĐV
   var pStatus = DATA.players.length ? "done" : "empty";
   H += `<div class="acc">${accH(1, "Quản lý VĐV của tôi", "s1", pStatus, DATA.players.length + " VĐV")}<div class="acc-b${DATA.acc.s1?" open":""}">`;
   H += `<div class="fg"><input id="p-name" placeholder="Họ tên VĐV"/><input id="p-rating" type="number" step="0.05" placeholder="Trình"/><button class="btn btn-p" onclick="savePlayer(null,el('p-name').value,el('p-rating').value)">➕ Thêm</button></div>`;
@@ -1300,50 +1305,29 @@ function render() {
   }
   H += `</div></div>`;
 
-  // 🌟 2. Quản lý Giải đấu & Nội dung (ĐÃ SỬA ĐỂ TẠO NHIỀU GIẢI)
-  var tStatus = DATA.tournaments.length > 0 ? "done" : "empty";
-  var currentTName = DATA.tournament ? DATA.tournament.name : (DATA.tournaments.length > 0 ? "Chọn một giải" : "Chưa có giải");
-  H += `<div class="acc">${accH(2, "Quản lý Giải đấu & Nội dung", "s2", tStatus, currentTName)}<div class="acc-b${DATA.acc.s2?" open":""}">`;
-  
-  // Form tạo giải mới luôn hiển thị
-  H += `<div class="fg" style="margin-bottom:12px; border-bottom:1px solid var(--ln); padding-bottom:12px;">
-          <input id="t-name" placeholder="Tên giải đấu mới"/>
-          <input id="t-loc" placeholder="Địa điểm (tùy chọn)"/>
-          <input id="t-start" type="date" placeholder="Ngày bắt đầu"/>
-          <input id="t-end" type="date" placeholder="Ngày kết thúc (tùy chọn)"/>
-          <button class="btn btn-p" onclick="createT()">➕ Tạo giải mới</button>
-        </div>`;
-
-  if (DATA.tournaments.length > 0) {
-    H += `<div class="fg">`;
-    H += `<select onchange="selT(this.value)" style="flex:1">`;
-    DATA.tournaments.forEach(t => { 
-      H += `<option value="${t.id}" ${DATA.tournament && t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; 
+  var tStatus = DATA.tournament ? "done" : "empty";
+  H += `<div class="acc">${accH(2, "Giải đấu & Nội dung", "s2", tStatus, DATA.tournament ? DATA.tournament.name : "Chưa chọn")}<div class="acc-b${DATA.acc.s2?" open":""}">`;
+  if (!DATA.tournament) {
+    H += `<div class="fg"><input id="t-name" placeholder="Tên giải"/><input id="t-loc" placeholder="Địa điểm"/><input id="t-start" type="date"/><input id="t-end" type="date"/><button class="btn btn-p" onclick="createT()"> Tạo giải</button></div>`;
+  } else {
+    H += `<div class="fg"><select onchange="selT(this.value)">`;
+    DATA.tournaments.forEach(t => { H += `<option value="${t.id}" ${t.id===DATA.tournament.id?"selected":""}>${esc(t.name)}</option>`; });
+    H += `</select><button class="btn btn-d" onclick="delT('${DATA.tournament.id}')">🗑 Xóa giải</button></div>`;
+    H += `<div class="section-title"> Nội dung thi đấu</div>`;
+    H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
+    DATA.events.forEach(e => {
+      var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
+      H += `<option value="${e.id}" ${e.id===DATA.eid?"selected":""}>${esc(e.code)}. ${esc(e.name)}${rule}</option>`;
     });
-    H += `</select>`;
-    if (DATA.tournament) {
-      H += `<button class="btn btn-d" onclick="delT('${DATA.tournament.id}')">🗑 Xóa giải đang chọn</button>`;
-    }
-    H += `</div>`;
-    
-    if (DATA.tournament) {
-      H += `<div class="section-title"> Nội dung thi đấu của: <span style="color:var(--li)">${esc(DATA.tournament.name)}</span></div>`;
-      H += `<div class="fg"><select onchange="selE(this.value)" id="event-selector"><option value="">-- Chọn nội dung --</option>`;
-      DATA.events.forEach(e => {
-        var rule = e.rating_rule === "max_total" ? " (≤"+e.rating_limit+")" : " (Mở)";
-        H += `<option value="${e.id}" ${e.id===DATA.eid?"selected":""}>${esc(e.code)}. ${esc(e.name)}${rule}</option>`;
-      });
-      H += `</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button></div>`;
-      if (DATA.events.length) {
-        H += `<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th></th></tr></thead><tbody>`;
-        DATA.events.forEach(e => { H += `<tr><td>${esc(e.code)}</td><td>${esc(e.name)}</td><td>${e.rating_limit||'Mở'}</td><td><button class="btn btn-d btn-xs" onclick="delE('${e.id}')">🗑</button></td></tr>`; });
-        H += `</tbody></table></div>`;
-      }
+    H += `</select><button class="btn btn-b btn-s" onclick="quickCreateEvent()">➕ Tạo nội dung</button></div>`;
+    if (DATA.events.length) {
+      H += `<div class="tw"><table><thead><tr><th>Mã</th><th>Tên</th><th>Giới hạn</th><th></th></tr></thead><tbody>`;
+      DATA.events.forEach(e => { H += `<tr><td>${esc(e.code)}</td><td>${esc(e.name)}</td><td>${e.rating_limit||'Mở'}</td><td><button class="btn btn-d btn-xs" onclick="delE('${e.id}')">🗑</button></td></tr>`; });
+      H += `</tbody></table></div>`;
     }
   }
   H += `</div></div>`;
 
-  // 3. Tạo đội
   var teamStatus = DATA.teams.length ? "done" : "empty";
   H += `<div class="acc">${accH(3, "Tạo đội", "s3", teamStatus, DATA.teams.length + " đội")}<div class="acc-b${DATA.acc.s3?" open":""}">`;
   if (!DATA.eid) {
@@ -1368,7 +1352,6 @@ function render() {
   }
   H += `</div></div>`;
 
-  // 4. Xếp lịch & Ghi điểm
   var matchCount = DATA.matches.length;
   var s4Status = matchCount ? "done" : "empty";
   H += `<div class="acc">${accH(4, "Xếp lịch & Ghi điểm", "s4", s4Status, matchCount + " trận")}<div class="acc-b${DATA.acc.s4?" open":""}">`;
@@ -1443,27 +1426,14 @@ function render() {
       var r16 = km.filter(m => Number(m.round)===1), tk = km.filter(m => Number(m.round)===2), bk = km.filter(m => Number(m.round)===3), ck = km.filter(m => Number(m.round)===4);
       if (r16.length) H += renderKOGroup(" VÒNG 1/16", "r16", r16);
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
-      if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
+      if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
       if (ck.length) H += renderKOGroup(" CHUNG KẾT", "ck", ck);
       H += `</div>`;
     }
   }
   H += `</div></div>`;
   el("content").innerHTML = H;
-  
   setTimeout(() => {
-    // Tự động điền ngày hôm nay cho form tạo giải mới
-    var dateInput = document.getElementById('t-start');
-    if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
-    
-    // Scroll xuống phần xếp lịch nếu có param URL
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('tournament')) {
-      var accs = document.querySelectorAll('.acc');
-      if (accs[3]) accs[3].scrollIntoView({behavior: 'smooth', block: 'start'});
-    }
-    
-    // Restore draft selections
     DATA.draft.forEach((m, i) => {
       var rows = document.querySelectorAll(".mrow");
       if (rows[i]) {
@@ -1561,9 +1531,13 @@ window.addEventListener('storage', function(event) {
         if (t) {
           await selT(tid);
           DATA.acc.s4 = true;
+          render();
+          setTimeout(() => {
+            var accs = document.querySelectorAll('.acc');
+            if (accs[3]) accs[3].scrollIntoView({behavior: 'smooth', block: 'start'});
+          }, 300);
         }
       }
-      render();
     } else {
       el("content").innerHTML = '<div style="text-align:center;padding:40px;color:var(--mu)">Vui lòng đăng nhập để quản trị.</div>';
     }
