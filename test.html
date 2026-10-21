@@ -93,7 +93,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-main-row .m-team{font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;transition:color .2s}
 .match-main-row .m-team.home{color:var(--li);text-align:right}
 .match-main-row .m-team.away{color:var(--cy);text-align:left}
-.match-main-row .m-team.tbd{color:var(--mu);font-style:italic;font-weight:500;font-size:10px}
+.match-main-row .m-team.tbd{color:var(--cy);font-style:italic;font-weight:600;font-size:10px}
 .match-main-row .m-team.leading { color: var(--rd) !important; font-weight: 800; }
 .match-main-row .m-team .serve-icon{color:var(--or);font-size:12px;margin:0 2px;animation:blink 1s infinite}
 
@@ -363,17 +363,32 @@ function getPlayerName(playerId) {
   return p ? p.full_name : null;
 }
 
-// 🌟 CHO PHÉP XEM CÔNG KHAI: Chỉ kiểm tra quyền sở hữu nếu đã đăng nhập
 function isOwnerOfTournament(t) {
   if (!t) return false;
   if (isAdmin()) return true;
-  if (!CURRENT_USER) return false; // Chưa đăng nhập thì không phải chủ sở hữu
+  if (!CURRENT_USER) return false;
   return t.admin_id === CURRENT_USER.id;
 }
 
-function getMatchTeamName(teamId, bracketPos) {
+// 🌟 HÀM KIỂM TRA TẤT CẢ CÁC BẢNG ĐÃ ĐẤU XONG CHƯA
+function areAllGroupsComplete() {
+  if (!DATA.gStage) return false;
+  var eventGroups = DATA.groups.filter(function(g) { return g.stage_id === DATA.gStage.id; });
+  if (eventGroups.length === 0) return false;
+  return eventGroups.every(function(g) { return isGroupComplete(g.id); });
+}
+
+// 🌟 HÀM LẤY TÊN ĐỘI CÔNG KHAI (GIẤU TÊN NẾU CHƯA XONG VÒNG BẢNG)
+function getPublicMatchTeamName(teamId, bracketPos, isGroupStageDone, isHome) {
+  if (!isGroupStageDone) {
+    // Nếu chưa xong vòng bảng, ưu tiên hiển thị vị trí (ví dụ: "1A", "Thắng TK1")
+    // Nếu không có thông tin vị trí, hiển thị "TEAM A" / "TEAM B" như yêu cầu
+    if (bracketPos) return bracketPos;
+    return isHome ? "TEAM A" : "TEAM B";
+  }
+  // Nếu đã xong vòng bảng, hiển thị tên đội thật
   if (!teamId) {
-    return bracketPos ? bracketPos : 'TBD';
+    return bracketPos ? bracketPos : (isHome ? "TEAM A" : "TEAM B");
   }
   var t = DATA.teams.find(function(x) { return x && x.id === teamId; });
   return t ? (t.name || 'TBD') : 'TBD';
@@ -548,6 +563,7 @@ function stopRealtime() {
 }
 
 function updateMatchRowsDOM() {
+  var isGroupStageDone = areAllGroupsComplete();
   DATA.matches.forEach(function(m) {
     var row = document.querySelector('.match-item[data-match-id="' + m.id + '"]');
     if (!row) return;
@@ -555,8 +571,8 @@ function updateMatchRowsDOM() {
     var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
     var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
     
-    var hn = getMatchTeamName(m.home_team_id, m.home_bracket_position);
-    var an = getMatchTeamName(m.away_team_id, m.away_bracket_position);
+    var hn = getPublicMatchTeamName(m.home_team_id, m.home_bracket_position, isGroupStageDone, true);
+    var an = getPublicMatchTeamName(m.away_team_id, m.away_bracket_position, isGroupStageDone, false);
     
     var scoreEl = row.querySelector('.m-score');
     if (scoreEl) {
@@ -636,11 +652,10 @@ function checkTournamentStatus(tMatches) {
   return "in_progress";
 }
 
-// 🌟 TẢI DỮ LIỆU CÔNG KHAI: Không lọc theo admin_id, ai cũng xem được
 async function loadTournaments() {
   try {
     var tr = await sb.from("tournaments").select("*").order("created_at", {ascending:false});
-    DATA.tournaments = tr.data || []; // Lấy tất cả, không filter
+    DATA.tournaments = tr.data || [];
     
     var er = await sb.from("events").select("id, tournament_id");
     var allEvents = er.data || [];
@@ -648,7 +663,6 @@ async function loadTournaments() {
     var mr = await sb.from("matches").select("*");
     var allMatches = mr.data || [];
     
-    // 🌟 Logic tự động gán "completed" nếu end_date <= (hôm nay - 1 ngày)
     var today = new Date();
     today.setHours(0, 0, 0, 0);
     var thresholdDate = new Date(today);
@@ -756,11 +770,12 @@ function renderTimeline() {
     return;
   }
   var H = '';
+  var isGroupStageDone = areAllGroupsComplete();
   DATA.rallies.forEach(function(r) {
     var badge = getEventTypeBadge(r.event_type);
     var match = DATA.matches.find(function(m) { return m.id === r.match_id; });
-    var homeTeamName = match ? getMatchTeamName(match.home_team_id, match.home_bracket_position) : 'Đội A';
-    var awayTeamName = match ? getMatchTeamName(match.away_team_id, match.away_bracket_position) : 'Đội B';
+    var homeTeamName = match ? getPublicMatchTeamName(match.home_team_id, match.home_bracket_position, isGroupStageDone, true) : 'TEAM A';
+    var awayTeamName = match ? getPublicMatchTeamName(match.away_team_id, match.away_bracket_position, isGroupStageDone, false) : 'TEAM B';
     
     var isHomeServing = r.server_team === 'home';
     var serverName = isHomeServing ? homeTeamName : awayTeamName;
@@ -1012,7 +1027,7 @@ function renderTournamentList() {
   DATA.tournaments.forEach(function(t) {
     var statusCls = t.display_status || "not_started";
     var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
-    var canManage = isOwnerOfTournament(t); // Sẽ trả về false nếu chưa đăng nhập
+    var canManage = isOwnerOfTournament(t);
     H += '<div class="t-card" onclick="viewTournament(\'' + t.id + '\')">';
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
@@ -1138,8 +1153,9 @@ function renderEventDetail() {
 }
 
 function renderMatchItem(m, isKO) {
-  var hn = getMatchTeamName(m.home_team_id, m.home_bracket_position);
-  var an = getMatchTeamName(m.away_team_id, m.away_bracket_position);
+  var isGroupStageDone = areAllGroupsComplete();
+  var hn = getPublicMatchTeamName(m.home_team_id, m.home_bracket_position, isGroupStageDone, true);
+  var an = getPublicMatchTeamName(m.away_team_id, m.away_bracket_position, isGroupStageDone, false);
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
   var statusText = "⏳ Chưa đấu", statusClass = "scheduled";
@@ -1185,7 +1201,6 @@ function renderKOGroup(title, cls, matches) {
   return H;
 }
 
-// 🌟 RENDER CÔNG KHAI: Không có điều kiện chặn nếu !CURRENT_USER
 function render() {
   var H = DATA.tournament ? renderTournamentDetail() : renderTournamentList();
   el("content").innerHTML = H;
@@ -1195,7 +1210,10 @@ function openTimelineModal(matchId) {
   currentTimelineMatchId = matchId;
   var m = DATA.matches.find(function(x) { return x.id === matchId; });
   if (!m) return;
-  el("timeline-title").textContent = displayCode(m) + ': ' + getMatchTeamName(m.home_team_id, m.home_bracket_position) + ' vs ' + getMatchTeamName(m.away_team_id, m.away_bracket_position);
+  var isGroupStageDone = areAllGroupsComplete();
+  el("timeline-title").textContent = displayCode(m) + ': ' + 
+    getPublicMatchTeamName(m.home_team_id, m.home_bracket_position, isGroupStageDone, true) + ' vs ' + 
+    getPublicMatchTeamName(m.away_team_id, m.away_bracket_position, isGroupStageDone, false);
   el("timeline-modal").classList.add("show");
   loadRallies(matchId);
 }
@@ -1220,8 +1238,8 @@ window.backToList = function() {
     var u = localStorage.getItem('pb_admin');
     if (u) { try { CURRENT_USER = JSON.parse(u); } catch(e) { localStorage.removeItem('pb_admin'); } }
     applyUI();
-    await loadTournaments(); // Tải dữ liệu cho cả khách vãng lai
-    render(); // Hiển thị ngay lập tức
+    await loadTournaments();
+    render();
   } catch(e) {
     el("content").innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Lỗi tải dữ liệu: ' + esc(e.message) + '</p></div>';
   }
