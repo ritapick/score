@@ -1140,12 +1140,12 @@ function renderTournamentDetail() {
   var t = DATA.tournament;
   if (!t) return '';
   var statusCls = t.display_status || "not_started";
-  var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? " Đang diễn ra" : "✅ Đã kết thúc");
+  var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
   var canManage = isOwnerOfTournament(t);
   
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
-  H += '<div class="meta"><span> ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
+  H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div>';
   if (canManage) H += '<div class="manage-bar"><a class="btn btn-w" href="https://ritapick.github.io/score/referee.html">⚙ TRANG TRỌNG TÀI</a></div>';
