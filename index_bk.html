@@ -130,6 +130,37 @@ td.pf{font-family:monospace;color:var(--cy)}
 .ko-group-header.r16{background:rgba(34,211,238,.1);color:var(--cy)}
 .ko-group .match-list{padding:6px}
 
+/* Bracket Tree Styles - Căn chỉnh cân đối */
+.bracket-section{margin-top:16px;padding:14px;background:rgba(59,130,246,.05);border:2px solid rgba(59,130,246,.3);border-radius:12px}
+.bracket-section>h3{margin:0 0 16px;color:var(--cy);font-size:15px;display:flex;align-items:center;gap:8px}
+.bracket-container{overflow-x:auto;padding:10px 0}
+.bracket-tree{display:flex;gap:0;min-width:900px;position:relative;align-items:stretch}
+.bracket-round{flex:1;display:flex;flex-direction:column;position:relative;padding:0 10px}
+.bracket-round:first-child{padding-left:0}
+.bracket-round:last-child{padding-right:0}
+.bracket-header{text-align:center;margin-bottom:20px;padding:10px 14px;border-radius:8px;font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:1px;flex-shrink:0}
+.bracket-header.tk{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff}
+.bracket-header.bk{background:linear-gradient(135deg,#065f46,#10b981);color:#fff}
+.bracket-header.ck{background:linear-gradient(135deg,#991b1b,#ef4444);color:#fff}
+
+.bracket-matches-wrapper{flex:1;display:flex;flex-direction:column;justify-content:space-around;position:relative}
+
+.bracket-match{background:var(--sf);border:2px solid var(--ln);border-radius:8px;padding:8px;margin:6px 0;position:relative;z-index:2;transition:.2s}
+.bracket-match:hover{border-color:var(--cy)}
+.bracket-match.winner{border-color:var(--li);background:rgba(163,230,53,.05)}
+.bracket-match-code{position:absolute;top:-10px;left:10px;background:var(--or);color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:4px;font-family:monospace;z-index:3}
+.bracket-match-row{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin:2px 0;background:rgba(13,22,38,.6);border-radius:4px}
+.bracket-match-row.winner-row{background:rgba(163,230,53,.12)}
+.bracket-team{font-size:11px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bracket-team.tbd{color:var(--mu);font-style:italic;font-weight:500;font-size:10px}
+.bracket-score{font-family:monospace;font-weight:900;font-size:12px;min-width:24px;text-align:center;margin-left:8px;padding:2px 6px;border-radius:3px;background:#0d1626}
+.bracket-score.win{color:var(--li)}
+.bracket-vs{display:flex;justify-content:center;margin:3px 0;font-size:9px;color:var(--mu);font-weight:800;letter-spacing:1px}
+
+/* Connector lines */
+.bracket-connector-h{position:absolute;right:-10px;top:50%;width:10px;height:2px;background:var(--ln);z-index:1}
+.bracket-round:not(:last-child) .bracket-matches-wrapper::after{content:"";position:absolute;right:-10px;top:0;bottom:0;width:2px;background:transparent}
+
 .sponsor-section{margin-top:14px;padding:12px;background:var(--sf2);border:1px solid var(--ln);border-radius:10px}
 .sponsor-section h4{margin:0 0 10px;color:var(--cy);font-size:13px}
 .sponsor-list{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
@@ -245,6 +276,10 @@ td.pf{font-family:monospace;color:var(--cy)}
   .rally-score-circle{width:38px;height:38px;font-size:18px}
   .rally-score-circle.turn{width:34px;height:34px;font-size:14px}
   .rally-score-label{font-size:9px;max-width:70px}
+  .bracket-tree{min-width:700px}
+  .bracket-match{padding:6px;margin:4px 0}
+  .bracket-team{font-size:10px}
+  .bracket-header{font-size:11px;padding:8px 10px}
 }
 @media(min-width:481px) and (max-width:768px){
   .tournament-grid{grid-template-columns:repeat(2,1fr)}
@@ -261,7 +296,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   <span id="user-chip" class="chip hidden"></span>
   <button id="register-btn" class="btn btn-b" onclick="openRegister()">📝 Đăng ký</button>
   <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
-  <a id="admin-link" class="btn btn-b hidden" href="admin.html">⚙ Quản trị</a>
+  <a id="admin-link" class="btn btn-b hidden" href="admin.html"> Quản trị</a>
   <button id="logout-btn" class="btn btn-l hidden" onclick="doLogout()">Thoát</button>
 </div>
 </nav>
@@ -311,12 +346,12 @@ td.pf{font-family:monospace;color:var(--cy)}
     <button class="close-btn" onclick="closeTimelineModal()">×</button>
   </div>
   <div class="timeline-subheader">
-    <span class="icon">📈</span>
+    <span class="icon"></span>
     <h4 id="timeline-title">Đang tải...</h4>
   </div>
   <div class="timeline-body" id="timeline-body">
     <div class="timeline-empty">
-      <div class="icon">⏳</div>
+      <div class="icon"></div>
       <p>Đang tải diễn biến...</p>
     </div>
   </div>
@@ -475,7 +510,7 @@ async function doRegister() {
   
   if (!u || !p || !pc) { msg.textContent = "⚠️ Vui lòng nhập đầy đủ thông tin."; return; }
   if (!/^[a-z0-9_]{3,20}$/.test(u)) { 
-    msg.textContent = "⚠️ Tên chỉ chứa chữ thường, số, _ (3-20 ký tự)."; 
+    msg.textContent = "️ Tên chỉ chứa chữ thường, số, _ (3-20 ký tự)."; 
     return; 
   }
   if (u === 'admin') { 
@@ -487,7 +522,7 @@ async function doRegister() {
     return; 
   }
   if (p !== pc) { 
-    msg.textContent = "⚠️ Mật khẩu xác nhận không khớp."; 
+    msg.textContent = "️ Mật khẩu xác nhận không khớp."; 
     return; 
   }
   
@@ -614,7 +649,7 @@ function updateMatchRowsDOM() {
 
     var statusEl = row.querySelector('.status-tag');
     if (statusEl) {
-      var statusText = status === 'live' ? '🔴 LIVE' : ((status === 'finished' || status === 'completed') ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : ''));
+      var statusText = status === 'live' ? ' LIVE' : ((status === 'finished' || status === 'completed') ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : ''));
       statusEl.className = 'status-tag ' + status;
       statusEl.textContent = statusText;
     }
@@ -628,7 +663,7 @@ function updateMatchRowsDOM() {
     if (status === 'live' && m.serving_player_id) {
       var pName = getPlayerName(m.serving_player_id) || 'VĐV';
       var turn = m.serving_turn || 1;
-      var newText = '🏓 ' + pName + ' đang giao (L' + turn + ')';
+      var newText = ' ' + pName + ' đang giao (L' + turn + ')';
       if (!serveInfoEl) {
         var newDiv = document.createElement('div');
         newDiv.className = 'match-serve-info';
@@ -803,7 +838,7 @@ function renderTimeline() {
     H += '<span class="rally-badge ' + badge.cls + '">' + badge.text + '</span>';
     H += '</div>';
     H += '<div class="rally-score">';
-    H += '<div class="rally-score-col"><div class="rally-score-label server-label">🏓 ' + esc(serverName) + '</div><div class="rally-score-circle server">' + serverScore + '</div></div>';
+    H += '<div class="rally-score-col"><div class="rally-score-label server-label"> ' + esc(serverName) + '</div><div class="rally-score-circle server">' + serverScore + '</div></div>';
     H += '<span class="rally-score-sep">-</span>';
     H += '<div class="rally-score-col"><div class="rally-score-label">' + esc(receiverName) + '</div><div class="rally-score-circle receiver">' + receiverScore + '</div></div>';
     H += '<span class="rally-score-sep">-</span>';
@@ -1032,13 +1067,13 @@ function computeKOTeams() {
 function renderTournamentList() {
   var H = '<div class="section-title">🏆 DANH SÁCH GIẢI ĐẤU <span class="count">' + DATA.tournaments.length + '</span></div>';
   if (!DATA.tournaments.length) {
-    H += '<div class="empty-state"><div class="icon">📭</div><p>Chưa có giải đấu nào</p></div>';
+    H += '<div class="empty-state"><div class="icon"></div><p>Chưa có giải đấu nào</p></div>';
     return H;
   }
   H += '<div class="tournament-grid">';
   DATA.tournaments.forEach(function(t) {
     var statusCls = t.display_status || "not_started";
-    var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
+    var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? " Đang diễn ra" : "✅ Đã kết thúc");
     var canManage = isOwnerOfTournament(t);
     H += '<div class="t-card" onclick="viewTournament(\'' + t.id + '\')">';
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
@@ -1063,7 +1098,7 @@ function renderTournamentDetail() {
   
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
-  H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
+  H += '<div class="meta"><span> ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div>';
   if (canManage) H += '<div class="manage-bar"><a class="btn btn-w" href="https://ritapick.github.io/score/referee.html">⚙ TRANG TRỌNG TÀI</a></div>';
@@ -1157,10 +1192,129 @@ function renderEventDetail() {
     
     if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16);
     if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
-    if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
+    if (bk.length) H += renderKOGroup(" BÁN KẾT", "bk", bk);
     if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
     H += '</div>';
+    
+    // Render bracket tree
+    H += renderBracketTree(tk, bk, ck, numGroups);
   }
+  return H;
+}
+
+// Helper: render 1 match card trong bracket
+function renderBracketMatchCard(m, codeOverride, isPlaceholder) {
+  var code = codeOverride || (m ? displayCode(m) : '');
+  var h = m ? Number(m.home_score)||0 : 0;
+  var a = m ? Number(m.away_score)||0 : 0;
+  var hWin = m && h > a;
+  var aWin = m && a > h;
+  
+  var homeName, awayName;
+  if (isPlaceholder) {
+    homeName = codeOverride || 'TBD';
+    awayName = 'TBD';
+  } else if (m) {
+    homeName = getDisplayTeamName(m.home_team_id, m.home_bracket_position, m, true);
+    awayName = getDisplayTeamName(m.away_team_id, m.away_bracket_position, m, false);
+  } else {
+    homeName = 'TBD';
+    awayName = 'TBD';
+  }
+  
+  var H = '<div class="bracket-match' + (hWin || aWin ? ' winner' : '') + '">';
+  if (!isPlaceholder && code) {
+    H += '<div class="bracket-match-code">' + esc(code) + '</div>';
+  }
+  H += '<div class="bracket-match-row' + (hWin ? ' winner-row' : '') + '">';
+  H += '<span class="bracket-team' + (isPlaceholder ? ' tbd' : '') + '">' + esc(homeName) + '</span>';
+  H += '<span class="bracket-score' + (hWin ? ' win' : '') + '">' + (m ? (h || '-') : '-') + '</span>';
+  H += '</div>';
+  H += '<div class="bracket-vs">VS</div>';
+  H += '<div class="bracket-match-row' + (aWin ? ' winner-row' : '') + '">';
+  H += '<span class="bracket-team' + (isPlaceholder ? ' tbd' : '') + '">' + esc(awayName) + '</span>';
+  H += '<span class="bracket-score' + (aWin ? ' win' : '') + '">' + (m ? (a || '-') : '-') + '</span>';
+  H += '</div>';
+  H += '</div>';
+  return H;
+}
+
+function renderBracketTree(tk, bk, ck, numGroups) {
+  var hasTK = tk && tk.length > 0;
+  var H = '<div class="bracket-section"><h3>🌳 SƠ ĐỒ NHÁNH ĐẤU</h3><div class="bracket-container"><div class="bracket-tree">';
+  
+  if (hasTK) {
+    // Tứ kết - 4 trận
+    H += '<div class="bracket-round">';
+    H += '<div class="bracket-header tk">🎯 Tứ Kết</div>';
+    H += '<div class="bracket-matches-wrapper">';
+    tk.forEach(function(m) {
+      var code = displayCode(m);
+      H += renderBracketMatchCard(m, code, false);
+    });
+    H += '</div></div>';
+    
+    // Bán kết - 2 trận, căn giữa
+    H += '<div class="bracket-round">';
+    H += '<div class="bracket-header bk">🏅 Bán Kết</div>';
+    H += '<div class="bracket-matches-wrapper">';
+    if (bk && bk.length) {
+      bk.forEach(function(m) {
+        var code = displayCode(m);
+        H += renderBracketMatchCard(m, code, false);
+      });
+    } else {
+      H += renderBracketMatchCard(null, 'Thắng TK1', true);
+      H += renderBracketMatchCard(null, 'Thắng TK2', true);
+    }
+    H += '</div></div>';
+    
+    // Chung kết - 1 trận, căn giữa
+    H += '<div class="bracket-round">';
+    H += '<div class="bracket-header ck">🏆 Chung Kết</div>';
+    H += '<div class="bracket-matches-wrapper">';
+    if (ck && ck.length) {
+      ck.forEach(function(m) {
+        var code = displayCode(m);
+        H += renderBracketMatchCard(m, code, false);
+      });
+    } else {
+      H += renderBracketMatchCard(null, 'Thắng BK1', true);
+    }
+    H += '</div></div>';
+  } else {
+    // Chỉ có 2 bảng - không có tứ kết
+    // Bán kết
+    H += '<div class="bracket-round">';
+    H += '<div class="bracket-header bk">🏅 Bán Kết</div>';
+    H += '<div class="bracket-matches-wrapper">';
+    if (bk && bk.length) {
+      bk.forEach(function(m) {
+        var code = displayCode(m);
+        H += renderBracketMatchCard(m, code, false);
+      });
+    } else {
+      H += renderBracketMatchCard(null, 'Nhất bảng A', true);
+      H += renderBracketMatchCard(null, 'Nhất bảng B', true);
+    }
+    H += '</div></div>';
+    
+    // Chung kết
+    H += '<div class="bracket-round">';
+    H += '<div class="bracket-header ck">🏆 Chung Kết</div>';
+    H += '<div class="bracket-matches-wrapper">';
+    if (ck && ck.length) {
+      ck.forEach(function(m) {
+        var code = displayCode(m);
+        H += renderBracketMatchCard(m, code, false);
+      });
+    } else {
+      H += renderBracketMatchCard(null, 'Thắng BK1', true);
+    }
+    H += '</div></div>';
+  }
+  
+  H += '</div></div></div>';
   return H;
 }
 
@@ -1173,7 +1327,7 @@ function renderMatchItem(m, isKO) {
   
   if (status === 'live') { statusText = "🔴 LIVE"; statusClass = "live"; } 
   else if (status === 'finished' || status === 'completed') { statusText = "✅ FIN"; statusClass = "finished"; } 
-  else if (status === 'bye') { statusText = "🎟 BYE"; statusClass = "bye"; }
+  else if (status === 'bye') { statusText = " BYE"; statusClass = "bye"; }
   
   var homeLeadingClass = h > a ? "leading" : "";
   var awayLeadingClass = a > h ? "leading" : "";
@@ -1199,7 +1353,7 @@ function renderMatchItem(m, isKO) {
   
   if (status === 'live' && m.serving_player_id) {
     var pName = getPlayerName(m.serving_player_id) || 'VĐV';
-    H += '<div class="match-serve-info">🏓 ' + esc(pName) + ' đang giao (L' + (m.serving_turn || 1) + ')</div>';
+    H += '<div class="match-serve-info"> ' + esc(pName) + ' đang giao (L' + (m.serving_turn || 1) + ')</div>';
   }
   H += '</div>';
   return H;
