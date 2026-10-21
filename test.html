@@ -357,7 +357,6 @@ function findTeam(id) { for(var i=0;i<DATA.teams.length;i++) if(DATA.teams[i].id
 function tName(id) { var t=findTeam(id); return t?sn(t.name):null; }
 function isAdmin() { return CURRENT_USER && CURRENT_USER.username.toLowerCase() === 'admin'; }
 
-// 🌟 Kiểm tra quyền đặc biệt (Admin hoặc Trọng tài) để luôn hiển thị tên thật
 function isPrivileged() {
   if (!CURRENT_USER) return false;
   var u = String(CURRENT_USER.username || "").toLowerCase();
@@ -386,32 +385,26 @@ function getMatchTeamName(teamId, bracketPos) {
   return t ? (t.name || 'TBD') : 'TBD';
 }
 
-// 🌟 LOGIC MỚI: Kiểm tra và trả về tên đội hiển thị (TEAM A / TEAM B nếu đủ điều kiện)
-function getDisplayTeamName(teamId, bracketPos, match) {
-  // Admin và Trọng tài luôn thấy tên thật
+function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) {
     return getMatchTeamName(teamId, bracketPos);
   }
 
-  // Kiểm tra xem có phải trận Tứ kết (TK) hay không
   var isTK = Number(match.round) === 2 || (match.match_code && String(match.match_code).toUpperCase().includes('TK'));
 
   if (isTK) {
-    // Kiểm tra xem TẤT CẢ các trận vòng bảng đều đã có tỷ số hoặc kết thúc
     var allGroupMatchesScored = DATA.matches.every(function(m) {
-      if (!m.group_id) return true; // Không phải trận vòng bảng, bỏ qua
+      if (!m.group_id) return true;
       var hasScore = Number(m.home_score) > 0 || Number(m.away_score) > 0;
       var isDone = m.match_status === 'completed' || m.match_status === 'finished' || m.match_status === 'bye' || m.match_status === 'live';
       return hasScore || isDone;
     });
 
-    // Nếu có ít nhất 1 trận vòng bảng chưa có tỷ số/kết thúc
     if (!allGroupMatchesScored) {
-      return teamId === match.home_team_id ? "TEAM A" : "TEAM B";
+      return isHome ? "TEAM A" : "TEAM B";
     }
   }
 
-  // Mặc định trả về tên thật
   return getMatchTeamName(teamId, bracketPos);
 }
 
@@ -591,8 +584,8 @@ function updateMatchRowsDOM() {
     var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
     var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
     
-    var hn = getDisplayTeamName(m.home_team_id, m.home_bracket_position, m);
-    var an = getDisplayTeamName(m.away_team_id, m.away_bracket_position, m);
+    var hn = getDisplayTeamName(m.home_team_id, m.home_bracket_position, m, true);
+    var an = getDisplayTeamName(m.away_team_id, m.away_bracket_position, m, false);
     
     var scoreEl = row.querySelector('.m-score');
     if (scoreEl) {
@@ -793,8 +786,8 @@ function renderTimeline() {
   DATA.rallies.forEach(function(r) {
     var badge = getEventTypeBadge(r.event_type);
     var match = DATA.matches.find(function(m) { return m.id === r.match_id; });
-    var homeTeamName = match ? getDisplayTeamName(match.home_team_id, match.home_bracket_position, match) : 'Đội A';
-    var awayTeamName = match ? getDisplayTeamName(match.away_team_id, match.away_bracket_position, match) : 'Đội B';
+    var homeTeamName = match ? getDisplayTeamName(match.home_team_id, match.home_bracket_position, match, true) : 'Đội A';
+    var awayTeamName = match ? getDisplayTeamName(match.away_team_id, match.away_bracket_position, match, false) : 'Đội B';
     
     var isHomeServing = r.server_team === 'home';
     var serverName = isHomeServing ? homeTeamName : awayTeamName;
@@ -1172,8 +1165,8 @@ function renderEventDetail() {
 }
 
 function renderMatchItem(m, isKO) {
-  var hn = getDisplayTeamName(m.home_team_id, m.home_bracket_position, m);
-  var an = getDisplayTeamName(m.away_team_id, m.away_bracket_position, m);
+  var hn = getDisplayTeamName(m.home_team_id, m.home_bracket_position, m, true);
+  var an = getDisplayTeamName(m.away_team_id, m.away_bracket_position, m, false);
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
   var statusText = "⏳ Chưa đấu", statusClass = "scheduled";
@@ -1228,7 +1221,7 @@ function openTimelineModal(matchId) {
   currentTimelineMatchId = matchId;
   var m = DATA.matches.find(function(x) { return x.id === matchId; });
   if (!m) return;
-  el("timeline-title").textContent = displayCode(m) + ': ' + getDisplayTeamName(m.home_team_id, m.home_bracket_position, m) + ' vs ' + getDisplayTeamName(m.away_team_id, m.away_bracket_position, m);
+  el("timeline-title").textContent = displayCode(m) + ': ' + getDisplayTeamName(m.home_team_id, m.home_bracket_position, m, true) + ' vs ' + getDisplayTeamName(m.away_team_id, m.away_bracket_position, m, false);
   el("timeline-modal").classList.add("show");
   loadRallies(matchId);
 }
