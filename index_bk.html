@@ -145,14 +145,13 @@ td.pf{font-family:monospace;color:var(--cy)}
 
 .modal-bg{position:fixed;inset:0;background:rgba(4,8,16,.9);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
 .modal-bg.show{display:flex}
-.modal{width:min(600px,100%);max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.modal{width:min(600px,100%);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:16px}
 .modal h3{margin:0 0 10px;color:var(--li);font-size:16px}
 .modal input{background:#0d1626;border:1px solid var(--ln);border-radius:8px;padding:9px;color:var(--tx);width:100%;font-size:13px;margin-bottom:8px}
 .modal .hint{font-size:10px;color:var(--mu);margin:-4px 0 8px;font-style:italic}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end}
 .modal .msg{font-size:12px;margin-top:8px;color:var(--rd);min-height:16px}
 
-/* 🌟 STYLE CHO GỢI Ý TÊN KHI TRÙNG */
 .modal .msg.suggest {
   color: var(--or);
   background: rgba(251, 146, 60, 0.1);
@@ -260,7 +259,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 <div>
   <span id="user-chip" class="chip hidden"></span>
-  <!-- ✅ THÊM NÚT ĐĂNG KÝ CẠNH NÚT ĐĂNG NHẬP -->
   <button id="register-btn" class="btn btn-b" onclick="openRegister()">📝 Đăng ký</button>
   <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
   <a id="admin-link" class="btn btn-b hidden" href="admin.html">⚙ Quản trị</a>
@@ -277,7 +275,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 
 <div id="toast" class="toast"></div>
 
-<!-- MODAL ĐĂNG NHẬP (GIỮ NGUYÊN) -->
 <div id="login-modal" class="modal-bg">
 <div class="modal" style="width:min(380px,100%)">
 <h3>🔐 Đăng nhập</h3>
@@ -292,7 +289,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 </div>
 
-<!-- ✅ MODAL ĐĂNG KÝ MỚI -->
 <div id="register-modal" class="modal-bg">
 <div class="modal" style="width:min(380px,100%)">
 <h3>📝 Đăng ký tài khoản</h3>
@@ -367,10 +363,11 @@ function getPlayerName(playerId) {
   return p ? p.full_name : null;
 }
 
+// 🌟 CHO PHÉP XEM CÔNG KHAI: Chỉ kiểm tra quyền sở hữu nếu đã đăng nhập
 function isOwnerOfTournament(t) {
   if (!t) return false;
   if (isAdmin()) return true;
-  if (!CURRENT_USER) return false;
+  if (!CURRENT_USER) return false; // Chưa đăng nhập thì không phải chủ sở hữu
   return t.admin_id === CURRENT_USER.id;
 }
 
@@ -382,7 +379,6 @@ function getMatchTeamName(teamId, bracketPos) {
   return t ? (t.name || 'TBD') : 'TBD';
 }
 
-// ===== ĐĂNG NHẬP (GIỮ NGUYÊN) =====
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
 function closeLogin() { el("login-modal").classList.remove("show"); }
 async function doLogin() {
@@ -408,7 +404,6 @@ function doLogout() {
   toast("👋 Đã đăng xuất");
 }
 
-// ===== 🌟 ĐĂNG KÝ (MỚI) =====
 function openRegister() { 
   el("register-modal").classList.add("show"); 
   var msg = el("rmsg"); 
@@ -425,7 +420,6 @@ function closeRegister() {
   msg.className = "msg"; 
 }
 
-// Hàm hiển thị gợi ý tên khi trùng
 function showSuggestName(originalName) {
   var suggested = originalName + "2006";
   var msg = el("rmsg");
@@ -438,7 +432,6 @@ function showSuggestName(originalName) {
     msg.className = "msg";
     msg.onclick = null;
   };
-  // Tự động điền luôn để tiện
   el("ru").value = suggested;
 }
 
@@ -448,7 +441,6 @@ async function doRegister() {
   var pc = el("rpc").value;
   var msg = el("rmsg");
   
-  // Reset style message
   msg.className = "msg";
   msg.textContent = "";
   
@@ -473,7 +465,6 @@ async function doRegister() {
   msg.textContent = "Đang kiểm tra...";
   
   try {
-    // 🌟 KIỂM TRA TRÙNG TÊN TRƯỚC KHI TẠO
     var { data: existing, error: checkErr } = await sb.from('admin_users')
       .select('id')
       .eq('username', u)
@@ -482,19 +473,16 @@ async function doRegister() {
     if (checkErr) throw checkErr;
     
     if (existing) {
-      // Tên đã tồn tại -> Gợi ý tên + 2006
       showSuggestName(u);
       return;
     }
     
-    // Thử tạo tài khoản
     var { data, error } = await sb.from('admin_users').insert({ 
       username: u, 
       password: p 
     }).select().maybeSingle();
     
     if (error) {
-      // Nếu vẫn bị lỗi trùng (race condition)
       if (error.code === '23505') {
         showSuggestName(u);
         return;
@@ -502,7 +490,6 @@ async function doRegister() {
       throw error;
     }
     
-    // Đăng ký thành công -> Tự động đăng nhập
     CURRENT_USER = data;
     localStorage.setItem('pb_admin', JSON.stringify(CURRENT_USER));
     closeRegister();
@@ -518,7 +505,7 @@ async function doRegister() {
 function applyUI() {
   var logged = !!CURRENT_USER;
   el("login-btn").classList.toggle("hidden", logged);
-  el("register-btn").classList.toggle("hidden", logged); // Ẩn nút đăng ký khi đã login
+  el("register-btn").classList.toggle("hidden", logged);
   el("logout-btn").classList.toggle("hidden", !logged);
   el("admin-link").classList.toggle("hidden", !logged);
   el("user-chip").classList.toggle("hidden", !logged);
@@ -649,10 +636,11 @@ function checkTournamentStatus(tMatches) {
   return "in_progress";
 }
 
+// 🌟 TẢI DỮ LIỆU CÔNG KHAI: Không lọc theo admin_id, ai cũng xem được
 async function loadTournaments() {
   try {
     var tr = await sb.from("tournaments").select("*").order("created_at", {ascending:false});
-    DATA.tournaments = tr.data || [];
+    DATA.tournaments = tr.data || []; // Lấy tất cả, không filter
     
     var er = await sb.from("events").select("id, tournament_id");
     var allEvents = er.data || [];
@@ -660,10 +648,25 @@ async function loadTournaments() {
     var mr = await sb.from("matches").select("*");
     var allMatches = mr.data || [];
     
+    // 🌟 Logic tự động gán "completed" nếu end_date <= (hôm nay - 1 ngày)
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var thresholdDate = new Date(today);
+    thresholdDate.setDate(thresholdDate.getDate() - 1);
+    
     DATA.tournaments.forEach(function(t) {
       var tEvents = allEvents.filter(function(e){ return e.tournament_id === t.id; });
       var eids = tEvents.map(function(e){ return e.id; });
       var tMatches = allMatches.filter(function(m){ return eids.indexOf(m.event_id) >= 0; });
+      
+      if (t.end_date) {
+        var endDate = new Date(t.end_date);
+        endDate.setHours(0, 0, 0, 0);
+        if (endDate <= thresholdDate) {
+          t.display_status = "completed";
+          return;
+        }
+      }
       
       t.display_status = checkTournamentStatus(tMatches);
     });
@@ -1009,7 +1012,7 @@ function renderTournamentList() {
   DATA.tournaments.forEach(function(t) {
     var statusCls = t.display_status || "not_started";
     var statusText = statusCls === "not_started" ? "⏳ Chưa diễn ra" : (statusCls === "in_progress" ? "🔴 Đang diễn ra" : "✅ Đã kết thúc");
-    var canManage = isOwnerOfTournament(t);
+    var canManage = isOwnerOfTournament(t); // Sẽ trả về false nếu chưa đăng nhập
     H += '<div class="t-card" onclick="viewTournament(\'' + t.id + '\')">';
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
@@ -1182,6 +1185,7 @@ function renderKOGroup(title, cls, matches) {
   return H;
 }
 
+// 🌟 RENDER CÔNG KHAI: Không có điều kiện chặn nếu !CURRENT_USER
 function render() {
   var H = DATA.tournament ? renderTournamentDetail() : renderTournamentList();
   el("content").innerHTML = H;
@@ -1216,8 +1220,8 @@ window.backToList = function() {
     var u = localStorage.getItem('pb_admin');
     if (u) { try { CURRENT_USER = JSON.parse(u); } catch(e) { localStorage.removeItem('pb_admin'); } }
     applyUI();
-    await loadTournaments();
-    render();
+    await loadTournaments(); // Tải dữ liệu cho cả khách vãng lai
+    render(); // Hiển thị ngay lập tức
   } catch(e) {
     el("content").innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Lỗi tải dữ liệu: ' + esc(e.message) + '</p></div>';
   }
