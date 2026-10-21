@@ -1149,6 +1149,7 @@ function renderTournamentDetail() {
   H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
+  
   // Nút chia sẻ link
   H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ</button>';
   H += '</div>';
@@ -1183,21 +1184,44 @@ function renderTournamentDetail() {
   return H;
 }
 
-// Hàm chia sẻ link giải đấu
+// --- LOGIC CHIA SẺ MỚI ---
 window.shareTournament = function(tid) {
   var url = window.location.origin + window.location.pathname + '?tid=' + tid;
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(url).then(function() {
-      toast("✅ Đã sao chép link giải đấu!");
-    }).catch(function() {
-      fallbackCopyText(url);
+  var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
+  
+  var shareData = {
+    title: name,
+    text: 'Xem lịch thi đấu và kết quả: ' + name,
+    url: url
+  };
+
+  // Ưu tiên dùng Web Share API (mở hộp thoại chia sẻ native của điện thoại: Zalo, Messenger, Copy link...)
+  if (navigator.share) {
+    navigator.share(shareData).catch(function(error) {
+      // Nếu người dùng hủy share hoặc lỗi, fallback sang copy clipboard
+      if (error.name !== 'AbortError') {
+        fallbackCopyText(url);
+      }
     });
   } else {
+    // Fallback cho trình duyệt không hỗ trợ Web Share API
     fallbackCopyText(url);
   }
 };
 
 function fallbackCopyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(function() {
+      toast("✅ Đã sao chép link giải đấu!");
+    }).catch(function() {
+      execCopy(text);
+    });
+  } else {
+    execCopy(text);
+  }
+}
+
+function execCopy(text) {
   var textArea = document.createElement("textarea");
   textArea.value = text;
   textArea.style.position = "fixed";
@@ -1213,6 +1237,7 @@ function fallbackCopyText(text) {
   }
   document.body.removeChild(textArea);
 }
+// -------------------------
 
 function renderFinalStandings(ckMatch, bkMatches) {
   if (!ckMatch) return '';
@@ -1534,7 +1559,7 @@ window.backToList = function() {
     applyUI();
     await loadTournaments();
     
-    // --- LOGIC MỚI: Kiểm tra tham số URL để mở trực tiếp giải đấu ---
+    // Kiểm tra tham số URL để mở trực tiếp giải đấu
     var urlParams = new URLSearchParams(window.location.search);
     var targetTid = urlParams.get('tid') || urlParams.get('tournament');
     
@@ -1542,10 +1567,9 @@ window.backToList = function() {
       var exists = DATA.tournaments.find(function(t) { return t.id === targetTid; });
       if (exists) {
         await viewTournament(targetTid);
-        return; // Dừng lại, không render danh sách nữa
+        return; 
       }
     }
-    // ---------------------------------------------------------------
     
     render();
   } catch(e) {
