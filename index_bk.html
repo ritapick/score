@@ -44,9 +44,9 @@ main{max-width:1200px;margin:0 auto;padding:12px}
 .manage-btn:hover{background:rgba(251,146,60,.25)}
 .manage-btn:active{transform:scale(.95)}
 .t-detail{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;margin-bottom:14px}
-.t-detail-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--ln)}
-.t-detail-header h2{margin:0 0 6px;color:var(--li);font-size:18px;word-break:break-word}
-.t-detail-header .meta{font-size:11px;color:var(--mu);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.t-detail-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--ln);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.t-detail-header h2{margin:0 0 6px;color:var(--li);font-size:18px;word-break:break-word;flex:1}
+.t-detail-header .meta{font-size:11px;color:var(--mu);display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1}
 .t-detail-header .meta span{display:inline-flex;align-items:center;gap:3px}
 .manage-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .back-btn{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:10px}
@@ -571,7 +571,7 @@ function applyUI() {
   el("user-chip").classList.toggle("hidden", !logged);
   if (logged) {
     var role = isAdmin() ? "ADMIN" : "ORG";
-    el("user-chip").textContent = " " + CURRENT_USER.username + " • " + role;
+    el("user-chip").textContent = "👤 " + CURRENT_USER.username + " • " + role;
   }
 }
 
@@ -1144,10 +1144,16 @@ function renderTournamentDetail() {
   var canManage = isOwnerOfTournament(t);
   
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
-  H += '<div class="t-detail"><div class="t-detail-header"><h2>' + esc(t.name) + '</h2>';
+  H += '<div class="t-detail"><div class="t-detail-header">';
+  H += '<div><h2>' + esc(t.name) + '</h2>';
   H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
-  H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div>';
+  H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
+  
+  // Nút chia sẻ link
+  H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ</button>';
+  H += '</div>';
+  
   if (canManage) H += '<div class="manage-bar"><a class="btn btn-w" href="https://ritapick.github.io/score/referee.html">⚙ TRANG TRỌNG TÀI</a></div>';
   H += '</div>';
   
@@ -1177,6 +1183,60 @@ function renderTournamentDetail() {
   H += '</div>';
   return H;
 }
+
+// --- LOGIC CHIA SẺ MỚI ---
+window.shareTournament = function(tid) {
+  var url = window.location.origin + window.location.pathname + '?tid=' + tid;
+  var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
+  
+  var shareData = {
+    title: name,
+    url: url
+  };
+
+  // Ưu tiên dùng Web Share API (mở hộp thoại chia sẻ native của điện thoại: Zalo, Messenger, Copy link...)
+  if (navigator.share) {
+    navigator.share(shareData).catch(function(error) {
+      // Nếu người dùng hủy share hoặc lỗi, fallback sang copy clipboard
+      if (error.name !== 'AbortError') {
+        fallbackCopyText(url);
+      }
+    });
+  } else {
+    // Fallback cho trình duyệt không hỗ trợ Web Share API
+    fallbackCopyText(url);
+  }
+};
+
+function fallbackCopyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(function() {
+      toast("✅ Đã sao chép link giải đấu!");
+    }).catch(function() {
+      execCopy(text);
+    });
+  } else {
+    execCopy(text);
+  }
+}
+
+function execCopy(text) {
+  var textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    toast("✅ Đã sao chép link giải đấu!");
+  } catch (err) {
+    toast("❌ Không thể sao chép link");
+  }
+  document.body.removeChild(textArea);
+}
+// -------------------------
 
 function renderFinalStandings(ckMatch, bkMatches) {
   if (!ckMatch) return '';
@@ -1208,7 +1268,7 @@ function renderFinalStandings(ckMatch, bkMatches) {
     return thirdPlaceTeams.indexOf(item) == pos;
   });
   
-  var H = '<div class="section-title" style="margin-top:20px">🏆 BẢNG THÀNH TÍCH</div>';
+  var H = '<div class="section-title" style="margin-top:20px">🏆 BẢNG XẾP HẠNG CUỐI CÙNG</div>';
   H += '<div class="group-card" style="border: 2px solid var(--li); background: rgba(163,230,53,0.05);">';
   H += '<table><tbody>';
   H += '<tr style="background:rgba(163,230,53,.15)"><td style="padding:12px;font-weight:900;color:var(--li);font-size:18px;width:60px;text-align:center">🥇 1</td><td style="padding:12px;font-weight:800;font-size:16px;color:var(--li)">' + esc(winnerName) + '</td></tr>';
@@ -1376,7 +1436,6 @@ function renderBracketTree(tk, bk, ck, numGroups) {
     }
     H += '</div></div>';
   } else {
-    // Trường hợp giải có 2 bảng, không có vòng tứ kết, chỉ có bán kết và chung kết
     H += '<div class="bracket-round">';
     H += '<div class="bracket-header bk">🏅 Bán Kết</div>';
     H += '<div class="bracket-matches-wrapper">';
@@ -1477,10 +1536,16 @@ function closeTimelineModal() {
   DATA.rallies = [];
 }
 
-window.viewTournament = async function(tid) { stopRealtime(); await loadTournamentDetail(tid); window.scrollTo(0, 0); };
+window.viewTournament = async function(tid) { 
+  stopRealtime(); 
+  await loadTournamentDetail(tid); 
+  window.scrollTo(0, 0); 
+};
 window.viewEvent = async function(eid) { stopRealtime(); await loadEventDetail(eid); window.scrollTo(0, 0); };
 window.backToList = function() {
   stopRealtime();
+  // Xóa tham số tid khỏi URL để về trang chủ sạch sẽ
+  window.history.pushState({}, document.title, window.location.pathname);
   DATA.tournament = null; DATA.events = []; DATA.eid = null; DATA.teams = []; DATA.players = [];
   DATA.matches = []; DATA.groups = []; DATA.groupTeams = []; DATA.sponsors = []; DATA.rallies = [];
   render(); window.scrollTo(0, 0);
@@ -1492,6 +1557,19 @@ window.backToList = function() {
     if (u) { try { CURRENT_USER = JSON.parse(u); } catch(e) { localStorage.removeItem('pb_admin'); } }
     applyUI();
     await loadTournaments();
+    
+    // Kiểm tra tham số URL để mở trực tiếp giải đấu
+    var urlParams = new URLSearchParams(window.location.search);
+    var targetTid = urlParams.get('tid') || urlParams.get('tournament');
+    
+    if (targetTid) {
+      var exists = DATA.tournaments.find(function(t) { return t.id === targetTid; });
+      if (exists) {
+        await viewTournament(targetTid);
+        return; 
+      }
+    }
+    
     render();
   } catch(e) {
     el("content").innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Lỗi tải dữ liệu: ' + esc(e.message) + '</p></div>';
