@@ -23,16 +23,22 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
 .event-info h2{margin:0 0 4px;color:var(--cy);font-size:20px}
 .event-info p{margin:0;color:var(--mu);font-size:13px}
 
-.draw-container{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.draw-container{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
 @media(max-width:768px){ .draw-container{grid-template-columns:1fr;} }
 
 .draw-stage{background:var(--sf);border:2px solid var(--ln);border-radius:16px;padding:30px;text-align:center;position:relative;overflow:hidden}
 .draw-stage::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center, rgba(163,230,53,0.05) 0%, transparent 70%);pointer-events:none}
-.current-group-label{font-size:14px;color:var(--mu);text-transform:uppercase;letter-spacing:2px;font-weight:800;margin-bottom:20px}
 
-.draw-box{font-size:2.5rem;font-weight:900;text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center;transition:all .3s;border-radius:12px;padding:20px;background:rgba(13,22,38,.5);border:1px dashed var(--ln);margin-bottom:24px}
+.group-selector{margin-bottom:24px;text-align:left}
+.group-selector label{font-size:12px;color:var(--mu);font-weight:700;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.group-select{width:100%;background:#0d1626;border:2px solid var(--ln);border-radius:8px;padding:12px;color:var(--tx);font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
+.group-select:focus{outline:none;border-color:var(--cy)}
+.group-select option{background:var(--sf);color:var(--tx)}
+.group-status{font-size:12px;color:var(--cy);margin-top:8px;text-align:right;font-weight:600}
+
+.draw-box{font-size:2.5rem;font-weight:900;text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center;transition:all .3s;border-radius:12px;padding:20px;background:rgba(13,22,38,.5);border:1px dashed var(--ln);margin-bottom:24px;word-break:break-word}
 .draw-box.spinning{animation:blurText 0.1s infinite;color:var(--cy);border-color:var(--cy);text-shadow:0 0 15px rgba(34,211,238,0.5)}
-.draw-box.winner{animation:popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);color:var(--li);border-color:var(--li);background:rgba(163,230,53,0.05);text-shadow:0 0 25px rgba(163,230,53,0.6);font-size:3rem}
+.draw-box.winner{animation:popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);color:var(--li);border-color:var(--li);background:rgba(163,230,53,0.08);text-shadow:0 0 25px rgba(163,230,53,0.6);font-size:3rem}
 
 @keyframes blurText{0%{filter:blur(0px);transform:scale(1)}50%{filter:blur(3px);transform:scale(1.02)}100%{filter:blur(0px);transform:scale(1)}}
 @keyframes popIn{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
@@ -42,7 +48,7 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
 
 .side-panel{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:16px}
 .side-panel h3{margin:0 0 12px;font-size:14px;color:var(--cy);display:flex;align-items:center;gap:6px}
-.pool-list, .result-list{list-style:none;padding:0;margin:0;max-height:300px;overflow-y:auto}
+.pool-list, .result-list{list-style:none;padding:0;margin:0;max-height:350px;overflow-y:auto}
 .pool-item, .result-item{padding:8px 12px;background:var(--sf2);border-radius:6px;margin-bottom:6px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--ln)}
 .result-item{background:rgba(163,230,53,0.08);border-color:rgba(163,230,53,0.3);color:var(--li)}
 .result-item .group-badge{background:var(--li);color:#0b1220;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800}
@@ -67,11 +73,19 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
 
   <div class="draw-container">
     <div class="draw-stage">
-      <div class="current-group-label" id="current-group-label">Chuẩn bị bốc thăm</div>
+      <div class="group-selector">
+        <label>🎯 Chọn bảng cần bốc thăm:</label>
+        <select id="group-select" class="group-select" onchange="updateGroupStatus()">
+          <option value="">-- Đang tải danh sách bảng --</option>
+        </select>
+        <div class="group-status" id="group-status"></div>
+      </div>
+
       <div class="draw-box" id="draw-box">SẴN SÀNG</div>
+      
       <div class="draw-controls">
         <button class="btn btn-p" id="btn-spin" onclick="startSpin()">🎲 Bắt đầu quay</button>
-        <button class="btn btn-w hidden" id="btn-next" onclick="nextDraw()">➡️ Tiếp tục</button>
+        <button class="btn btn-w hidden" id="btn-next" onclick="nextDraw()">🔄 Rút tiếp đội khác</button>
         <button class="btn btn-l hidden" id="btn-finish" onclick="finishAndSave()">💾 Lưu vào hệ thống</button>
       </div>
     </div>
@@ -104,12 +118,12 @@ var DATA = {
   teams: [],
   groups: [],
   stageId: null,
+  existingGroupCounts: {}, // Lưu số đội đã có sẵn trong DB của mỗi bảng
   drawnResults: [] // { teamId, teamName, groupId, groupName }
 };
 
 var isSpinning = false;
 var spinInterval = null;
-var currentDrawIndex = 0;
 
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -129,7 +143,6 @@ async function init() {
     return;
   }
 
-  // Kiểm tra quyền admin đơn giản
   var adminData = localStorage.getItem('pb_admin');
   if (!adminData) {
     if(!confirm("⚠️ Bạn chưa đăng nhập Quản trị. Trang này vẫn hoạt động nhưng khuyến nghị nên đăng nhập trước.\n\nBạn có muốn tiếp tục không?")) {
@@ -139,7 +152,6 @@ async function init() {
   }
 
   try {
-    // 1. Lấy thông tin Event
     var { data: eventData } = await sb.from("events").select("name, tournament_id").eq("id", DATA.eid).single();
     if (!eventData) throw new Error("Không tìm thấy nội dung thi đấu");
     DATA.eventName = eventData.name;
@@ -150,21 +162,27 @@ async function init() {
     el("event-name").textContent = tourName + " - " + DATA.eventName;
     el("event-desc").textContent = "Đang tải danh sách đội và bảng đấu...";
 
-    // 2. Lấy Stage ID (Group Stage)
     var { data: stages } = await sb.from("stages").select("id").eq("event_id", DATA.eid).eq("stage_type", "group_stage").maybeSingle();
     if (!stages) throw new Error("Chưa tạo vòng bảng cho nội dung này. Vui lòng tạo ở trang Quản trị.");
     DATA.stageId = stages.id;
 
-    // 3. Lấy Groups
     var { data: groups } = await sb.from("groups").select("id, code, name").eq("stage_id", DATA.stageId).order("code");
     DATA.groups = groups || [];
     if (DATA.groups.length === 0) throw new Error("Chưa có bảng đấu nào được tạo.");
 
-    // 4. Lấy Teams đã được phân bảng (để loại trừ)
-    var { data: assignedTeams } = await sb.from("group_teams").select("team_id").eq("stage_id", DATA.stageId);
-    var assignedIds = new Set((assignedTeams || []).map(x => x.team_id));
+    // Lấy số đội đã có sẵn trong DB cho mỗi bảng
+    var { data: assignedTeams } = await sb.from("group_teams").select("team_id, group_id").eq("stage_id", DATA.stageId);
+    var assignedIds = new Set();
+    DATA.existingGroupCounts = {};
+    DATA.groups.forEach(g => DATA.existingGroupCounts[g.id] = 0);
+    
+    (assignedTeams || []).forEach(x => {
+      assignedIds.add(x.team_id);
+      if (DATA.existingGroupCounts[x.group_id] !== undefined) {
+        DATA.existingGroupCounts[x.group_id]++;
+      }
+    });
 
-    // 5. Lấy tất cả Teams của event
     var { data: allTeams } = await sb.from("teams").select("id, name").eq("event_id", DATA.eid);
     DATA.teams = (allTeams || []).filter(t => !assignedIds.has(t.id));
 
@@ -172,12 +190,14 @@ async function init() {
       el("event-desc").textContent = "Tất cả các đội đã được phân vào bảng. Không cần bốc thăm thêm.";
       el("btn-spin").disabled = true;
       el("btn-spin").textContent = "Đã hoàn tất";
+      el("group-select").disabled = true;
     } else {
-      el("event-desc").textContent = "Sẵn sàng bốc thăm cho " + DATA.teams.length + " đội vào " + DATA.groups.length + " bảng.";
+      el("event-desc").textContent = "Sẵn sàng bốc thăm cho " + DATA.teams.length + " đội còn lại.";
     }
 
+    renderGroupSelect();
     renderPool();
-    updateCurrentGroupLabel();
+    renderResults();
 
   } catch(e) {
     el("event-name").textContent = "Lỗi tải dữ liệu";
@@ -186,15 +206,44 @@ async function init() {
   }
 }
 
+function renderGroupSelect() {
+  var select = el("group-select");
+  select.innerHTML = "";
+  DATA.groups.forEach(g => {
+    var count = DATA.existingGroupCounts[g.id] || 0;
+    var opt = document.createElement("option");
+    opt.value = g.id;
+    opt.textContent = "Bảng " + g.code + " (Đã có: " + count + " đội)";
+    opt.dataset.code = g.code;
+    select.appendChild(opt);
+  });
+  updateGroupStatus();
+}
+
+function updateGroupStatus() {
+  var select = el("group-select");
+  var selectedOpt = select.options[select.selectedIndex];
+  if (!selectedOpt) return;
+  
+  var code = selectedOpt.dataset.code;
+  var currentSessionCount = DATA.drawnResults.filter(r => r.groupId === select.value).length;
+  var dbCount = DATA.existingGroupCounts[select.value] || 0;
+  var total = dbCount + currentSessionCount;
+  
+  el("group-status").textContent = "🎯 Đang bốc thăm cho: Bảng " + code + " | Tổng cộng: " + total + " đội";
+}
+
 function renderPool() {
   var list = el("pool-list");
   el("pool-count").textContent = DATA.teams.length;
   list.innerHTML = "";
   if (DATA.teams.length === 0) {
-    list.innerHTML = '<div class="empty-msg">Không còn đội nào</div>';
+    list.innerHTML = '<div class="empty-msg">🎉 Không còn đội nào chưa bốc</div>';
     return;
   }
-  DATA.teams.forEach(t => {
+  // Xáo trộn danh sách hiển thị cho vui mắt
+  var shuffled = DATA.teams.slice().sort(() => Math.random() - 0.5);
+  shuffled.forEach(t => {
     var li = document.createElement("li");
     li.className = "pool-item";
     li.textContent = esc(t.name);
@@ -213,13 +262,12 @@ function renderResults() {
   }
   emptyMsg.style.display = "none";
   
-  // Group by group for display
   DATA.groups.forEach(g => {
     var groupResults = DATA.drawnResults.filter(r => r.groupId === g.id);
     if (groupResults.length > 0) {
       var header = document.createElement("div");
-      header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase";
-      header.textContent = "Bảng " + g.code;
+      header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase;border-bottom:1px solid var(--ln);padding-bottom:4px";
+      header.textContent = "Bảng " + g.code + " (+" + groupResults.length + " đội mới)";
       list.appendChild(header);
       
       groupResults.forEach(r => {
@@ -231,37 +279,17 @@ function renderResults() {
     }
   });
   
-  // Scroll to bottom of result list
   list.scrollTop = list.scrollHeight;
 }
 
-function updateCurrentGroupLabel() {
-  if (DATA.teams.length === 0) {
-    el("current-group-label").textContent = "🎉 HOÀN TẤT BỐC THĂM";
-    el("draw-box").textContent = "XONG!";
-    el("draw-box").className = "draw-box winner";
-    el("btn-spin").classList.add("hidden");
-    el("btn-next").classList.add("hidden");
-    el("btn-finish").classList.remove("hidden");
+function startSpin() {
+  var select = el("group-select");
+  if (!select.value) {
+    toast("⚠️ Vui lòng chọn bảng cần bốc thăm!");
     return;
   }
-  
-  // Simple round-robin assignment logic for target group
-  // We just pick the group that currently has the fewest teams assigned in this session + existing DB
-  // For simplicity in this UI, we just cycle through groups or pick the first one that needs teams.
-  // Let's use a simple counter: currentDrawIndex % DATA.groups.length
-  var targetGroup = DATA.groups[currentDrawIndex % DATA.groups.length];
-  el("current-group-label").textContent = "🎯 Đang bốc thăm cho: BẢNG " + targetGroup.code;
-  el("draw-box").textContent = "SẴN SÀNG";
-  el("draw-box").className = "draw-box";
-  el("btn-spin").classList.remove("hidden");
-  el("btn-next").classList.add("hidden");
-  el("btn-finish").classList.add("hidden");
-  el("btn-spin").disabled = false;
-}
-
-function startSpin() {
   if (isSpinning || DATA.teams.length === 0) return;
+  
   isSpinning = true;
   el("btn-spin").disabled = true;
   el("draw-box").className = "draw-box spinning";
@@ -271,9 +299,8 @@ function startSpin() {
     var randomIdx = Math.floor(Math.random() * DATA.teams.length);
     el("draw-box").textContent = DATA.teams[randomIdx].name;
     counter++;
-  }, 80); // Tốc độ quay
+  }, 80);
 
-  // Dừng sau 2 giây
   setTimeout(() => {
     clearInterval(spinInterval);
     finalizeDraw();
@@ -283,16 +310,14 @@ function startSpin() {
 function finalizeDraw() {
   isSpinning = false;
   
-  // Chọn ngẫu nhiên 1 đội thực sự
   var winnerIndex = Math.floor(Math.random() * DATA.teams.length);
   var winner = DATA.teams[winnerIndex];
-  var targetGroup = DATA.groups[currentDrawIndex % DATA.groups.length];
+  var select = el("group-select");
+  var targetGroup = DATA.groups.find(g => g.id === select.value);
   
-  // Hiển thị kết quả
   el("draw-box").textContent = winner.name;
   el("draw-box").className = "draw-box winner";
   
-  // Lưu vào kết quả tạm thời
   DATA.drawnResults.push({
     teamId: winner.id,
     teamName: winner.name,
@@ -300,31 +325,40 @@ function finalizeDraw() {
     groupName: targetGroup.code
   });
   
-  // Xóa khỏi pool
   DATA.teams.splice(winnerIndex, 1);
-  currentDrawIndex++;
   
   renderPool();
   renderResults();
+  renderGroupSelect(); // Cập nhật lại số lượng trên dropdown
   
-  // Đổi nút
   el("btn-spin").classList.add("hidden");
+  
   if (DATA.teams.length > 0) {
     el("btn-next").classList.remove("hidden");
-  } else {
     el("btn-finish").classList.remove("hidden");
+  } else {
+    el("btn-next").classList.add("hidden");
+    el("btn-finish").classList.remove("hidden");
+    el("draw-box").textContent = "HOÀN TẤT!";
   }
   
-  // Hiệu ứng confetti đơn giản (tùy chọn, ở đây dùng toast)
-  toast("🎉 Chúc mừng: " + winner.name + " vào Bảng " + targetGroup.code);
+  toast("🎉 " + winner.name + " đã vào Bảng " + targetGroup.code);
 }
 
 function nextDraw() {
-  updateCurrentGroupLabel();
+  el("draw-box").textContent = "SẴN SÀNG";
+  el("draw-box").className = "draw-box";
+  el("btn-spin").classList.remove("hidden");
+  el("btn-next").classList.add("hidden");
+  el("btn-spin").disabled = false;
 }
 
 async function finishAndSave() {
-  if (!confirm("💾 Bạn có chắc chắn muốn lưu kết quả bốc thăm này vào hệ thống?")) return;
+  if (DATA.drawnResults.length === 0) {
+    toast("⚠️ Chưa có đội nào được bốc để lưu!");
+    return;
+  }
+  if (!confirm("💾 Bạn có chắc chắn muốn lưu " + DATA.drawnResults.length + " kết quả bốc thăm này vào hệ thống?")) return;
   
   el("btn-finish").disabled = true;
   el("btn-finish").textContent = "⏳ Đang lưu...";
