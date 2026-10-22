@@ -249,7 +249,7 @@ function renderGroupSelect() {
   DATA.groups.forEach(g => {
     var opt = document.createElement("option");
     opt.value = g.id;
-    opt.textContent = "Bảng " + g.code; // Chỉ hiển thị tên bảng, bỏ phần số lượng
+    opt.textContent = "Bảng " + g.code; // Chỉ hiển thị tên bảng
     opt.dataset.code = g.code;
     select.appendChild(opt);
   });
@@ -305,12 +305,14 @@ function renderResults() {
   
   if (DATA.drawnResults.length === 0) {
     emptyMsg.style.display = "block";
+    list.scrollTop = 0;
     return;
   }
   emptyMsg.style.display = "none";
   
   DATA.groups.forEach(g => {
-    var groupResults = DATA.drawnResults.filter(r => r.groupId === g.id);
+    // Đảo ngược mảng để đội mới bốc thăm luôn hiển thị ở ĐẦU danh sách
+    var groupResults = DATA.drawnResults.filter(r => r.groupId === g.id).reverse();
     if (groupResults.length > 0) {
       var header = document.createElement("div");
       header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase;border-bottom:1px solid var(--ln);padding-bottom:4px;";
@@ -330,7 +332,8 @@ function renderResults() {
     }
   });
   
-  list.scrollTop = list.scrollHeight;
+  // Tự động cuộn lên đầu danh sách để thấy đội mới thêm vào
+  list.scrollTop = 0;
 }
 
 function startSpin() {
@@ -381,7 +384,7 @@ function finalizeDraw() {
   DATA.teams.splice(winnerIndex, 1);
   
   renderPool();
-  renderResults();
+  renderResults(); // Hàm này giờ sẽ đảo ngược và cuộn lên đầu (scrollTop = 0)
   renderGroupSelect(); 
   
   el("btn-spin").classList.add("hidden");
