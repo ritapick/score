@@ -17,41 +17,53 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 .btn-l{background:rgba(148,163,184,.15);color:var(--mu);border:1px solid var(--ln)}
 .btn-w{background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.4)}
 .btn-d{background:rgba(248,113,113,.15);color:var(--rd);border:1px solid rgba(248,113,113,.4)}
+.hidden{display:none !important}
 
 main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;flex-direction:column;gap:20px}
 .event-info{text-align:center;padding:16px;background:var(--sf);border:1px solid var(--ln);border-radius:12px}
 .event-info h2{margin:0 0 4px;color:var(--cy);font-size:20px}
 .event-info p{margin:0;color:var(--mu);font-size:13px}
 
-.draw-container{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+.draw-container{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:768px){ .draw-container{grid-template-columns:1fr;} }
 
-.draw-stage{background:var(--sf);border:2px solid var(--ln);border-radius:16px;padding:30px;text-align:center;position:relative;overflow:hidden}
+.draw-stage{background:var(--sf);border:2px solid var(--ln);border-radius:16px;padding:24px;text-align:center;position:relative;overflow:hidden}
 .draw-stage::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center, rgba(163,230,53,0.05) 0%, transparent 70%);pointer-events:none}
 
-.group-selector{margin-bottom:24px;text-align:left}
+.group-selector{margin-bottom:20px;text-align:left}
 .group-selector label{font-size:12px;color:var(--mu);font-weight:700;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
-.group-select{width:100%;background:#0d1626;border:2px solid var(--ln);border-radius:8px;padding:12px;color:var(--tx);font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
+.group-select{width:100%;background:#0d1626;border:2px solid var(--ln);border-radius:8px;padding:10px 12px;color:var(--tx);font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
 .group-select:focus{outline:none;border-color:var(--cy)}
 .group-select option{background:var(--sf);color:var(--tx)}
 .group-status{font-size:12px;color:var(--cy);margin-top:8px;text-align:right;font-weight:600}
 
-.draw-box{font-size:2.5rem;font-weight:900;text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center;transition:all .3s;border-radius:12px;padding:20px;background:rgba(13,22,38,.5);border:1px dashed var(--ln);margin-bottom:24px;word-break:break-word}
+/* Giao diện quay số nhỏ lại */
+.draw-box{font-size:1.8rem;font-weight:900;text-align:center;min-height:70px;display:flex;align-items:center;justify-content:center;transition:all .3s;border-radius:12px;padding:15px;background:rgba(13,22,38,.5);border:1px dashed var(--ln);margin-bottom:20px;word-break:break-word}
 .draw-box.spinning{animation:blurText 0.1s infinite;color:var(--cy);border-color:var(--cy);text-shadow:0 0 15px rgba(34,211,238,0.5)}
-.draw-box.winner{animation:popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);color:var(--li);border-color:var(--li);background:rgba(163,230,53,0.08);text-shadow:0 0 25px rgba(163,230,53,0.6);font-size:3rem}
+.draw-box.winner{animation:popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);color:var(--li);border-color:var(--li);background:rgba(163,230,53,0.08);text-shadow:0 0 25px rgba(163,230,53,0.6);font-size:2.2rem}
 
 @keyframes blurText{0%{filter:blur(0px);transform:scale(1)}50%{filter:blur(3px);transform:scale(1.02)}100%{filter:blur(0px);transform:scale(1)}}
 @keyframes popIn{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
 
-.draw-controls{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.draw-controls .btn{min-width:140px;justify-content:center;padding:12px 20px;font-size:15px}
+.draw-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.draw-controls .btn{min-width:130px;justify-content:center;padding:10px 16px;font-size:14px}
 
+/* Side Panel & Tabs */
 .side-panel{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:16px}
-.side-panel h3{margin:0 0 12px;font-size:14px;color:var(--cy);display:flex;align-items:center;gap:6px}
-.pool-list, .result-list{list-style:none;padding:0;margin:0;max-height:350px;overflow-y:auto}
-.pool-item, .result-item{padding:8px 12px;background:var(--sf2);border-radius:6px;margin-bottom:6px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--ln)}
-.result-item{background:rgba(163,230,53,0.08);border-color:rgba(163,230,53,0.3);color:var(--li)}
-.result-item .group-badge{background:var(--li);color:#0b1220;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800}
+.tabs{display:flex;border-bottom:1px solid var(--ln);margin-bottom:12px}
+.tab-btn{flex:1;background:none;border:none;color:var(--mu);padding:10px 8px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab-btn:hover{color:var(--tx)}
+.tab-btn.active{color:var(--cy);border-bottom-color:var(--cy)}
+.tab-content{display:none;max-height:380px;overflow-y:auto;padding-right:4px}
+.tab-content.active{display:block}
+
+.pool-list, .result-list{list-style:none;padding:0;margin:0}
+.pool-item, .result-item{padding:8px 10px;background:var(--sf2);border-radius:6px;margin-bottom:6px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--ln)}
+.result-item{background:rgba(163,230,53,0.08);border-color:rgba(163,230,53,0.3);color:var(--tx)}
+.result-item .group-badge{background:var(--li);color:#0b1220;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-right:6px}
+
+.btn-remove{background:rgba(248,113,113,0.15);color:var(--rd);border:1px solid rgba(248,113,113,0.3);border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:.15s;flex-shrink:0}
+.btn-remove:hover{background:rgba(248,113,113,0.3);transform:scale(1.05)}
 
 .empty-msg{text-align:center;color:var(--mu);font-size:12px;padding:20px;font-style:italic}
 
@@ -91,12 +103,20 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
     </div>
 
     <div class="side-panel">
-      <h3>📦 Đội chưa bốc (<span id="pool-count">0</span>)</h3>
-      <ul class="pool-list" id="pool-list"></ul>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('remaining')">📦 Còn lại (<span id="pool-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('drawn')">✅ Đã bốc thăm</button>
+      </div>
       
-      <h3 style="margin-top:20px">✅ Kết quả đã bốc</h3>
-      <ul class="result-list" id="result-list"></ul>
-      <div class="empty-msg" id="result-empty">Chưa có kết quả</div>
+      <div id="tab-remaining" class="tab-content active">
+        <ul class="pool-list" id="pool-list"></ul>
+        <div class="empty-msg hidden" id="pool-empty">🎉 Không còn đội nào chưa bốc</div>
+      </div>
+      
+      <div id="tab-drawn" class="tab-content">
+        <ul class="result-list" id="result-list"></ul>
+        <div class="empty-msg" id="result-empty">Chưa có kết quả</div>
+      </div>
     </div>
   </div>
 </main>
@@ -118,8 +138,8 @@ var DATA = {
   teams: [],
   groups: [],
   stageId: null,
-  existingGroupCounts: {}, // Lưu số đội đã có sẵn trong DB của mỗi bảng
-  drawnResults: [] // { teamId, teamName, groupId, groupName }
+  existingGroupCounts: {},
+  drawnResults: [] 
 };
 
 var isSpinning = false;
@@ -131,6 +151,19 @@ function toast(msg) {
   var t = el("toast"); t.textContent = msg; t.className = "toast show";
   if (window._tt) clearTimeout(window._tt);
   window._tt = setTimeout(function(){ t.className = "toast"; }, 2500);
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  
+  if (tabName === 'remaining') {
+    document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+    el('tab-remaining').classList.add('active');
+  } else {
+    document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+    el('tab-drawn').classList.add('active');
+  }
 }
 
 async function init() {
@@ -170,7 +203,6 @@ async function init() {
     DATA.groups = groups || [];
     if (DATA.groups.length === 0) throw new Error("Chưa có bảng đấu nào được tạo.");
 
-    // Lấy số đội đã có sẵn trong DB cho mỗi bảng
     var { data: assignedTeams } = await sb.from("group_teams").select("team_id, group_id").eq("stage_id", DATA.stageId);
     var assignedIds = new Set();
     DATA.existingGroupCounts = {};
@@ -208,6 +240,8 @@ async function init() {
 
 function renderGroupSelect() {
   var select = el("group-select");
+  var currentVal = select.value; // Lưu lại giá trị đang chọn để không bị reset về Bảng A
+  
   select.innerHTML = "";
   DATA.groups.forEach(g => {
     var count = DATA.existingGroupCounts[g.id] || 0;
@@ -217,6 +251,14 @@ function renderGroupSelect() {
     opt.dataset.code = g.code;
     select.appendChild(opt);
   });
+  
+  // Khôi phục lựa chọn nếu nó vẫn tồn tại trong danh sách
+  if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+    select.value = currentVal;
+  } else if (select.options.length > 0) {
+    select.selectedIndex = 0;
+  }
+  
   updateGroupStatus();
 }
 
@@ -235,13 +277,16 @@ function updateGroupStatus() {
 
 function renderPool() {
   var list = el("pool-list");
+  var emptyMsg = el("pool-empty");
   el("pool-count").textContent = DATA.teams.length;
   list.innerHTML = "";
+  
   if (DATA.teams.length === 0) {
-    list.innerHTML = '<div class="empty-msg">🎉 Không còn đội nào chưa bốc</div>';
+    emptyMsg.classList.remove("hidden");
     return;
   }
-  // Xáo trộn danh sách hiển thị cho vui mắt
+  emptyMsg.classList.add("hidden");
+  
   var shuffled = DATA.teams.slice().sort(() => Math.random() - 0.5);
   shuffled.forEach(t => {
     var li = document.createElement("li");
@@ -266,14 +311,18 @@ function renderResults() {
     var groupResults = DATA.drawnResults.filter(r => r.groupId === g.id);
     if (groupResults.length > 0) {
       var header = document.createElement("div");
-      header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase;border-bottom:1px solid var(--ln);padding-bottom:4px";
+      header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase;border-bottom:1px solid var(--ln);padding-bottom:4px;";
       header.textContent = "Bảng " + g.code + " (+" + groupResults.length + " đội mới)";
       list.appendChild(header);
       
       groupResults.forEach(r => {
         var li = document.createElement("li");
         li.className = "result-item";
-        li.innerHTML = '<span>' + esc(r.teamName) + '</span><span class="group-badge">' + esc(g.code) + '</span>';
+        li.innerHTML = '<span>' + esc(r.teamName) + '</span>' + 
+                       '<div style="display:flex;align-items:center;">' + 
+                       '<span class="group-badge">' + esc(g.code) + '</span>' +
+                       '<button class="btn-remove" onclick="removeDrawnTeam(\'' + r.teamId + '\')" title="Xóa đội này khỏi kết quả tạm">✕</button>' +
+                       '</div>';
         list.appendChild(li);
       });
     }
@@ -292,6 +341,7 @@ function startSpin() {
   
   isSpinning = true;
   el("btn-spin").disabled = true;
+  el("group-select").disabled = true; // Khóa dropdown khi đang quay để giữ cố định bảng
   el("draw-box").className = "draw-box spinning";
   
   var counter = 0;
@@ -309,6 +359,7 @@ function startSpin() {
 
 function finalizeDraw() {
   isSpinning = false;
+  el("group-select").disabled = false; // Mở lại dropdown sau khi quay xong
   
   var winnerIndex = Math.floor(Math.random() * DATA.teams.length);
   var winner = DATA.teams[winnerIndex];
@@ -329,7 +380,7 @@ function finalizeDraw() {
   
   renderPool();
   renderResults();
-  renderGroupSelect(); // Cập nhật lại số lượng trên dropdown
+  renderGroupSelect(); 
   
   el("btn-spin").classList.add("hidden");
   
@@ -351,6 +402,37 @@ function nextDraw() {
   el("btn-spin").classList.remove("hidden");
   el("btn-next").classList.add("hidden");
   el("btn-spin").disabled = false;
+}
+
+// Hàm xóa đội đã chọn khỏi kết quả tạm
+function removeDrawnTeam(teamId) {
+  if (isSpinning) return;
+  
+  var idx = DATA.drawnResults.findIndex(r => r.teamId === teamId);
+  if (idx === -1) return;
+  
+  var removed = DATA.drawnResults.splice(idx, 1)[0];
+  
+  // Đưa đội trở lại danh sách chưa bốc
+  DATA.teams.push({ id: removed.teamId, name: removed.teamName });
+  
+  // Cập nhật lại giao diện
+  renderPool();
+  renderResults();
+  renderGroupSelect();
+  updateGroupStatus();
+  
+  // Nếu không còn kết quả nào, reset trạng thái nút bấm
+  if (DATA.drawnResults.length === 0) {
+    el("draw-box").textContent = "SẴN SÀNG";
+    el("draw-box").className = "draw-box";
+    el("btn-spin").classList.remove("hidden");
+    el("btn-next").classList.add("hidden");
+    el("btn-finish").classList.add("hidden");
+    el("btn-spin").disabled = false;
+  }
+  
+  toast("↩️ Đã xóa " + removed.teamName + " khỏi kết quả tạm");
 }
 
 async function finishAndSave() {
@@ -386,7 +468,6 @@ async function finishAndSave() {
   }
 }
 
-// Khởi chạy
 init();
 </script>
 </body>
