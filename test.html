@@ -1357,10 +1357,86 @@ function accH(num, title, key, status, txt) {
   return '<div class="acc-h" onclick="DATA.acc[\''+key+'\']=!DATA.acc[\''+key+'\'];render()"><span>'+num+'. '+esc(title)+'</span><span style="display:flex;gap:6px;align-items:center"><span class="st '+stCls+'">'+esc(txt)+'</span><span>▼</span></span></div>';
 }
 
-// 🌟 HÀM MỚI: Mở trang bốc thăm
 function openDrawPage() {
   if (!DATA.eid) { alert("⚠️ Vui lòng chọn hoặc tạo nội dung thi đấu ở Bước 2 trước."); return; }
   window.open('draw.html?eid=' + DATA.eid, '_blank');
+}
+
+// 🌟 CÁC HÀM MỚI CHO BƯỚC 4: AUTO TẤT CẢ, LƯU TẤT CẢ, XÓA LỊCH
+function autoAllRR() {
+  var groups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id);
+  var missingTeams = false;
+  groups.forEach(g => {
+    var t = teamsInG(g.id);
+    if (t.length < 2) {
+      missingTeams = true;
+      return;
+    }
+    DATA.draft = DATA.draft.filter(x => x.g !== g.id);
+    generateRoundRobin(t.map(x => x.id)).forEach(m => DATA.draft.push({g: g.id, h: m.home, a: m.away}));
+  });
+  if (missingTeams) {
+    toast("⚠️ Có bảng chưa đủ 2 đội để xếp lịch!");
+  } else {
+    toast("✅ Đã tự động xếp lịch cho tất cả các bảng");
+  }
+  render();
+}
+
+async function saveAllGroups() {
+  var groups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id);
+  for (var i = 0; i < groups.length; i++) {
+    var err = valDraft(groups[i].id);
+    if (err) {
+      alert("❌ Bảng " + groups[i].code + " chưa hợp lệ: " + err);
+      return;
+    }
+  }
+  toast("⏳ Đang lưu lịch tất cả bảng...");
+  try {
+    var allOldMatches = DATA.matches.filter(m => m.group_id && groups.some(g => g.id === m.group_id));
+    if (allOldMatches.length > 0) {
+      await sb.from("matches").delete().in("id", allOldMatches.map(m => m.id));
+    }
+    var ins = [];
+    groups.forEach((grp, gIdx) => {
+      var base = gIdx * 100;
+      var d = draftOf(grp.id);
+      d.forEach((m, i) => {
+        ins.push({
+          event_id: DATA.eid, tournament_id: DATA.tournament.id, stage_id: DATA.gStage.id, group_id: grp.id, round: 1, bracket_slot: base + i + 1,
+          match_code: DATA.tournament.code + pad(DATA.events.findIndex(e=>e.id===DATA.eid)+1,1) + grp.code + (i+1), match_seq: base + i + 1,
+          home_team_id: m.h, away_team_id: m.a, home_score: 0, away_score: 0, status: "scheduled", match_status: "scheduled"
+        });
+      });
+      DATA._savedGroups.add(grp.id);
+    });
+    if (ins.length > 0) {
+      await sb.from("matches").insert(ins);
+    }
+    toast("✅ Đã lưu lịch cho " + groups.length + " bảng");
+    await createKO();
+    await selE(DATA.eid);
+  } catch(e) {
+    alert("❌ " + e.message);
+  }
+}
+
+async function clearAllSchedules() {
+  if (!confirm("⚠️ XÓA TẤT CẢ LỊCH ĐẤU VÒNG BẢNG?\n\nCác trận đấu đã tạo sẽ bị xóa để bạn có thể xếp lịch lại.")) return;
+  try {
+    var groups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id);
+    var groupIds = groups.map(g => g.id);
+    if (groupIds.length > 0) {
+      await sb.from("matches").delete().in("group_id", groupIds);
+    }
+    DATA.draft = [];
+    DATA._savedGroups = new Set();
+    toast("✅ Đã xóa lịch đấu vòng bảng. Bạn có thể nhấn 'Auto tất cả' để xếp lại.");
+    await selE(DATA.eid);
+  } catch(e) {
+    alert("❌ " + e.message);
+  }
 }
 
 function render() {
@@ -1442,8 +1518,13 @@ function render() {
     var totalGroups = DATA.groups.filter(g => g.stage_id === DATA.gStage.id).length;
     var savedCount = DATA._savedGroups.size;
     H += '<div class="reset-bar"><div class="info-text">📊 Đang có <b>'+totalGroups+' bảng</b> · <b>'+matchCount+' trận</b> · <b>Đã lưu: '+savedCount+'/'+totalGroups+' bảng</b></div>';
-    H += '<button class="btn btn-w btn-s" onclick="openDrawPage()" style="margin-right:8px">🎲 Bốc thăm tự động</button>';
-    H += '<button class="btn btn-d btn-s" onclick="resetGroupsAndKO()">🗑 Xóa toàn bộ</button></div>';
+    H += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    H += '<button class="btn btn-w btn-s" onclick="openDrawPage()">🎲 Bốc thăm</button>';
+    H += '<button class="btn btn-b btn-s" onclick="autoAllRR()">⚡ Auto tất cả</button>';
+    H += '<button class="btn btn-p btn-s" onclick="saveAllGroups()">💾 Lưu tất cả</button>';
+    H += '<button class="btn btn-d btn-s" onclick="clearAllSchedules()">🗑 Xóa lịch</button>';
+    H += '<button class="btn btn-d btn-s" style="border-style:dashed" onclick="resetGroupsAndKO()">☠️ Xóa toàn bộ</button>';
+    H += '</div></div>';
     
     var un = unassigned();
     if (un.length) H += '<div style="color:var(--or);font-size:11px;margin-bottom:8px">⚠ Chưa xếp: '+un.length+' đội</div>';
@@ -1481,8 +1562,7 @@ function render() {
           });
           H += '<div style="display:flex;gap:6px;margin-top:6px">';
           if (d.length < mb.length * (mb.length - 1) / 2) H += '<button class="btn btn-l btn-s" onclick="addDraft(\''+g.id+'\')">➕ Trận</button>';
-          H += '<button class="btn btn-b btn-s" onclick="autoRR(\''+g.id+'\')">⚡ Auto</button>';
-          if (!valDraft(g.id)) H += '<button class="btn btn-p btn-s" onclick="saveGroup(\''+g.id+'\')">💾 Lưu bảng</button>';
+          // Đã xóa nút Auto và Lưu riêng lẻ tại đây để ưu tiên thanh công cụ phía trên
           H += '</div>';
         } else {
           H += '<div style="margin-top:10px">';
