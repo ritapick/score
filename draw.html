@@ -106,7 +106,7 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
       <div class="tabs">
         <!-- Tab 1: Bảng đang bốc thăm (mặc định active) -->
         <button class="tab-btn active" id="tab-btn-current" onclick="switchTab('current')">🎯 Bảng đang bốc</button>
-        <!-- Tab 2: Tất cả các bảng (bao gồm cả bảng đang bốc) -->
+        <!-- Tab 2: Tất cả các bảng (theo thứ tự A, B, C) -->
         <button class="tab-btn" id="tab-btn-others" onclick="switchTab('others')">📋 Tất cả bảng</button>
         <!-- Tab 3: Danh sách còn lại -->
         <button class="tab-btn" id="tab-btn-remaining" onclick="switchTab('remaining')">📦 Còn lại (<span id="pool-count">0</span>)</button>
@@ -384,7 +384,7 @@ function renderCurrentGroup() {
   list.scrollTop = 0;
 }
 
-// Render danh sách đội của TẤT CẢ CÁC BẢNG (Tab 2) - Ưu tiên bảng đang bốc lên đầu
+// Render danh sách đội của TẤT CẢ CÁC BẢNG (Tab 2) - Theo thứ tự A, B, C
 function renderOtherGroups() {
   var list = el("others-list");
   var emptyMsg = el("others-empty");
@@ -393,19 +393,10 @@ function renderOtherGroups() {
   var select = el("group-select");
   var currentGroupId = select.value;
   
-  // Tạo mảng đã sắp xếp: bảng đang bốc lên đầu, các bảng khác theo sau
-  var sortedGroups = [];
-  var currentGroup = DATA.groups.find(g => g.id === currentGroupId);
-  if (currentGroup) sortedGroups.push(currentGroup);
-  
-  // Thêm các bảng khác
-  DATA.groups.forEach(g => {
-    if (g.id !== currentGroupId) sortedGroups.push(g);
-  });
-  
   var hasAnyResult = false;
   
-  sortedGroups.forEach(g => {
+  // Duyệt theo thứ tự A, B, C (DATA.groups đã được sort theo code từ query)
+  DATA.groups.forEach(g => {
     var groupResults = DATA.drawnResults.filter(r => r.groupId === g.id).reverse();
     if (groupResults.length > 0) {
       hasAnyResult = true;
@@ -493,8 +484,8 @@ function finalizeDraw() {
   DATA.teams.splice(winnerIndex, 1);
   
   renderPool();
-  renderCurrentGroup();  // Render tab 1 - bảng đang bốc
-  renderOtherGroups();   // Render tab 2 - tất cả các bảng (bảng đang bốc lên đầu)
+  renderCurrentGroup();
+  renderOtherGroups();
   renderGroupSelect(); 
   
   el("btn-spin").classList.add("hidden");
