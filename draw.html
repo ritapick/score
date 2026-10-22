@@ -106,8 +106,8 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
       <div class="tabs">
         <!-- Tab 1: Bảng đang bốc thăm (mặc định active) -->
         <button class="tab-btn active" id="tab-btn-current" onclick="switchTab('current')">🎯 Bảng đang bốc</button>
-        <!-- Tab 2: Các bảng khác đã bốc -->
-        <button class="tab-btn" id="tab-btn-others" onclick="switchTab('others')">📋 Các bảng khác</button>
+        <!-- Tab 2: Tất cả các bảng (bao gồm cả bảng đang bốc) -->
+        <button class="tab-btn" id="tab-btn-others" onclick="switchTab('others')">📋 Tất cả bảng</button>
         <!-- Tab 3: Danh sách còn lại -->
         <button class="tab-btn" id="tab-btn-remaining" onclick="switchTab('remaining')">📦 Còn lại (<span id="pool-count">0</span>)</button>
       </div>
@@ -118,10 +118,10 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
         <div class="empty-msg" id="current-empty">Chưa có đội nào được bốc vào bảng này</div>
       </div>
       
-      <!-- Nội dung Tab 2: Các bảng khác -->
+      <!-- Nội dung Tab 2: Tất cả các bảng -->
       <div id="tab-others" class="tab-content">
         <ul class="result-list" id="others-list"></ul>
-        <div class="empty-msg" id="others-empty">Chưa có bảng nào khác được bốc thăm</div>
+        <div class="empty-msg" id="others-empty">Chưa có bảng nào được bốc thăm</div>
       </div>
       
       <!-- Nội dung Tab 3: Còn lại -->
@@ -384,7 +384,7 @@ function renderCurrentGroup() {
   list.scrollTop = 0;
 }
 
-// Render danh sách đội của CÁC BẢNG KHÁC (Tab 2)
+// Render danh sách đội của TẤT CẢ CÁC BẢNG (Tab 2) - Ưu tiên bảng đang bốc lên đầu
 function renderOtherGroups() {
   var list = el("others-list");
   var emptyMsg = el("others-empty");
@@ -393,19 +393,36 @@ function renderOtherGroups() {
   var select = el("group-select");
   var currentGroupId = select.value;
   
-  // Lọc ra các bảng KHÁC với bảng đang chọn
-  var otherGroups = DATA.groups.filter(g => g.id !== currentGroupId);
+  // Tạo mảng đã sắp xếp: bảng đang bốc lên đầu, các bảng khác theo sau
+  var sortedGroups = [];
+  var currentGroup = DATA.groups.find(g => g.id === currentGroupId);
+  if (currentGroup) sortedGroups.push(currentGroup);
+  
+  // Thêm các bảng khác
+  DATA.groups.forEach(g => {
+    if (g.id !== currentGroupId) sortedGroups.push(g);
+  });
+  
   var hasAnyResult = false;
   
-  otherGroups.forEach(g => {
+  sortedGroups.forEach(g => {
     var groupResults = DATA.drawnResults.filter(r => r.groupId === g.id).reverse();
     if (groupResults.length > 0) {
       hasAnyResult = true;
       
+      var isCurrentGroup = (g.id === currentGroupId);
       var header = document.createElement("div");
-      header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase;border-bottom:1px solid var(--ln);padding-bottom:4px;display:flex;justify-content:space-between;align-items:center;";
+      
+      // Style khác nhau cho bảng đang bốc và bảng khác
+      if (isCurrentGroup) {
+        header.style.cssText = "font-size:12px;color:var(--cy);font-weight:800;margin:0 0 8px;text-transform:uppercase;border-bottom:2px solid var(--cy);padding-bottom:6px;display:flex;justify-content:space-between;align-items:center;";
+      } else {
+        header.style.cssText = "font-size:11px;color:var(--mu);font-weight:700;margin:12px 0 6px;text-transform:uppercase;border-bottom:1px solid var(--ln);padding-bottom:4px;display:flex;justify-content:space-between;align-items:center;";
+      }
+      
       var dbCount = DATA.existingGroupCounts[g.id] || 0;
-      header.innerHTML = '<span>Bảng ' + esc(g.code) + '</span><span style="font-size:10px;color:var(--mu);font-weight:600;">+' + groupResults.length + ' mới' + (dbCount > 0 ? ' | ' + dbCount + ' có sẵn' : '') + '</span>';
+      var prefix = isCurrentGroup ? '🎯 ' : '';
+      header.innerHTML = '<span>' + prefix + 'Bảng ' + esc(g.code) + '</span><span style="font-size:10px;color:var(--mu);font-weight:600;">+' + groupResults.length + ' mới' + (dbCount > 0 ? ' | ' + dbCount + ' có sẵn' : '') + '</span>';
       list.appendChild(header);
       
       groupResults.forEach(r => {
@@ -477,7 +494,7 @@ function finalizeDraw() {
   
   renderPool();
   renderCurrentGroup();  // Render tab 1 - bảng đang bốc
-  renderOtherGroups();   // Render tab 2 - các bảng khác
+  renderOtherGroups();   // Render tab 2 - tất cả các bảng (bảng đang bốc lên đầu)
   renderGroupSelect(); 
   
   el("btn-spin").classList.add("hidden");
