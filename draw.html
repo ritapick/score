@@ -37,7 +37,7 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
 .group-select option{background:var(--sf);color:var(--tx)}
 .group-status{font-size:12px;color:var(--cy);margin-top:8px;text-align:right;font-weight:600}
 
-/* Giao diện quay số nhỏ lại */
+/* Giao diện quay số nhỏ gọn */
 .draw-box{font-size:1.8rem;font-weight:900;text-align:center;min-height:70px;display:flex;align-items:center;justify-content:center;transition:all .3s;border-radius:12px;padding:15px;background:rgba(13,22,38,.5);border:1px dashed var(--ln);margin-bottom:20px;word-break:break-word}
 .draw-box.spinning{animation:blurText 0.1s infinite;color:var(--cy);border-color:var(--cy);text-shadow:0 0 15px rgba(34,211,238,0.5)}
 .draw-box.winner{animation:popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);color:var(--li);border-color:var(--li);background:rgba(163,230,53,0.08);text-shadow:0 0 25px rgba(163,230,53,0.6);font-size:2.2rem}
@@ -104,18 +104,21 @@ main{flex:1;max-width:1000px;margin:0 auto;padding:20px;width:100%;display:flex;
 
     <div class="side-panel">
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('remaining')">📦 Còn lại (<span id="pool-count">0</span>)</button>
-        <button class="tab-btn" onclick="switchTab('drawn')">✅ Đã bốc thăm</button>
+        <!-- Tab Đã bốc thăm được đặt trước và mặc định active -->
+        <button class="tab-btn active" onclick="switchTab('drawn')">✅ Đã bốc thăm</button>
+        <button class="tab-btn" onclick="switchTab('remaining')">📦 Còn lại (<span id="pool-count">0</span>)</button>
       </div>
       
-      <div id="tab-remaining" class="tab-content active">
-        <ul class="pool-list" id="pool-list"></ul>
-        <div class="empty-msg hidden" id="pool-empty">🎉 Không còn đội nào chưa bốc</div>
-      </div>
-      
-      <div id="tab-drawn" class="tab-content">
+      <!-- Nội dung tab Đã bốc thăm hiển thị mặc định -->
+      <div id="tab-drawn" class="tab-content active">
         <ul class="result-list" id="result-list"></ul>
         <div class="empty-msg" id="result-empty">Chưa có kết quả</div>
+      </div>
+      
+      <!-- Nội dung tab Còn lại -->
+      <div id="tab-remaining" class="tab-content">
+        <ul class="pool-list" id="pool-list"></ul>
+        <div class="empty-msg hidden" id="pool-empty">🎉 Không còn đội nào chưa bốc</div>
       </div>
     </div>
   </div>
@@ -157,12 +160,12 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
   
-  if (tabName === 'remaining') {
+  if (tabName === 'drawn') {
     document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-    el('tab-remaining').classList.add('active');
+    el('tab-drawn').classList.add('active');
   } else {
     document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-    el('tab-drawn').classList.add('active');
+    el('tab-remaining').classList.add('active');
   }
 }
 
@@ -240,14 +243,13 @@ async function init() {
 
 function renderGroupSelect() {
   var select = el("group-select");
-  var currentVal = select.value; // Lưu lại giá trị đang chọn để không bị reset về Bảng A
+  var currentVal = select.value; // Lưu lại giá trị đang chọn để không bị reset
   
   select.innerHTML = "";
   DATA.groups.forEach(g => {
-    var count = DATA.existingGroupCounts[g.id] || 0;
     var opt = document.createElement("option");
     opt.value = g.id;
-    opt.textContent = "Bảng " + g.code + " (Đã có: " + count + " đội)";
+    opt.textContent = "Bảng " + g.code; // Chỉ hiển thị tên bảng, bỏ phần số lượng
     opt.dataset.code = g.code;
     select.appendChild(opt);
   });
