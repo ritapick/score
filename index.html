@@ -15,7 +15,8 @@ button,input,select{font:inherit}
 .brand-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .logo{color:var(--li);font-weight:800;font-size:16px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
 .logo-icon{font-size:22px}
-.chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--li);padding:4px 10px;border-radius:99px}
+.chip{color:#0b1220;font-size:11px;font-weight:800;background:var(--li);padding:4px 10px;border-radius:99px;cursor:pointer;transition:.15s}
+.chip:hover{background:var(--cy);color:#0b1220}
 .btn{border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:.15s}
 .btn:active{transform:scale(.97)}
 .btn-p{background:var(--li);color:#0b1220}
@@ -289,7 +290,7 @@ td.pf{font-family:monospace;color:var(--cy)}
   <span class="logo"><span class="logo-icon">🏓</span> PICKLEBALL SCORE</span>
 </div>
 <div>
-  <span id="user-chip" class="chip hidden"></span>
+  <span id="user-chip" class="chip hidden" onclick="openChangePassword()" title="Nhấn để đổi mật khẩu"></span>
   <button id="register-btn" class="btn btn-b" onclick="openRegister()">📝 Đăng ký</button>
   <button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button>
   <a id="admin-link" class="btn btn-b hidden" href="admin.html">⚙ Quản trị</a>
@@ -332,6 +333,21 @@ td.pf{font-family:monospace;color:var(--cy)}
   <button class="btn btn-p" onclick="doRegister()">Tạo tài khoản</button>
 </div>
 <div id="rmsg" class="msg"></div>
+</div>
+</div>
+
+<!-- MODAL ĐỔI MẬT KHẨU MỚI -->
+<div id="change-password-modal" class="modal-bg">
+<div class="modal" style="width:min(380px,100%)">
+<h3>🔑 Đổi mật khẩu</h3>
+<input id="cp_old" type="password" placeholder="Mật khẩu hiện tại"/>
+<input id="cp_new" type="password" placeholder="Mật khẩu mới (tối thiểu 3 ký tự)"/>
+<input id="cp_confirm" type="password" placeholder="Xác nhận mật khẩu mới"/>
+<div class="actions">
+  <button class="btn btn-l" onclick="closeChangePassword()">Đóng</button>
+  <button class="btn btn-p" onclick="doChangePassword()">Cập nhật</button>
+</div>
+<div id="cpmsg" class="msg"></div>
 </div>
 </div>
 
@@ -561,6 +577,76 @@ async function doRegister() {
     msg.textContent = "❌ " + e.message;
   }
 }
+
+// --- CHỨC NĂNG ĐỔI MẬT KHẨU ---
+function openChangePassword() {
+  if (!CURRENT_USER) return;
+  el("change-password-modal").classList.add("show");
+  el("cp_old").value = "";
+  el("cp_new").value = "";
+  el("cp_confirm").value = "";
+  el("cpmsg").textContent = "";
+  el("cpmsg").className = "msg";
+}
+
+function closeChangePassword() {
+  el("change-password-modal").classList.remove("show");
+}
+
+async function doChangePassword() {
+  var oldP = el("cp_old").value;
+  var newP = el("cp_new").value;
+  var confirmP = el("cp_confirm").value;
+  var msg = el("cpmsg");
+
+  msg.className = "msg";
+  msg.textContent = "";
+
+  if (!oldP || !newP || !confirmP) {
+    msg.textContent = "⚠️ Vui lòng nhập đầy đủ thông tin.";
+    return;
+  }
+  if (newP.length < 3) {
+    msg.textContent = "⚠️ Mật khẩu mới tối thiểu 3 ký tự.";
+    return;
+  }
+  if (newP !== confirmP) {
+    msg.textContent = "⚠️ Mật khẩu xác nhận không khớp.";
+    return;
+  }
+
+  msg.textContent = "Đang kiểm tra...";
+
+  try {
+    // 1. Kiểm tra mật khẩu cũ có đúng không
+    var { data: userData, error: checkErr } = await sb.from('admin_users')
+      .select('id')
+      .eq('id', CURRENT_USER.id)
+      .eq('password', oldP)
+      .maybeSingle();
+
+    if (checkErr) throw checkErr;
+
+    if (!userData) {
+      msg.textContent = "❌ Mật khẩu hiện tại không đúng!";
+      return;
+    }
+
+    // 2. Cập nhật mật khẩu mới
+    var { error: updateErr } = await sb.from('admin_users')
+      .update({ password: newP })
+      .eq('id', CURRENT_USER.id);
+
+    if (updateErr) throw updateErr;
+
+    closeChangePassword();
+    toast("✅ Đổi mật khẩu thành công!");
+  } catch(e) {
+    msg.className = "msg";
+    msg.textContent = "❌ Lỗi: " + e.message;
+  }
+}
+// -----------------------------
 
 function applyUI() {
   var logged = !!CURRENT_USER;
