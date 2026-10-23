@@ -694,6 +694,7 @@ function startRealtime() {
           } else {
             updateMatchRowsDOM();
             updateBracketDOM();
+            updateStandingsDOM();
           }
           if (currentTimelineMatchId) {
             await loadRallies(currentTimelineMatchId);
@@ -807,6 +808,50 @@ function updateBracketDOM() {
         teams[1].textContent = awayName;
         teams[0].classList.toggle('tbd', !m.home_team_id);
         teams[1].classList.toggle('tbd', !m.away_team_id);
+      }
+    }
+  });
+}
+
+function updateStandingsDOM() {
+  if (!DATA.gStage) return;
+  var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; }).sort(function(a,b){ return a.code.localeCompare(b.code); });
+  var numGroups = groups.length;
+  
+  groups.forEach(function(g, idx) {
+    var card = document.querySelector('.group-card[data-group-id="' + g.id + '"]');
+    if (!card) return;
+    
+    var st = standings(g.id);
+    var mb = teamsInG(g.id);
+    var completed = DATA.matches.filter(function(m){ 
+      var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
+      return m.group_id===g.id && (status==="completed" || status==="finished"); 
+    }).length;
+    var expected = expectedMatchesInGroup(g.id);
+    var isComplete = isGroupComplete(g.id);
+    var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
+    
+    var badge = card.querySelector('.badge');
+    if (badge) {
+      badge.textContent = mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount;
+    }
+    
+    var tbody = card.querySelector('tbody');
+    if (tbody) {
+      if (st.length) {
+        var tbodyHTML = '';
+        st.forEach(function(t, i) {
+          var name = tName(t.id) || "—";
+          var diff = t.pf - t.pa;
+          var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
+          var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
+          var qClass = (i < qualifyCount && isComplete) ? " qualify" : "";
+          tbodyHTML += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
+        });
+        tbody.innerHTML = tbodyHTML;
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--mu);font-size:11px;text-align:center;padding:8px">Chưa có dữ liệu</td></tr>';
       }
     }
   });
@@ -1392,7 +1437,7 @@ function renderEventDetail() {
     var isComplete = isGroupComplete(g.id);
     var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
     
-    H += '<div class="group-card"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
+    H += '<div class="group-card" data-group-id="' + g.id + '"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
     if (st.length) {
       H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>L</th><th>HS</th><th>GF</th></tr></thead><tbody>';
       st.forEach(function(t, i) {
