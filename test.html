@@ -392,6 +392,7 @@ var DATA = {
 };
 var realtimeInterval = null;
 var currentTimelineMatchId = null;
+var durationInterval = null; // Biến mới cho bộ đếm thời gian
 
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -477,6 +478,7 @@ function doLogout() {
   CURRENT_USER = null;
   localStorage.removeItem('pb_admin');
   stopRealtime();
+  stopDurationTimer();
   applyUI(); render();
   toast("👋 Đã đăng xuất");
 }
@@ -619,7 +621,6 @@ async function doChangePassword() {
   msg.textContent = "Đang kiểm tra...";
 
   try {
-    // 1. Kiểm tra mật khẩu cũ có đúng không
     var { data: userData, error: checkErr } = await sb.from('admin_users')
       .select('id')
       .eq('id', CURRENT_USER.id)
@@ -633,7 +634,6 @@ async function doChangePassword() {
       return;
     }
 
-    // 2. Cập nhật mật khẩu mới
     var { error: updateErr } = await sb.from('admin_users')
       .update({ password: newP })
       .eq('id', CURRENT_USER.id);
@@ -661,6 +661,34 @@ function applyUI() {
     el("user-chip").textContent = "👤 " + CURRENT_USER.username + " • " + role;
   }
 }
+
+// --- BỘ ĐẾM THỜI GIAN TRẬN ĐẤU ---
+function startDurationTimer() {
+  stopDurationTimer();
+  if (!currentTimelineMatchId) return;
+  var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
+  if (!match || match.match_status !== 'live') return;
+
+  durationInterval = setInterval(function() {
+    var durationEl = document.getElementById("match-duration");
+    if (durationEl && DATA.rallies.length > 0) {
+      var firstRallyTime = new Date(DATA.rallies[0].created_at).getTime();
+      var diffMs = Date.now() - firstRallyTime;
+      if (diffMs < 0) diffMs = 0;
+      var minutes = Math.floor(diffMs / 60000);
+      var seconds = Math.floor((diffMs % 60000) / 1000);
+      durationEl.textContent = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
+  }, 1000);
+}
+
+function stopDurationTimer() {
+  if (durationInterval) {
+    clearInterval(durationInterval);
+    durationInterval = null;
+  }
+}
+// -----------------------------
 
 function startRealtime() {
   stopRealtime();
@@ -970,6 +998,14 @@ async function loadRallies(matchId) {
     var r = await sb.from("match_rallies").select("*").eq("match_id", matchId).order("rally_number", {ascending:true});
     DATA.rallies = r.data || [];
     renderTimeline();
+    
+    // Khởi động bộ đếm nếu trận đấu đang Live
+    if (DATA.rallies.length > 0) {
+      var match = DATA.matches.find(function(m) { return m.id === matchId; });
+      if (match && match.match_status === 'live') {
+        startDurationTimer();
+      }
+    }
   } catch(e) {
     console.error("Load rallies error:", e);
     DATA.rallies = [];
@@ -997,9 +1033,24 @@ function renderTimeline() {
     return;
   }
   var H = '';
-  DATA.rallies.forEach(function(r) {
+  var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
+  var isLive = match && match.match_status === 'live';
+
+  // Tính toán thời gian trận đấu
+  var durationText = "";
+  if (DATA.rallies.length > 0) {
+    var firstRallyTime = new Date(DATA.rallies[0].created_at).getTime();
+    var lastRallyTime = isLive ? Date.now() : new Date(DATA.rallies[DATA.rallies.length - 1].created_at).getTime();
+    var diffMs = lastRallyTime - firstRallyTime;
+    if (diffMs < 0) diffMs = 0;
+    
+    var minutes = Math.floor(diffMs / 60000);
+    var seconds = Math.floor((diffMs % 60000) / 1000);
+    durationText = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+  }
+
+  DATA.rallies.forEach(function(r, index) {
     var badge = getEventTypeBadge(r.event_type);
-    var match = DATA.matches.find(function(m) { return m.id === r.match_id; });
     var homeTeamName = match ? getDisplayTeamName(match.home_team_id, match.home_bracket_position, match, true) : 'Đội A';
     var awayTeamName = match ? getDisplayTeamName(match.away_team_id, match.away_bracket_position, match, false) : 'Đội B';
     
@@ -1025,6 +1076,13 @@ function renderTimeline() {
     H += '</div>';
     H += '<div class="rally-desc">' + desc + '</div>';
     H += '</div>';
+
+    // Hiển thị thời gian trận đấu ở rally cuối cùng
+    if (index === DATA.rallies.length - 1) {
+      H += '<div style="text-align:center; margin-top:12px; padding:10px; background:rgba(34,211,238,0.1); border:1px solid var(--cy); border-radius:8px; color:var(--cy); font-weight:800; font-size:14px; font-family:monospace;">';
+      H += '⏱️ Thời gian trận đấu: <span id="match-duration">' + durationText + '</span>';
+      H += '</div>';
+    }
   });
   body.innerHTML = H;
   body.scrollTop = body.scrollHeight;
@@ -1287,7 +1345,6 @@ function renderTournamentDetail() {
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
   
-  // Nút chia sẻ link
   H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ</button>';
   H += '</div>';
   
@@ -1321,7 +1378,6 @@ function renderTournamentDetail() {
   return H;
 }
 
-// --- LOGIC CHIA SẺ MỚI ---
 window.shareTournament = function(tid) {
   var url = window.location.origin + window.location.pathname + '?tid=' + tid;
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
@@ -1331,16 +1387,13 @@ window.shareTournament = function(tid) {
     url: url
   };
 
-  // Ưu tiên dùng Web Share API (mở hộp thoại chia sẻ native của điện thoại: Zalo, Messenger, Copy link...)
   if (navigator.share) {
     navigator.share(shareData).catch(function(error) {
-      // Nếu người dùng hủy share hoặc lỗi, fallback sang copy clipboard
       if (error.name !== 'AbortError') {
         fallbackCopyText(url);
       }
     });
   } else {
-    // Fallback cho trình duyệt không hỗ trợ Web Share API
     fallbackCopyText(url);
   }
 };
@@ -1373,7 +1426,6 @@ function execCopy(text) {
   }
   document.body.removeChild(textArea);
 }
-// -------------------------
 
 function renderFinalStandings(ckMatch, bkMatches) {
   if (!ckMatch) return '';
@@ -1671,6 +1723,7 @@ function closeTimelineModal() {
   el("timeline-modal").classList.remove("show");
   currentTimelineMatchId = null;
   DATA.rallies = [];
+  stopDurationTimer(); // Dừng bộ đếm khi đóng modal
 }
 
 window.viewTournament = async function(tid) { 
@@ -1681,7 +1734,6 @@ window.viewTournament = async function(tid) {
 window.viewEvent = async function(eid) { stopRealtime(); await loadEventDetail(eid); window.scrollTo(0, 0); };
 window.backToList = function() {
   stopRealtime();
-  // Xóa tham số tid khỏi URL để về trang chủ sạch sẽ
   window.history.pushState({}, document.title, window.location.pathname);
   DATA.tournament = null; DATA.events = []; DATA.eid = null; DATA.teams = []; DATA.players = [];
   DATA.matches = []; DATA.groups = []; DATA.groupTeams = []; DATA.sponsors = []; DATA.rallies = [];
@@ -1695,7 +1747,6 @@ window.backToList = function() {
     applyUI();
     await loadTournaments();
     
-    // Kiểm tra tham số URL để mở trực tiếp giải đấu
     var urlParams = new URLSearchParams(window.location.search);
     var targetTid = urlParams.get('tid') || urlParams.get('tournament');
     
