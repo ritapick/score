@@ -392,7 +392,7 @@ var DATA = {
 };
 var realtimeInterval = null;
 var currentTimelineMatchId = null;
-var durationInterval = null; // Biến mới cho bộ đếm thời gian
+var durationInterval = null;
 
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -581,7 +581,6 @@ async function doRegister() {
   }
 }
 
-// --- CHỨC NĂNG ĐỔI MẬT KHẨU ---
 function openChangePassword() {
   if (!CURRENT_USER) return;
   el("change-password-modal").classList.add("show");
@@ -647,7 +646,6 @@ async function doChangePassword() {
     msg.textContent = "❌ Lỗi: " + e.message;
   }
 }
-// -----------------------------
 
 function applyUI() {
   var logged = !!CURRENT_USER;
@@ -662,18 +660,49 @@ function applyUI() {
   }
 }
 
-// --- BỘ ĐẾM THỜI GIAN TRẬN ĐẤU ---
+// --- BỘ ĐẾM THỜI GIAN TRẬN ĐẤU (ĐÃ NÂNG CẤP) ---
+function getValidMatchStartTime() {
+  if (!DATA.rallies || DATA.rallies.length === 0) return Date.now();
+
+  // Lọc ra các rally có created_at hợp lệ
+  var validRallies = DATA.rallies.filter(function(r) {
+    return r.created_at && !isNaN(new Date(r.created_at).getTime());
+  });
+
+  if (validRallies.length === 0) {
+    console.warn("Không tìm thấy created_at hợp lệ trong rallies. Dùng thời gian hiện tại.");
+    return Date.now();
+  }
+
+  // Sắp xếp theo created_at tăng dần để lấy thời điểm sớm nhất tuyệt đối
+  validRallies.sort(function(a, b) {
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  var earliestTime = new Date(validRallies[0].created_at).getTime();
+  
+  // Cảnh báo nếu thời gian sớm nhất cách đây quá 2 tiếng (7200000 ms)
+  // Điều này giúp bạn phát hiện nếu dữ liệu trong DB bị lỗi hoặc là dữ liệu cũ từ hôm qua
+  var diff = Date.now() - earliestTime;
+  if (diff > 2 * 60 * 60 * 1000) {
+    console.warn("⚠️ CẢNH BÁO: Rally đầu tiên có vẻ cách đây rất lâu (>2h). Kiểm tra lại cột 'created_at' trong bảng match_rallies trên Supabase. Giá trị hiện tại:", validRallies[0].created_at);
+  }
+
+  return earliestTime;
+}
+
 function startDurationTimer() {
   stopDurationTimer();
   if (!currentTimelineMatchId) return;
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   if (!match || match.match_status !== 'live') return;
 
+  var startTime = getValidMatchStartTime();
+
   durationInterval = setInterval(function() {
     var durationEl = document.getElementById("match-duration");
-    if (durationEl && DATA.rallies.length > 0) {
-      var firstRallyTime = new Date(DATA.rallies[0].created_at).getTime();
-      var diffMs = Date.now() - firstRallyTime;
+    if (durationEl) {
+      var diffMs = Date.now() - startTime;
       if (diffMs < 0) diffMs = 0;
       var minutes = Math.floor(diffMs / 60000);
       var seconds = Math.floor((diffMs % 60000) / 1000);
@@ -999,7 +1028,6 @@ async function loadRallies(matchId) {
     DATA.rallies = r.data || [];
     renderTimeline();
     
-    // Khởi động bộ đếm nếu trận đấu đang Live
     if (DATA.rallies.length > 0) {
       var match = DATA.matches.find(function(m) { return m.id === matchId; });
       if (match && match.match_status === 'live') {
@@ -1036,12 +1064,14 @@ function renderTimeline() {
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   var isLive = match && match.match_status === 'live';
 
-  // Tính toán thời gian trận đấu
-  var durationText = "";
+  var durationText = "00:00";
   if (DATA.rallies.length > 0) {
-    var firstRallyTime = new Date(DATA.rallies[0].created_at).getTime();
+    var startTime = getValidMatchStartTime();
     var lastRallyTime = isLive ? Date.now() : new Date(DATA.rallies[DATA.rallies.length - 1].created_at).getTime();
-    var diffMs = lastRallyTime - firstRallyTime;
+    
+    if (isNaN(lastRallyTime)) lastRallyTime = startTime;
+
+    var diffMs = lastRallyTime - startTime;
     if (diffMs < 0) diffMs = 0;
     
     var minutes = Math.floor(diffMs / 60000);
@@ -1077,7 +1107,6 @@ function renderTimeline() {
     H += '<div class="rally-desc">' + desc + '</div>';
     H += '</div>';
 
-    // Hiển thị thời gian trận đấu ở rally cuối cùng
     if (index === DATA.rallies.length - 1) {
       H += '<div style="text-align:center; margin-top:12px; padding:10px; background:rgba(34,211,238,0.1); border:1px solid var(--cy); border-radius:8px; color:var(--cy); font-weight:800; font-size:14px; font-family:monospace;">';
       H += '⏱️ Thời gian trận đấu: <span id="match-duration">' + durationText + '</span>';
@@ -1723,7 +1752,7 @@ function closeTimelineModal() {
   el("timeline-modal").classList.remove("show");
   currentTimelineMatchId = null;
   DATA.rallies = [];
-  stopDurationTimer(); // Dừng bộ đếm khi đóng modal
+  stopDurationTimer();
 }
 
 window.viewTournament = async function(tid) { 
