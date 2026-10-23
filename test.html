@@ -69,6 +69,7 @@ tr.qualify{background:rgba(163,230,53,.08)}
 tr.qualify td.rank{color:var(--li)}
 tr.qualify td.rank::before{content:"✓ ";color:var(--li);font-weight:900}
 td.wins{color:var(--li);font-weight:800;font-family:monospace}
+td.losses{color:var(--rd);font-weight:800;font-family:monospace}
 td.diff{font-family:monospace;font-weight:700}
 td.diff.pos{color:var(--li)}
 td.diff.neg{color:var(--rd)}
@@ -1004,7 +1005,7 @@ function isGroupComplete(gid) {
 function standings(g) {
   var t = teamsInG(g);
   var st = {};
-  t.forEach(function(x){ st[x.id] = {id:x.id, w:0, pf:0, pa:0, played:0}; });
+  t.forEach(function(x){ st[x.id] = {id:x.id, w:0, l:0, pf:0, pa:0, played:0}; });
   DATA.matches.filter(function(m){ 
     var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
     return m.group_id===g && (status==="completed" || status==="finished"); 
@@ -1013,8 +1014,13 @@ function standings(g) {
     if (!h || !a) return;
     h.pf += Number(m.home_score)||0; h.pa += Number(m.away_score)||0; h.played++;
     a.pf += Number(m.away_score)||0; a.pa += Number(m.home_score)||0; a.played++;
-    if (Number(m.home_score) > Number(m.away_score)) h.w++;
-    else if (Number(m.away_score) > Number(m.home_score)) a.w++;
+    if (Number(m.home_score) > Number(m.away_score)) {
+      h.w++;
+      a.l++;
+    } else if (Number(m.away_score) > Number(m.home_score)) {
+      a.w++;
+      h.l++;
+    }
   });
   var arr = []; for (var k in st) arr.push(st[k]);
   return arr.sort(function(x,y){
@@ -1388,14 +1394,14 @@ function renderEventDetail() {
     
     H += '<div class="group-card"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
     if (st.length) {
-      H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>HS</th><th>GF</th></tr></thead><tbody>';
+      H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>L</th><th>HS</th><th>GF</th></tr></thead><tbody>';
       st.forEach(function(t, i) {
         var name = tName(t.id) || "—";
         var diff = t.pf - t.pa;
         var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
         var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
         var qClass = (i < qualifyCount && isComplete) ? " qualify" : "";
-        H += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
+        H += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
       });
       H += '</tbody></table>';
     } else {
