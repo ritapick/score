@@ -99,26 +99,64 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .toast.show{opacity:1}
 .login-input{width:100%;padding:8px;margin-bottom:8px;background:var(--bg);border:1px solid var(--ln);border-radius:6px;color:var(--tx);font-size:13px}
 
-/* --- CSS MỚI CHO MODAL XÚC XẮC --- */
-.dice-modal-content{display:flex;flex-direction:column;gap:16px;padding:4px}
-.dice-team-section{background:var(--bg);border-radius:10px;padding:16px;text-align:center;border:2px solid var(--ln);transition:.2s}
-.dice-team-section.home{border-color:var(--li)}
-.dice-team-section.away{border-color:var(--cy)}
-.dice-display{font-size:72px;font-weight:900;color:var(--tx);margin:12px 0;height:90px;display:flex;align-items:center;justify-content:center;background:var(--sf2);border-radius:12px;border:2px solid var(--ln);text-shadow:0 4px 12px rgba(0,0,0,0.4)}
-.dice-display.rolling{animation:shake 0.1s infinite;color:var(--or);border-color:var(--or)}
-@keyframes shake{0%{transform:translate(1px,1px) rotate(0deg)}10%{transform:translate(-1px,-2px) rotate(-2deg)}20%{transform:translate(-3px,0px) rotate(2deg)}30%{transform:translate(3px,2px) rotate(0deg)}40%{transform:translate(1px,-1px) rotate(2deg)}50%{transform:translate(-1px,2px) rotate(-2deg)}60%{transform:translate(-3px,1px) rotate(0deg)}70%{transform:translate(3px,1px) rotate(-2deg)}80%{transform:translate(-1px,-1px) rotate(2deg)}90%{transform:translate(1px,2px) rotate(0deg)}100%{transform:translate(1px,-2px) rotate(-2deg)}}
-.dice-result{font-size:14px;color:var(--mu);margin-top:8px;min-height:20px;font-weight:700}
-.dice-btn{width:100%;padding:12px;font-size:15px;font-weight:800;border-radius:8px;border:none;cursor:pointer;transition:.15s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px}
-.dice-btn.home{background:var(--li);color:#0b1220}
-.dice-btn.away{background:var(--cy);color:#0b1220}
-.dice-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
-.dice-btn:active:not(:disabled){transform:scale(0.95)}
+/* --- CSS MỚI CHO MODAL XÚC XẮC HỢP NHẤT --- */
+.dice-display {
+    font-size: 80px;
+    font-weight: 900;
+    color: var(--tx);
+    margin: 12px 0;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sf2);
+    border-radius: 16px;
+    border: 3px solid var(--ln);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.dice-display.rolling {
+    color: var(--or);
+    border-color: var(--or);
+    animation: none;
+}
+.dice-display.boom {
+    font-size: 100px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--li), #059669);
+    border-color: var(--li);
+    text-shadow: 0 4px 15px rgba(163, 230, 53, 0.6);
+    transform: scale(1.15);
+    animation: boomPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes boomPop {
+    0% { transform: scale(0.5); opacity: 0.5; }
+    60% { transform: scale(1.25); }
+    100% { transform: scale(1.15); opacity: 1; }
+}
+.dice-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.dice-btn.home { background: var(--li); color: #0b1220; }
+.dice-btn.away { background: var(--cy); color: #0b1220; }
+.dice-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; filter: grayscale(0.8); }
+.dice-btn:active:not(:disabled) { transform: scale(0.95); }
 
-@media(max-width:380px){.logo{font-size:12px}.btn{padding:5px 8px;font-size:10px}.filter-bar select{padding:5px 6px;font-size:11px}.match-card{padding:6px;margin:4px 6px}.match-code{font-size:10px}.team-name{font-size:10px}.match-score{font-size:14px;min-width:44px}.match-status{font-size:8px;padding:2px 4px}.score-value{font-size:30px}.score-btn{width:36px;height:36px;font-size:18px}.slots-grid{gap:6px}.slot-group{padding:6px}.serve-btn{font-size:14px;padding:5px 3px}.modal{padding:10px}.modal-header h3{font-size:13px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:56px;height:70px}.dice-btn{font-size:13px;padding:10px}}
+@media(max-width:380px){.logo{font-size:12px}.btn{padding:5px 8px;font-size:10px}.filter-bar select{padding:5px 6px;font-size:11px}.match-card{padding:6px;margin:4px 6px}.match-code{font-size:10px}.team-name{font-size:10px}.match-score{font-size:14px;min-width:44px}.match-status{font-size:8px;padding:2px 4px}.score-value{font-size:30px}.score-btn{width:36px;height:36px;font-size:18px}.slots-grid{gap:6px}.slot-group{padding:6px}.serve-btn{font-size:14px;padding:5px 3px}.modal{padding:10px}.modal-header h3{font-size:13px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:64px;height:90px}.dice-display.boom{font-size:80px}.dice-btn{font-size:13px;padding:12px}}
 @media(max-width:480px){.modal-actions{grid-template-columns:1fr 1fr;}}
 @media(min-width:381px) and (max-width:480px){.modal{max-width:420px}}
 @media(min-width:481px){main{max-width:600px;padding:12px}.modal{max-width:500px;padding:14px}.score-value{font-size:40px}.score-btn{width:44px;height:44px;font-size:22px}.score-top-display{font-size:32px}.timeout-display{font-size:64px}}
-@media(max-height:500px) and (orientation:landscape){.modal{max-height:95vh}.score-value{font-size:28px}.score-btn{width:34px;height:34px;font-size:16px}.slots-section{padding:8px}.modal-actions{grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:48px;height:60px}}
+@media(max-height:500px) and (orientation:landscape){.modal{max-height:95vh}.score-value{font-size:28px}.score-btn{width:34px;height:34px;font-size:16px}.slots-section{padding:8px}.modal-actions{grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:60px;height:80px}}
 </style>
 </head>
 <body>
@@ -131,25 +169,21 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 
 <div id="timeout-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3>⏱ TIMEOUT</h3><button class="modal-close" onclick="closeTimeoutModal()">×</button></div><div class="timeout-display" id="timeout-display">00:00</div><div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;"><button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button></div></div></div>
 
-<!-- MODAL XÚC XẮC MỚI -->
+<!-- MODAL XÚC XẮC HỢP NHẤT -->
 <div id="dice-modal" class="modal-bg">
   <div class="modal">
     <div class="modal-header">
       <h3>🎲 Chọn Quyền Ưu Tiên</h3>
       <button class="modal-close" onclick="closeDiceModal()">×</button>
     </div>
-    <div class="dice-modal-content">
-      <div class="dice-team-section home">
-        <div style="font-size:14px; font-weight:800; color:var(--li); margin-bottom:4px;" id="dice-home-name">ĐỘI A</div>
-        <div class="dice-display" id="dice-home-display">?</div>
-        <button class="dice-btn home" id="dice-home-btn" onclick="rollDice('home')">🎲 Gieo xúc xắc</button>
-        <div class="dice-result" id="dice-home-result"></div>
-      </div>
-      <div class="dice-team-section away">
-        <div style="font-size:14px; font-weight:800; color:var(--cy); margin-bottom:4px;" id="dice-away-name">ĐỘI B</div>
-        <div class="dice-display" id="dice-away-display">?</div>
-        <button class="dice-btn away" id="dice-away-btn" onclick="rollDice('away')">🎲 Gieo xúc xắc</button>
-        <div class="dice-result" id="dice-away-result"></div>
+    <div class="dice-modal-content" style="text-align:center; padding: 8px;">
+      <div style="font-size:14px; font-weight:700; color:var(--mu); margin-bottom:8px; min-height:20px;" id="dice-status-text">Sẵn sàng quay số</div>
+      <div class="dice-display" id="dice-main-display">?</div>
+      <div class="dice-result" id="dice-main-result" style="font-size:16px; font-weight:800; color:var(--tx); margin: 8px 0 16px 0; min-height: 24px;"></div>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <button class="dice-btn home" id="dice-home-btn" onclick="rollDice('home')">🎲 Đội A Quay</button>
+        <button class="dice-btn away" id="dice-away-btn" onclick="rollDice('away')">🎲 Đội B Quay</button>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:16px; grid-template-columns: 1fr;">
@@ -170,7 +204,7 @@ var DATA = { tournaments: [], events: [], matches: [], teams: [], players: [], g
 var currentMatchId = null, currentMatchData = null, realtimeInterval = null, lastRallyKey = null;
 var localServeState = { team: 'home', turn: 1 };
 var timeoutElapsed = 0, timeoutInterval = null, timeoutRunning = false;
-var diceRollInterval = null, diceRollTimeout = null; // Biến quản lý animation xúc xắc
+var diceRollInterval = null, diceRollTimeout = null;
 
 function el(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -849,15 +883,18 @@ function startTimeout(){timeoutRunning=true;el("timeout-display").classList.add(
 function stopTimeout(){timeoutRunning=false;if(timeoutInterval){clearInterval(timeoutInterval);timeoutInterval=null}el("timeout-display").classList.remove('running')}
 function updateTimeoutDisplay(){var m=Math.floor(timeoutElapsed/60),s=timeoutElapsed%60;el("timeout-display").textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s}
 
-// --- CÁC HÀM MỚI CHO CHỨC NĂNG XÚC XẮC ---
+// --- CÁC HÀM MỚI CHO CHỨC NĂNG XÚC XẮC HỢP NHẤT ---
 function openDiceModal() {
   if(!currentMatchData) return;
-  el("dice-home-name").textContent = el("modal-home-name").textContent;
-  el("dice-away-name").textContent = el("modal-away-name").textContent;
-  el("dice-home-display").textContent = "?";
-  el("dice-away-display").textContent = "?";
-  el("dice-home-result").textContent = "";
-  el("dice-away-result").textContent = "";
+  var homeName = el("modal-home-name").textContent;
+  var awayName = el("modal-away-name").textContent;
+  el("dice-home-btn").textContent = "🎲 " + homeName + " Quay";
+  el("dice-away-btn").textContent = "🎲 " + awayName + " Quay";
+  
+  el("dice-main-display").textContent = "?";
+  el("dice-main-display").className = "dice-display"; // Reset classes
+  el("dice-main-result").textContent = "";
+  el("dice-status-text").textContent = "Sẵn sàng quay số";
   el("dice-home-btn").disabled = false;
   el("dice-away-btn").disabled = false;
   el("dice-modal").classList.add("show");
@@ -870,28 +907,41 @@ function closeDiceModal() {
 }
 
 function rollDice(team) {
-  var displayEl = el("dice-" + team + "-display");
-  var btnEl = el("dice-" + team + "-btn");
-  var resultEl = el("dice-" + team + "-result");
-  var teamName = team === 'home' ? el("dice-home-name").textContent : el("dice-away-name").textContent;
+  var displayEl = el("dice-main-display");
+  var btnHome = el("dice-home-btn");
+  var btnAway = el("dice-away-btn");
+  var resultEl = el("dice-main-result");
+  var statusEl = el("dice-status-text");
+  var teamName = team === 'home' ? el("modal-home-name").textContent : el("modal-away-name").textContent;
 
-  btnEl.disabled = true;
-  displayEl.classList.add("rolling");
-  resultEl.textContent = "Đang quay...";
+  // Khóa cả 2 nút khi đang quay
+  btnHome.disabled = true;
+  btnAway.disabled = true;
+  
+  // Bắt đầu hiệu ứng quay số
+  displayEl.className = "dice-display rolling";
+  statusEl.textContent = teamName + " đang quay...";
+  resultEl.textContent = "";
 
-  // Hiệu ứng đổi số nhanh trong 2 giây
+  // Hiệu ứng quay số ngẫu nhiên từ 1 đến 9
   diceRollInterval = setInterval(function() {
-    displayEl.textContent = Math.floor(Math.random() * 6) + 1;
-  }, 80);
+    displayEl.textContent = Math.floor(Math.random() * 9) + 1;
+  }, 60);
 
+  // Dừng sau 2 giây và hiện kết quả BOOM
   diceRollTimeout = setTimeout(function() {
     clearInterval(diceRollInterval);
-    var finalRoll = Math.floor(Math.random() * 6) + 1;
+    var finalRoll = Math.floor(Math.random() * 6) + 1; // Kết quả xúc xắc thực tế 1-6
+    
     displayEl.textContent = finalRoll;
-    displayEl.classList.remove("rolling");
-    resultEl.textContent = "🎉 " + teamName + " gieo được: " + finalRoll + " điểm";
-    btnEl.disabled = false;
-    toast("🎲 " + teamName + " gieo được: " + finalRoll);
+    displayEl.className = "dice-display boom"; // Kích hoạt hiệu ứng boom
+    statusEl.textContent = "🎉 Kết quả";
+    resultEl.textContent = teamName + " quay được: " + finalRoll + " điểm";
+    
+    // Mở khóa lại để quay không giới hạn
+    btnHome.disabled = false;
+    btnAway.disabled = false;
+    toast("🎲 " + teamName + " quay được: " + finalRoll);
   }, 2000);
 }
 
