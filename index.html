@@ -248,9 +248,14 @@ td.pf{font-family:monospace;color:var(--cy)}
   font-weight: 700;
   z-index: 100;
 }
-.footer-credit span {
+/* --- ĐÃ CHỈNH SỬA: Bỏ gạch chân và chuyển sang màu xanh lá --- */
+.footer-credit a {
   color: var(--li);
-  opacity: 1;
+  text-decoration: none;
+  transition: .15s;
+}
+.footer-credit a:hover {
+  color: var(--cy);
 }
 
 @media(max-width:480px){
@@ -369,7 +374,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 </div>
 </div>
 
-<div class="footer-credit">LY DUNG RITA</div>
+<div class="footer-credit"><a href="https://www.facebook.com/RITA.LamDong" target="_blank" rel="noopener noreferrer">LY DUNG RITA</a></div>
 
 <script>
 "use strict";
@@ -553,6 +558,34 @@ function applyUI() {
   if (logged) {
     var role = isAdmin() ? "ADMIN" : "ORG";
     el("user-chip").textContent = "👤 " + CURRENT_USER.username + " • " + role;
+  }
+}
+
+function formatDateDDMMYYYY(dateStr) {
+  if (!dateStr) return "—";
+  var d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  var day = ("0" + d.getDate()).slice(-2);
+  var month = ("0" + (d.getMonth() + 1)).slice(-2);
+  var year = d.getFullYear();
+  return day + "/" + month + "/" + year;
+}
+
+function getDaysLeftText(dateStr) {
+  if (!dateStr) return "";
+  var d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  var diffTime = d.getTime() - today.getTime();
+  var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays > 0) {
+    return " (Còn " + diffDays + " ngày)";
+  } else if (diffDays === 0) {
+    return "";
+  } else {
+    return "";
   }
 }
 
@@ -1192,8 +1225,13 @@ function renderTournamentList() {
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
     H += '<div class="t-meta">';
-    H += '<span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
-    if (t.location_name) H += '<span> ' + esc(t.location_name) + '</span>';
+    
+    var startDateFormatted = formatDateDDMMYYYY(t.start_date);
+    var endDateFormatted = t.end_date && t.end_date !== t.start_date ? ' → ' + formatDateDDMMYYYY(t.end_date) : '';
+    var daysLeftText = getDaysLeftText(t.start_date);
+    
+    H += '<span>📅 ' + startDateFormatted + endDateFormatted + '<span style="color:var(--li); font-weight:700;">' + daysLeftText + '</span></span>';
+    if (t.location_name) H += '<span>📍 Địa điểm: ' + esc(t.location_name) + '</span>';
     H += '<span>🏷️ Mã: ' + esc(t.code) + '</span></div>';
     if (canManage) H += '<a class="manage-btn" href="admin.html?tournament=' + encodeURIComponent(t.id) + '" onclick="event.stopPropagation()">⚙ Quản lý</a>';
     H += '</div>';
@@ -1211,13 +1249,17 @@ function renderTournamentDetail() {
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header">';
   H += '<div><h2>' + esc(t.name) + '</h2>';
-  H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
-  if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
+  
+  var startDateFormatted = formatDateDDMMYYYY(t.start_date);
+  var endDateFormatted = t.end_date && t.end_date !== t.start_date ? ' → ' + formatDateDDMMYYYY(t.end_date) : '';
+  var daysLeftText = getDaysLeftText(t.start_date);
+  
+  H += '<div class="meta"><span>📅 ' + startDateFormatted + endDateFormatted + '<span style="color:var(--li); font-weight:700;">' + daysLeftText + '</span></span>';
+  if (t.location_name) H += '<span>📍 Địa điểm: ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
   H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ Link giải</button>';
   H += '</div>';
   
-  // --- NÂNG CẤP: Link trọng tài động theo giải đấu hiện tại + Nút chia sẻ ---
   if (canManage) {
     var refereeUrl = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(t.id);
     H += '<div class="manage-bar">';
@@ -1253,7 +1295,6 @@ function renderTournamentDetail() {
   return H;
 }
 
-// --- CHIA SẺ LINK GIẢI ĐẤU ---
 window.shareTournament = function(tid) {
   var url = window.location.origin + window.location.pathname + '?tid=' + tid;
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
@@ -1267,7 +1308,6 @@ window.shareTournament = function(tid) {
   }
 };
 
-// --- CHIA SẺ LINK TRỌNG TÀI (MỚI) ---
 window.shareRefereeLink = function(tid) {
   var url = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(tid);
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
