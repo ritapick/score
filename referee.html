@@ -90,27 +90,116 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .serve-btn.active{background:var(--rd);border-color:var(--rd);color:#fff;box-shadow:0 0 8px rgba(248,113,113,.4)}
 .serve-btn .tick{display:inline-block;color:var(--rd);font-weight:900}
 .serve-btn.active .tick{color:#fff}
-.modal-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
-.modal-actions .btn{padding:10px;font-size:12px;justify-content:center}
+.modal-actions{display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-top:12px}
+.modal-actions .btn{padding:10px 4px;font-size:11px;justify-content:center}
 .timeout-display{font-size:56px;font-weight:900;font-family:monospace;color:var(--or);text-align:center;margin:20px 0;letter-spacing:2px}
 .timeout-display.running{animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 .toast{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:8px 14px;border-radius:99px;font-weight:800;font-size:11px;z-index:99;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 .login-input{width:100%;padding:8px;margin-bottom:8px;background:var(--bg);border:1px solid var(--ln);border-radius:6px;color:var(--tx);font-size:13px}
-@media(max-width:380px){.logo{font-size:12px}.btn{padding:5px 8px;font-size:10px}.filter-bar select{padding:5px 6px;font-size:11px}.match-card{padding:6px;margin:4px 6px}.match-code{font-size:10px}.team-name{font-size:10px}.match-score{font-size:14px;min-width:44px}.match-status{font-size:8px;padding:2px 4px}.score-value{font-size:30px}.score-btn{width:36px;height:36px;font-size:18px}.slots-grid{gap:6px}.slot-group{padding:6px}.serve-btn{font-size:14px;padding:5px 3px}.modal{padding:10px}.modal-header h3{font-size:13px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}}
+
+/* --- CSS MỚI CHO MODAL XÚC XẮC HỢP NHẤT --- */
+.dice-display {
+    font-size: 80px;
+    font-weight: 900;
+    color: var(--tx);
+    margin: 12px 0;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sf2);
+    border-radius: 16px;
+    border: 3px solid var(--ln);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.dice-display.rolling {
+    color: var(--or);
+    border-color: var(--or);
+    animation: none;
+}
+.dice-display.boom {
+    font-size: 100px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--li), #059669);
+    border-color: var(--li);
+    text-shadow: 0 4px 15px rgba(163, 230, 53, 0.6);
+    transform: scale(1.15);
+    animation: boomPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes boomPop {
+    0% { transform: scale(0.5); opacity: 0.5; }
+    60% { transform: scale(1.25); }
+    100% { transform: scale(1.15); opacity: 1; }
+}
+.dice-btn-main {
+    width: 100%;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 900;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--or), var(--pk));
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+    margin-top: 8px;
+}
+.dice-btn-main:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+    transform: none !important; 
+    filter: grayscale(0.8); 
+}
+.dice-btn-main:active:not(:disabled) { 
+    transform: scale(0.96); 
+}
+
+@media(max-width:380px){.logo{font-size:12px}.btn{padding:5px 8px;font-size:10px}.filter-bar select{padding:5px 6px;font-size:11px}.match-card{padding:6px;margin:4px 6px}.match-code{font-size:10px}.team-name{font-size:10px}.match-score{font-size:14px;min-width:44px}.match-status{font-size:8px;padding:2px 4px}.score-value{font-size:30px}.score-btn{width:36px;height:36px;font-size:18px}.slots-grid{gap:6px}.slot-group{padding:6px}.serve-btn{font-size:14px;padding:5px 3px}.modal{padding:10px}.modal-header h3{font-size:13px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:64px;height:90px}.dice-display.boom{font-size:80px}.dice-btn-main{font-size:16px;padding:14px}}
+@media(max-width:480px){.modal-actions{grid-template-columns:1fr 1fr;}}
 @media(min-width:381px) and (max-width:480px){.modal{max-width:420px}}
 @media(min-width:481px){main{max-width:600px;padding:12px}.modal{max-width:500px;padding:14px}.score-value{font-size:40px}.score-btn{width:44px;height:44px;font-size:22px}.score-top-display{font-size:32px}.timeout-display{font-size:64px}}
-@media(max-height:500px) and (orientation:landscape){.modal{max-height:95vh}.score-value{font-size:28px}.score-btn{width:34px;height:34px;font-size:16px}.slots-section{padding:8px}.modal-actions{grid-template-columns:1fr 1fr 1fr;gap:6px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}}
+@media(max-height:500px) and (orientation:landscape){.modal{max-height:95vh}.score-value{font-size:28px}.score-btn{width:34px;height:34px;font-size:16px}.slots-section{padding:8px}.modal-actions{grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:60px;height:80px}}
 </style>
 </head>
 <body>
 <nav class="topnav"><div class="brand-row"><a href="https://ritapick.github.io/score/" class="btn btn-l" style="text-decoration:none">🏠 Trang chủ</a><span class="logo">⚖️ Trọng Tài</span></div><div><span id="user-chip" class="chip hidden"></span><button id="login-btn" class="btn btn-p" onclick="openLogin()">🔐 Đăng nhập</button><button id="logout-btn" class="btn btn-l hidden" onclick="doLogout()">Thoát</button></div></nav>
 <main><div class="filter-bar"><select id="tournament-filter" onchange="onTournamentChange()"><option value="">-- Chọn giải --</option></select><select id="event-filter" onchange="onEventChange()"><option value="">-- Chọn nội dung --</option></select></div><div id="matches-container"><div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📋</div><p style="font-size:12px;margin:0">Đang tải...</p></div></div></main>
+
 <div id="login-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3>🔐 Đăng nhập</h3><button class="modal-close" onclick="closeLogin()">×</button></div><input id="lu" class="login-input" placeholder="Tên đăng nhập"/><input id="lp" class="login-input" type="password" placeholder="Mật khẩu"/><button class="btn btn-p" onclick="doLogin()" style="width:100%;padding:10px;margin-top:4px">Đăng nhập</button><div id="lmsg" style="color:var(--rd);font-size:11px;margin-top:8px;text-align:center"></div></div></div>
-<div id="score-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3 id="modal-match-code">Trận: --</h3><button class="modal-close" onclick="closeScoreModal()">×</button></div><div class="score-top-bar"><div class="score-top-display"><div class="score-top-item"><div class="score-top-label" id="top-server-name">Đội A</div><div class="score-top-value server" id="top-server-score">0</div></div><span class="score-top-sep">-</span><div class="score-top-item"><div class="score-top-label" id="top-receiver-name">Đội B</div><div class="score-top-value" id="top-receiver-score">0</div></div><span class="score-top-sep">-</span><div class="score-top-item"><div class="score-top-label">Lượt</div><div class="score-top-value" id="top-serve-turn">1</div></div></div></div><div class="score-section"><div class="score-display"><div class="score-team"><div class="score-team-name home" id="modal-home-name">Team A</div><div class="score-value" id="modal-home-score">0</div><div class="score-controls" id="home-score-controls"><button class="score-btn" onclick="changeScore('home', -1)">−</button><button class="score-btn" onclick="changeScore('home', 1)">+</button></div></div><div class="score-sep">:</div><div class="score-team"><div class="score-team-name away" id="modal-away-name">Team B</div><div class="score-value" id="modal-away-score">0</div><div class="score-controls" id="away-score-controls"><button class="score-btn" onclick="changeScore('away', -1)">−</button><button class="score-btn" onclick="changeScore('away', 1)">+</button></div></div></div></div><div class="slots-section"><div class="slots-title">👥 Chọn VĐV & Lượt giao</div><div class="slots-grid"><div class="slot-group home"><div class="slot-group-title">ĐỘI A</div><div class="player-select-wrap"><label>🎯 Ô 1</label><select id="slot-home-1" class="slot-select" onchange="onSlotChange('home',1)"><option value="">-- Chọn --</option></select></div><div class="player-select-wrap"><label> Ô 2</label><select id="slot-home-2" class="slot-select" onchange="onSlotChange('home',2)"><option value="">-- Chọn --</option></select></div><div class="serve-buttons"><button class="serve-btn" id="serve-home-l1" onclick="setServe('home',1)" title="Lượt 1"><span class="tick">🌕</span></button><button class="serve-btn" id="serve-home-l2" onclick="setServe('home',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button></div></div><div class="slot-group away"><div class="slot-group-title">ĐỘI B</div><div class="player-select-wrap"><label>🎯 Ô 1</label><select id="slot-away-1" class="slot-select" onchange="onSlotChange('away',1)"><option value="">-- Chọn --</option></select></div><div class="player-select-wrap"><label>🎯 Ô 2</label><select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)"><option value="">-- Chọn --</option></select></div><div class="serve-buttons"><button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)" title="Lượt 1"><span class="tick">🌕</span></button><button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button></div></div></div></div><div class="modal-actions"><button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button><button class="btn btn-w" onclick="openTimeoutModal()"> Timeout</button><button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button></div></div></div>
+
+<div id="score-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3 id="modal-match-code">Trận: --</h3><button class="modal-close" onclick="closeScoreModal()">×</button></div><div class="score-top-bar"><div class="score-top-display"><div class="score-top-item"><div class="score-top-label" id="top-server-name">Đội A</div><div class="score-top-value server" id="top-server-score">0</div></div><span class="score-top-sep">-</span><div class="score-top-item"><div class="score-top-label" id="top-receiver-name">Đội B</div><div class="score-top-value" id="top-receiver-score">0</div></div><span class="score-top-sep">-</span><div class="score-top-item"><div class="score-top-label">Lượt</div><div class="score-top-value" id="top-serve-turn">1</div></div></div></div><div class="score-section"><div class="score-display"><div class="score-team"><div class="score-team-name home" id="modal-home-name">Team A</div><div class="score-value" id="modal-home-score">0</div><div class="score-controls" id="home-score-controls"><button class="score-btn" onclick="changeScore('home', -1)">−</button><button class="score-btn" onclick="changeScore('home', 1)">+</button></div></div><div class="score-sep">:</div><div class="score-team"><div class="score-team-name away" id="modal-away-name">Team B</div><div class="score-value" id="modal-away-score">0</div><div class="score-controls" id="away-score-controls"><button class="score-btn" onclick="changeScore('away', -1)">−</button><button class="score-btn" onclick="changeScore('away', 1)">+</button></div></div></div></div><div class="slots-section"><div class="slots-title">👥 Chọn VĐV & Lượt giao</div><div class="slots-grid"><div class="slot-group home"><div class="slot-group-title">ĐỘI A</div><div class="player-select-wrap"><label>🎯 Ô 1</label><select id="slot-home-1" class="slot-select" onchange="onSlotChange('home',1)"><option value="">-- Chọn --</option></select></div><div class="player-select-wrap"><label> Ô 2</label><select id="slot-home-2" class="slot-select" onchange="onSlotChange('home',2)"><option value="">-- Chọn --</option></select></div><div class="serve-buttons"><button class="serve-btn" id="serve-home-l1" onclick="setServe('home',1)" title="Lượt 1"><span class="tick">🌕</span></button><button class="serve-btn" id="serve-home-l2" onclick="setServe('home',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button></div></div><div class="slot-group away"><div class="slot-group-title">ĐỘI B</div><div class="player-select-wrap"><label>🎯 Ô 1</label><select id="slot-away-1" class="slot-select" onchange="onSlotChange('away',1)"><option value="">-- Chọn --</option></select></div><div class="player-select-wrap"><label>🎯 Ô 2</label><select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)"><option value="">-- Chọn --</option></select></div><div class="serve-buttons"><button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)" title="Lượt 1"><span class="tick">🌕</span></button><button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button></div></div></div></div><div class="modal-actions"><button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button><button class="btn btn-w" onclick="openTimeoutModal()">⏱ Timeout</button><button class="btn" style="background:var(--sf2);color:var(--or);border:1px solid var(--or);" onclick="openDiceModal()">🎲 QUAY SỐ</button><button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button></div></div></div>
+
 <div id="timeout-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3>⏱ TIMEOUT</h3><button class="modal-close" onclick="closeTimeoutModal()">×</button></div><div class="timeout-display" id="timeout-display">00:00</div><div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;"><button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button></div></div></div>
+
+<!-- MODAL XÚC XẮC HỢP NHẤT (CHỈ 1 NÚT) -->
+<div id="dice-modal" class="modal-bg">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🎲 Chọn Quyền Ưu Tiên</h3>
+      <button class="modal-close" onclick="closeDiceModal()">×</button>
+    </div>
+    <div class="dice-modal-content" style="text-align:center; padding: 8px;">
+      <div style="font-size:14px; font-weight:700; color:var(--mu); margin-bottom:8px; min-height:20px;" id="dice-status-text">Sẵn sàng quay số</div>
+      <div class="dice-display" id="dice-main-display">?</div>
+      <div class="dice-result" id="dice-main-result" style="font-size:16px; font-weight:800; color:var(--tx); margin: 8px 0 16px 0; min-height: 24px;"></div>
+      
+      <button class="dice-btn-main" id="dice-main-btn" onclick="rollDice()">🎲 QUAY SỐ</button>
+    </div>
+    <div class="modal-actions" style="margin-top:16px; grid-template-columns: 1fr;">
+      <button class="btn btn-l" onclick="closeDiceModal()">✕ Quay lại màn hình ghi điểm</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
+
 <script>
 "use strict";
 var CFG={URL:"https://mvefkcaqvjflrgmaybev.supabase.co",KEY:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12ZWZrY2FxdmpmbHJnbWF5YmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDAzOTksImV4cCI6MjEwMjE3NjM5OX0.vCY4_JlSBqi6QRh7DYWAe42Ot-pChKaVSHn7DY2C34Q"};
@@ -121,6 +210,7 @@ var DATA = { tournaments: [], events: [], matches: [], teams: [], players: [], g
 var currentMatchId = null, currentMatchData = null, realtimeInterval = null, lastRallyKey = null;
 var localServeState = { team: 'home', turn: 1 };
 var timeoutElapsed = 0, timeoutInterval = null, timeoutRunning = false;
+var diceRollInterval = null, diceRollTimeout = null;
 
 function el(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -558,7 +648,6 @@ async function insertRallyDirect(rallyData){
   }catch(e){return false}
 }
 
-// 🌟 HÀM TIỆN ÍCH: Tìm trận KO theo bracket_slot (ổn định, không phụ thuộc match_code)
 function findKOMatchBySlot(slot) {
   if (!DATA.kStage) return null;
   return DATA.matches.find(m => 
@@ -567,7 +656,6 @@ function findKOMatchBySlot(slot) {
   );
 }
 
-// 🌟 HÀM TIỆN ÍCH: Lấy đội thắng từ một trận đã finished
 function getWinner(match) {
   if (!match) return null;
   var status = match.match_status;
@@ -579,7 +667,6 @@ function getWinner(match) {
   return h > a ? match.home_team_id : match.away_team_id;
 }
 
-// 🌟 LOGIC THEN CHỐT: Tính toán đội vào vòng KO và TỰ ĐỘNG LAN TRUYỀN ĐỘI THẮNG
 function computeKOTeams(){
   var sortedGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).sort((a, b) => a.code.localeCompare(b.code));
   var numGroups = sortedGroups.length;
@@ -693,8 +780,6 @@ function computeKOTeams(){
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   }
 
-  // 🌟 LOGIC LAN TRUYỀN ĐỘI THẮNG: Dùng bracket_slot thay vì match_code
-  // Tứ Kết (slot 9-12) → Bán Kết (slot 13-14)
   var bk1Match = result.matches.find(m => m.code === "BK1");
   if (bk1Match) {
     var tk1Winner = getWinner(findKOMatchBySlot(9));
@@ -711,7 +796,6 @@ function computeKOTeams(){
     if (tk4Winner) bk2Match.a = tk4Winner;
   }
 
-  // Bán Kết (slot 13-14) → Chung Kết (slot 15)
   var ckMatch = result.matches.find(m => m.code === "CK");
   if (ckMatch) {
     var bk1Winner = getWinner(findKOMatchBySlot(13));
@@ -804,6 +888,63 @@ function closeTimeoutModal(){el("timeout-modal").classList.remove("show");stopTi
 function startTimeout(){timeoutRunning=true;el("timeout-display").classList.add('running');timeoutInterval=setInterval(function(){timeoutElapsed++;updateTimeoutDisplay()},1000)}
 function stopTimeout(){timeoutRunning=false;if(timeoutInterval){clearInterval(timeoutInterval);timeoutInterval=null}el("timeout-display").classList.remove('running')}
 function updateTimeoutDisplay(){var m=Math.floor(timeoutElapsed/60),s=timeoutElapsed%60;el("timeout-display").textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s}
+
+// --- CÁC HÀM MỚI CHO CHỨC NĂNG XÚC XẮC HỢP NHẤT (1 NÚT) ---
+function openDiceModal() {
+  if(!currentMatchData) return;
+  el("dice-main-display").textContent = "?";
+  el("dice-main-display").className = "dice-display"; // Reset classes
+  el("dice-main-result").textContent = "";
+  el("dice-status-text").textContent = "Sẵn sàng quay số";
+  el("dice-main-btn").disabled = false;
+  el("dice-main-btn").textContent = "🎲 QUAY SỐ";
+  el("dice-modal").classList.add("show");
+}
+
+function closeDiceModal() {
+  if(diceRollInterval) clearInterval(diceRollInterval);
+  if(diceRollTimeout) clearTimeout(diceRollTimeout);
+  el("dice-modal").classList.remove("show");
+}
+
+function rollDice() {
+  var displayEl = el("dice-main-display");
+  var btnEl = el("dice-main-btn");
+  var resultEl = el("dice-main-result");
+  var statusEl = el("dice-status-text");
+
+  // Khóa nút khi đang quay
+  btnEl.disabled = true;
+  btnEl.textContent = "⏳ Đang quay...";
+  
+  // Bắt đầu hiệu ứng quay số
+  displayEl.className = "dice-display rolling";
+  statusEl.textContent = "Đang quay ngẫu nhiên...";
+  resultEl.textContent = "";
+
+  // Hiệu ứng quay số ngẫu nhiên từ 1 đến 9
+  diceRollInterval = setInterval(function() {
+    displayEl.textContent = Math.floor(Math.random() * 9) + 1;
+  }, 60);
+
+  // Dừng sau 2 giây và hiện kết quả BOOM
+  diceRollTimeout = setTimeout(function() {
+    clearInterval(diceRollInterval);
+    var finalRoll = Math.floor(Math.random() * 6) + 1; // Kết quả xúc xắc thực tế 1-6
+    
+    displayEl.textContent = finalRoll;
+    displayEl.className = "dice-display boom"; // Kích hoạt hiệu ứng boom
+    
+    statusEl.textContent = "🎉 KẾT QUẢ";
+    resultEl.textContent = "Số điểm may mắn: " + finalRoll;
+    
+    // Mở khóa lại nút để quay tiếp không giới hạn
+    btnEl.disabled = false;
+    btnEl.textContent = "🎲 QUAY SỐ";
+    
+    toast("🎲 Kết quả: " + finalRoll + " điểm");
+  }, 2000);
+}
 
 function startRealtime(){
   stopRealtime();
