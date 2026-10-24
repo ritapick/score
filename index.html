@@ -556,46 +556,22 @@ function applyUI() {
   }
 }
 
-// ============================================================
-// HÀM PARSE THỜI GIAN UTC - CHỐNG LỆCH MÚI GIỜ
-// ============================================================
-// Supabase có thể trả về created_at dưới nhiều định dạng:
-// - "2026-10-23T10:00:00Z" (có Z - UTC rõ ràng)
-// - "2026-10-23T10:00:00+00:00" (có offset UTC)
-// - "2026-10-23 10:00:00" (không có timezone - JS sẽ parse thành giờ LOCAL)
-// - "2026-10-23T10:00:00" (không có timezone - JS sẽ parse thành giờ LOCAL)
-// 
-// Khi parse thành giờ local (UTC+7), giá trị milliseconds sẽ LỚN HƠN 7h so với UTC thực.
-// Khi so sánh với Date.now() (UTC), hiệu số sẽ bị LỆCH -7h (trừ 420 phút).
-//
-// Giải pháp: LUÔN parse theo UTC, bất kể chuỗi có timezone hay không.
-// ============================================================
 function parseAsUTC(dateStr) {
   if (!dateStr) return null;
   var s = String(dateStr).trim();
   if (!s) return null;
-  
-  // Nếu đã có Z hoặc offset (+HH:MM hoặc -HH:MM), parse bình thường
   if (/Z$/i.test(s) || /[+-]\d{2}:\d{2}$/.test(s)) {
     var t = new Date(s).getTime();
     return isNaN(t) ? null : t;
   }
-  
-  // Nếu có chữ T nhưng không có timezone (ISO không đầy đủ)
-  // VD: "2026-10-23T10:00:00" → thêm Z để ép UTC
   if (/T\d{2}:\d{2}:\d{2}/.test(s)) {
     var t = new Date(s + 'Z').getTime();
     return isNaN(t) ? null : t;
   }
-  
-  // Nếu là dạng "YYYY-MM-DD HH:MM:SS" (space thay vì T)
-  // VD: "2026-10-23 10:00:00" → thay space bằng T rồi thêm Z
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(s)) {
     var t = new Date(s.replace(' ', 'T') + 'Z').getTime();
     return isNaN(t) ? null : t;
   }
-  
-  // Fallback: parse bình thường (có thể bị lệch múi giờ nhưng ít nhất có giá trị)
   var t = new Date(s).getTime();
   return isNaN(t) ? null : t;
 }
@@ -614,10 +590,8 @@ function formatDuration(ms) {
   return mm + ":" + ss;
 }
 
-// Tìm thời điểm bắt đầu trận (rally đầu tiên) theo UTC
 function getMatchStartTime() {
   if (!DATA.rallies || DATA.rallies.length === 0) return null;
-  
   var earliest = null;
   for (var i = 0; i < DATA.rallies.length; i++) {
     var t = parseAsUTC(DATA.rallies[i].created_at);
@@ -628,10 +602,8 @@ function getMatchStartTime() {
   return earliest;
 }
 
-// Tìm thời điểm rally cuối cùng theo UTC
 function getLastRallyTime() {
   if (!DATA.rallies || DATA.rallies.length === 0) return null;
-  // Mảng đã được order theo rally_number tăng dần, lấy cái cuối
   for (var i = DATA.rallies.length - 1; i >= 0; i--) {
     var t = parseAsUTC(DATA.rallies[i].created_at);
     if (t !== null) return t;
@@ -639,7 +611,6 @@ function getLastRallyTime() {
   return null;
 }
 
-// Bộ đếm thời gian khi đang live
 function startDurationTimer() {
   stopDurationTimer();
   if (!currentTimelineMatchId) return;
@@ -966,15 +937,14 @@ function renderTimeline() {
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   var isLive = match && match.match_status === 'live';
 
-  // Tính thời gian trận đấu - LUÔN dùng parseAsUTC để không bị lệch múi giờ
   var durationText = "00:00";
   var startTime = getMatchStartTime();
   if (startTime !== null) {
     var endTime;
     if (isLive) {
-      endTime = Date.now(); // Date.now() luôn là UTC
+      endTime = Date.now();
     } else {
-      endTime = getLastRallyTime(); // Cũng parse theo UTC
+      endTime = getLastRallyTime();
     }
     if (endTime !== null && endTime >= startTime) {
       durationText = formatDuration(endTime - startTime);
@@ -1244,10 +1214,19 @@ function renderTournamentDetail() {
   H += '<div class="meta"><span>📅 ' + esc(t.start_date || "—") + (t.end_date && t.end_date !== t.start_date ? ' → ' + esc(t.end_date) : '') + '</span>';
   if (t.location_name) H += '<span>📍 ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
-  H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ</button>';
+  H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ Link giải</button>';
   H += '</div>';
-  if (canManage) H += '<div class="manage-bar"><a class="btn btn-w" href="https://ritapick.github.io/score/referee.html">⚙ TRANG TRỌNG TÀI</a></div>';
+  
+  // --- NÂNG CẤP: Link trọng tài động theo giải đấu hiện tại + Nút chia sẻ ---
+  if (canManage) {
+    var refereeUrl = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(t.id);
+    H += '<div class="manage-bar">';
+    H += '<a class="btn btn-w" href="' + refereeUrl + '" target="_blank">⚙ TRANG TRỌNG TÀI</a>';
+    H += '<button class="btn btn-b" onclick="shareRefereeLink(\'' + esc(t.id) + '\')">📤 Chia sẻ link trọng tài</button>';
+    H += '</div>';
+  }
   H += '</div>';
+  
   if (DATA.events.length) {
     H += '<div class="event-tabs">';
     DATA.events.forEach(function(e) {
@@ -1274,6 +1253,7 @@ function renderTournamentDetail() {
   return H;
 }
 
+// --- CHIA SẺ LINK GIẢI ĐẤU ---
 window.shareTournament = function(tid) {
   var url = window.location.origin + window.location.pathname + '?tid=' + tid;
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
@@ -1287,9 +1267,26 @@ window.shareTournament = function(tid) {
   }
 };
 
+// --- CHIA SẺ LINK TRỌNG TÀI (MỚI) ---
+window.shareRefereeLink = function(tid) {
+  var url = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(tid);
+  var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
+  var shareData = { 
+    title: "Link Trọng Tài: " + name, 
+    url: url 
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(function(error) {
+      if (error.name !== 'AbortError') fallbackCopyText(url);
+    });
+  } else {
+    fallbackCopyText(url);
+  }
+};
+
 function fallbackCopyText(text) {
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(function() { toast("✅ Đã sao chép link giải đấu!"); }).catch(function() { execCopy(text); });
+    navigator.clipboard.writeText(text).then(function() { toast("✅ Đã sao chép link!"); }).catch(function() { execCopy(text); });
   } else { execCopy(text); }
 }
 
@@ -1301,7 +1298,7 @@ function execCopy(text) {
   document.body.appendChild(textArea);
   textArea.focus();
   textArea.select();
-  try { document.execCommand('copy'); toast("✅ Đã sao chép link giải đấu!"); } catch (err) { toast("❌ Không thể sao chép link"); }
+  try { document.execCommand('copy'); toast("✅ Đã sao chép link!"); } catch (err) { toast("❌ Không thể sao chép link"); }
   document.body.removeChild(textArea);
 }
 
