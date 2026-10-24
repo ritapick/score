@@ -556,6 +556,29 @@ function applyUI() {
   }
 }
 
+// ============================================================
+// HÀM TẠO LINK TRỌNG TÀI ĐỘNG (ĐÚNG GIẢI ĐẤU HIỆN TẠI)
+// ============================================================
+function getRefereeUrl(tournamentId) {
+  try {
+    var url = new URL(window.location.href);
+    // Thay index.html thành referee.html trong đường dẫn
+    url.pathname = url.pathname.replace(/index\.html$/i, 'referee.html');
+    if (url.pathname === '/' || url.pathname === '') {
+      url.pathname = '/referee.html';
+    }
+    // Gắn hoặc cập nhật tham số tid
+    url.searchParams.set('tid', tournamentId);
+    return url.toString();
+  } catch (e) {
+    // Fallback cho trường hợp chạy local file://
+    var path = window.location.pathname;
+    var dir = path.substring(0, path.lastIndexOf('/') + 1);
+    if (dir === '') dir = './';
+    return dir + 'referee.html?tid=' + encodeURIComponent(tournamentId);
+  }
+}
+
 function parseAsUTC(dateStr) {
   if (!dateStr) return null;
   var s = String(dateStr).trim();
@@ -1217,9 +1240,9 @@ function renderTournamentDetail() {
   H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ</button>';
   H += '</div>';
   
-  // --- NÂNG CẤP: Link trọng tài động theo giải đấu hiện tại + Nút chia sẻ ---
+  // --- NÂNG CẤP: Link trọng tài động chính xác + Nút chia sẻ ---
   if (canManage) {
-    var refereeUrl = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(t.id);
+    var refereeUrl = getRefereeUrl(t.id);
     H += '<div class="manage-bar">';
     H += '<a class="btn btn-w" href="' + refereeUrl + '" target="_blank">⚙ TRANG TRỌNG TÀI</a>';
     H += '<button class="btn btn-b" onclick="shareRefereeLink(\'' + esc(t.id) + '\')">📤 Chia sẻ link trọng tài</button>';
@@ -1253,44 +1276,46 @@ function renderTournamentDetail() {
   return H;
 }
 
-// --- CHIA SẺ LINK GIẢI ĐẤU ---
 window.shareTournament = function(tid) {
   var url = window.location.origin + window.location.pathname + '?tid=' + tid;
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
   var shareData = { title: name, url: url };
   if (navigator.share) {
     navigator.share(shareData).catch(function(error) {
-      if (error.name !== 'AbortError') fallbackCopyText(url);
+      if (error.name !== 'AbortError') fallbackCopyText(url, "✅ Đã sao chép link giải đấu!");
     });
   } else {
-    fallbackCopyText(url);
+    fallbackCopyText(url, "✅ Đã sao chép link giải đấu!");
   }
 };
 
 // --- CHIA SẺ LINK TRỌNG TÀI (MỚI) ---
 window.shareRefereeLink = function(tid) {
-  var url = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(tid);
+  var url = getRefereeUrl(tid);
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
   var shareData = { 
     title: "Link Trọng Tài: " + name, 
+    text: "Tham gia làm trọng tài cho giải đấu: " + name,
     url: url 
   };
   if (navigator.share) {
     navigator.share(shareData).catch(function(error) {
-      if (error.name !== 'AbortError') fallbackCopyText(url);
+      if (error.name !== 'AbortError') fallbackCopyText(url, "✅ Đã sao chép link trọng tài!");
     });
   } else {
-    fallbackCopyText(url);
+    fallbackCopyText(url, "✅ Đã sao chép link trọng tài!");
   }
 };
 
-function fallbackCopyText(text) {
+function fallbackCopyText(text, successMsg) {
+  successMsg = successMsg || "✅ Đã sao chép link!";
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(function() { toast("✅ Đã sao chép link!"); }).catch(function() { execCopy(text); });
-  } else { execCopy(text); }
+    navigator.clipboard.writeText(text).then(function() { toast(successMsg); }).catch(function() { execCopy(text, successMsg); });
+  } else { execCopy(text, successMsg); }
 }
 
-function execCopy(text) {
+function execCopy(text, successMsg) {
+  successMsg = successMsg || "✅ Đã sao chép link!";
   var textArea = document.createElement("textarea");
   textArea.value = text;
   textArea.style.position = "fixed";
@@ -1298,7 +1323,7 @@ function execCopy(text) {
   document.body.appendChild(textArea);
   textArea.focus();
   textArea.select();
-  try { document.execCommand('copy'); toast("✅ Đã sao chép link!"); } catch (err) { toast("❌ Không thể sao chép link"); }
+  try { document.execCommand('copy'); toast(successMsg); } catch (err) { toast("❌ Không thể sao chép link"); }
   document.body.removeChild(textArea);
 }
 
