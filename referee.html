@@ -99,7 +99,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .toast.show{opacity:1}
 .login-input{width:100%;padding:8px;margin-bottom:8px;background:var(--bg);border:1px solid var(--ln);border-radius:6px;color:var(--tx);font-size:13px}
 
-/* --- CSS MỚI CHO MODAL XÚC XẮC HỢP NHẤT --- */
+/* --- CSS CHO MODAL XÚC XẮC --- */
 .dice-display {
     font-size: 80px;
     font-weight: 900;
@@ -161,7 +161,25 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     transform: scale(0.96); 
 }
 
-@media(max-width:380px){.logo{font-size:12px}.btn{padding:5px 8px;font-size:10px}.filter-bar select{padding:5px 6px;font-size:11px}.match-card{padding:6px;margin:4px 6px}.match-code{font-size:10px}.team-name{font-size:10px}.match-score{font-size:14px;min-width:44px}.match-status{font-size:8px;padding:2px 4px}.score-value{font-size:30px}.score-btn{width:36px;height:36px;font-size:18px}.slots-grid{gap:6px}.slot-group{padding:6px}.serve-btn{font-size:14px;padding:5px 3px}.modal{padding:10px}.modal-header h3{font-size:13px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:64px;height:90px}.dice-display.boom{font-size:80px}.dice-btn-main{font-size:16px;padding:14px}}
+/* --- CSS CHO MODAL FAIRPLAY --- */
+.fairplay-text {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: #fff;
+    margin: 10px 0 24px 0;
+    text-align: center;
+}
+.fairplay-highlight {
+    color: var(--li);
+    font-weight: 900;
+}
+.fairplay-highlight-2 {
+    color: var(--or);
+    font-weight: 900;
+}
+
+@media(max-width:380px){.logo{font-size:12px}.btn{padding:5px 8px;font-size:10px}.filter-bar select{padding:5px 6px;font-size:11px}.match-card{padding:6px;margin:4px 6px}.match-code{font-size:10px}.team-name{font-size:10px}.match-score{font-size:14px;min-width:44px}.match-status{font-size:8px;padding:2px 4px}.score-value{font-size:30px}.score-btn{width:36px;height:36px;font-size:18px}.slots-grid{gap:6px}.slot-group{padding:6px}.serve-btn{font-size:14px;padding:5px 3px}.modal{padding:10px}.modal-header h3{font-size:13px}.score-top-display{font-size:24px}.timeout-display{font-size:48px}.dice-display{font-size:64px;height:90px}.dice-display.boom{font-size:80px}.dice-btn-main{font-size:16px;padding:14px}.fairplay-text{font-size:15px}}
 @media(max-width:480px){.modal-actions{grid-template-columns:1fr 1fr;}}
 @media(min-width:381px) and (max-width:480px){.modal{max-width:420px}}
 @media(min-width:481px){main{max-width:600px;padding:12px}.modal{max-width:500px;padding:14px}.score-value{font-size:40px}.score-btn{width:44px;height:44px;font-size:22px}.score-top-display{font-size:32px}.timeout-display{font-size:64px}}
@@ -177,6 +195,26 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 <div id="score-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3 id="modal-match-code">Trận: --</h3><button class="modal-close" onclick="closeScoreModal()">×</button></div><div class="score-top-bar"><div class="score-top-display"><div class="score-top-item"><div class="score-top-label" id="top-server-name">Đội A</div><div class="score-top-value server" id="top-server-score">0</div></div><span class="score-top-sep">-</span><div class="score-top-item"><div class="score-top-label" id="top-receiver-name">Đội B</div><div class="score-top-value" id="top-receiver-score">0</div></div><span class="score-top-sep">-</span><div class="score-top-item"><div class="score-top-label">Lượt</div><div class="score-top-value" id="top-serve-turn">1</div></div></div></div><div class="score-section"><div class="score-display"><div class="score-team"><div class="score-team-name home" id="modal-home-name">Team A</div><div class="score-value" id="modal-home-score">0</div><div class="score-controls" id="home-score-controls"><button class="score-btn" onclick="changeScore('home', -1)">−</button><button class="score-btn" onclick="changeScore('home', 1)">+</button></div></div><div class="score-sep">:</div><div class="score-team"><div class="score-team-name away" id="modal-away-name">Team B</div><div class="score-value" id="modal-away-score">0</div><div class="score-controls" id="away-score-controls"><button class="score-btn" onclick="changeScore('away', -1)">−</button><button class="score-btn" onclick="changeScore('away', 1)">+</button></div></div></div></div><div class="slots-section"><div class="slots-title">👥 Chọn VĐV & Lượt giao</div><div class="slots-grid"><div class="slot-group home"><div class="slot-group-title">ĐỘI A</div><div class="player-select-wrap"><label>🎯 Ô 1</label><select id="slot-home-1" class="slot-select" onchange="onSlotChange('home',1)"><option value="">-- Chọn --</option></select></div><div class="player-select-wrap"><label> Ô 2</label><select id="slot-home-2" class="slot-select" onchange="onSlotChange('home',2)"><option value="">-- Chọn --</option></select></div><div class="serve-buttons"><button class="serve-btn" id="serve-home-l1" onclick="setServe('home',1)" title="Lượt 1"><span class="tick">🌕</span></button><button class="serve-btn" id="serve-home-l2" onclick="setServe('home',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button></div></div><div class="slot-group away"><div class="slot-group-title">ĐỘI B</div><div class="player-select-wrap"><label>🎯 Ô 1</label><select id="slot-away-1" class="slot-select" onchange="onSlotChange('away',1)"><option value="">-- Chọn --</option></select></div><div class="player-select-wrap"><label>🎯 Ô 2</label><select id="slot-away-2" class="slot-select" onchange="onSlotChange('away',2)"><option value="">-- Chọn --</option></select></div><div class="serve-buttons"><button class="serve-btn" id="serve-away-l1" onclick="setServe('away',1)" title="Lượt 1"><span class="tick">🌕</span></button><button class="serve-btn" id="serve-away-l2" onclick="setServe('away',2)" title="Lượt 2"><span class="tick">🌕🌕</span></button></div></div></div></div><div class="modal-actions"><button class="btn btn-l" onclick="closeScoreModal()">✕ Đóng</button><button class="btn btn-w" onclick="openTimeoutModal()">⏱ Timeout</button><button class="btn" style="background:var(--sf2);color:var(--or);border:1px solid var(--or);" onclick="openDiceModal()">🎲 QUAY SỐ</button><button class="btn btn-p" onclick="finishMatch()">🏁 Kết thúc</button></div></div></div>
 
 <div id="timeout-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3>⏱ TIMEOUT</h3><button class="modal-close" onclick="closeTimeoutModal()">×</button></div><div class="timeout-display" id="timeout-display">00:00</div><div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;"><button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button></div></div></div>
+
+<!-- MODAL THÔNG BÁO FAIRPLAY (MỚI) -->
+<div id="fairplay-modal" class="modal-bg">
+  <div class="modal" style="border: 2px solid var(--li); background: linear-gradient(135deg, var(--sf), #1e3a5f);">
+    <div class="modal-header">
+      <h3 style="color: var(--li); font-size: 16px; font-weight: 900;">⚖️ THÔNG BÁO TRƯỚC TRẬN ĐẤU</h3>
+      <button class="modal-close" onclick="closeFairplayModal()">×</button>
+    </div>
+    <div style="text-align: center; padding: 10px 0;">
+      <p class="fairplay-text">
+        "Chào 2 đội, em là trọng tài trận đấu này.<br>
+        Trên tinh thần <span class="fairplay-highlight">fairplay</span>, nếu tình huống trận đấu có những pha bóng không rõ ràng, trọng tài sẽ cho <span class="fairplay-highlight-2">đánh lại</span>.<br>
+        2 đội vui vẻ nhé!" 🤝
+      </p>
+      <button class="btn btn-p" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 800; border-radius: 8px;" onclick="closeFairplayModal()">
+        ✅ ĐÃ HIỂU, TIẾP TỤC
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL XÚC XẮC HỢP NHẤT (CHỈ 1 NÚT) -->
 <div id="dice-modal" class="modal-bg">
@@ -889,58 +927,67 @@ function startTimeout(){timeoutRunning=true;el("timeout-display").classList.add(
 function stopTimeout(){timeoutRunning=false;if(timeoutInterval){clearInterval(timeoutInterval);timeoutInterval=null}el("timeout-display").classList.remove('running')}
 function updateTimeoutDisplay(){var m=Math.floor(timeoutElapsed/60),s=timeoutElapsed%60;el("timeout-display").textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s}
 
-// --- CÁC HÀM MỚI CHO CHỨC NĂNG XÚC XẮC HỢP NHẤT (1 NÚT) ---
+// --- CÁC HÀM MỚI CHO CHỨC NĂNG XÚC XẮC VÀ FAIRPLAY ---
+
+// 1. Khi bấm nút Quay số, hiện popup Fairplay trước
 function openDiceModal() {
   if(!currentMatchData) return;
+  el("fairplay-modal").classList.add("show");
+}
+
+// 2. Đóng popup Fairplay và chuyển sang giao diện Quay số
+function closeFairplayModal() {
+  el("fairplay-modal").classList.remove("show");
+  
+  // Reset trạng thái modal quay số
   el("dice-main-display").textContent = "?";
-  el("dice-main-display").className = "dice-display"; // Reset classes
+  el("dice-main-display").className = "dice-display"; 
   el("dice-main-result").textContent = "";
   el("dice-status-text").textContent = "Sẵn sàng quay số";
   el("dice-main-btn").disabled = false;
   el("dice-main-btn").textContent = "🎲 QUAY SỐ";
+  
+  // Hiển thị modal quay số
   el("dice-modal").classList.add("show");
 }
 
+// 3. Đóng hoàn toàn modal quay số (về màn hình ghi điểm)
 function closeDiceModal() {
   if(diceRollInterval) clearInterval(diceRollInterval);
   if(diceRollTimeout) clearTimeout(diceRollTimeout);
   el("dice-modal").classList.remove("show");
 }
 
+// 4. Logic quay số (giữ nguyên như cũ)
 function rollDice() {
   var displayEl = el("dice-main-display");
   var btnEl = el("dice-main-btn");
   var resultEl = el("dice-main-result");
   var statusEl = el("dice-status-text");
 
-  // Khóa nút khi đang quay
   btnEl.disabled = true;
   btnEl.textContent = "⏳ Đang quay...";
   
-  // Bắt đầu hiệu ứng quay số
   displayEl.className = "dice-display rolling";
   statusEl.textContent = "Đang quay ngẫu nhiên...";
   resultEl.textContent = "";
 
-  // Hiệu ứng quay số ngẫu nhiên từ 1 đến 9
   diceRollInterval = setInterval(function() {
     displayEl.textContent = Math.floor(Math.random() * 9) + 1;
   }, 60);
 
-  // Dừng sau 2 giây và hiện kết quả BOOM
   diceRollTimeout = setTimeout(function() {
     clearInterval(diceRollInterval);
-    var finalRoll = Math.floor(Math.random() * 6) + 1; // Kết quả xúc xắc thực tế 1-6
+    var finalRoll = Math.floor(Math.random() * 6) + 1; 
     
     displayEl.textContent = finalRoll;
-    displayEl.className = "dice-display boom"; // Kích hoạt hiệu ứng boom
+    displayEl.className = "dice-display boom"; 
     
     statusEl.textContent = "🎉 KẾT QUẢ";
     resultEl.textContent = "Số điểm may mắn: " + finalRoll;
     
-    // Mở khóa lại nút để quay tiếp không giới hạn
     btnEl.disabled = false;
-    btnEl.textContent = "🎲 QUAY SỐ";
+    btnEl.textContent = "🎲 QUAY LẠI";
     
     toast("🎲 Kết quả: " + finalRoll + " điểm");
   }, 2000);
