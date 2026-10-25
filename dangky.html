@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký giải PICKLEBALL 100+ CHAMPIONSHIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #0056b3;
+      --light-blue: #e3f2fd;
+      --accent-green: #28a745;
+      --zalo-blue: #0068FF;
+      --error-red: #dc3545;
+      --white: #ffffff;
+      --gray-bg: #f4f7f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--gray-bg);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      padding-bottom: 0; /* Để footer dính đáy */
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 86, 179, 0.1);
+      overflow: hidden;
+      border-top: 6px solid var(--primary-blue);
+    }
+    .header {
+      background: linear-gradient(135deg, var(--primary-blue), #007bff);
+      color: var(--white);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--accent-green);
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-top: 5px;
+    }
+    .form-body { padding: 30px 25px; }
+    .player-section {
+      background: var(--light-blue);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--primary-blue);
+    }
+    .player-section h3 {
+      color: var(--primary-blue);
+      margin-bottom: 15px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #444;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #d1d9e6;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: 'Montserrat', sans-serif;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+    }
+    .error-text {
+      color: var(--error-red);
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+      font-weight: 600;
+    }
+    .summary-box {
+      background: #f8f9fa;
+      border: 2px dashed var(--primary-blue);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin: 25px 0;
+    }
+    .summary-box .age-display {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--primary-blue);
+    }
+    .summary-box .age-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .global-error {
+      background: #f8d7da;
+      color: var(--error-red);
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 15px;
+      display: none;
+      border: 1px solid #f5c6cb;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent-green);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform 0.2s, background 0.3s;
+      display: none; /* Mặc định ẩn */
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    .btn-submit:hover {
+      background: #218838;
+      transform: translateY(-2px);
+    }
+    .btn-submit:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Contact Section */
+    .contact-section {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 25px;
+      border-top: 2px dashed #d1d9e6;
+    }
+    .contact-section p {
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 15px;
+      font-size: 15px;
+    }
+    .contact-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .contact-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      gap: 8px;
+    }
+    .contact-btn:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .contact-btn.phone { background: var(--primary-blue); color: white; }
+    .contact-btn.zalo { background: var(--zalo-blue); color: white; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 25px 20px;
+      background: #e9ecef;
+      color: #6c757d;
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 20px;
+      border-radius: 0 0 16px 16px;
+    }
+    .footer a {
+      color: var(--primary-blue);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer a:hover { 
+      color: var(--accent-green);
+      text-decoration: underline; 
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      background: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--primary-blue);
+      font-weight: 800;
+      font-size: 20px;
+    }
+    .modal-body {
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+    .modal-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .modal-row strong { color: #555; }
+    .modal-actions {
+      display: flex;
+      gap: 15px;
+    }
+    .btn-modal {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+      transition: opacity 0.2s;
+    }
+    .btn-modal:hover { opacity: 0.9; }
+    .btn-confirm { background: var(--accent-green); color: white; }
+    .btn-cancel { background: #e9ecef; color: #495057; }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: var(--primary-blue);
+      font-weight: 700;
+      background: var(--light-blue);
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Đăng ký giải<br>PICKLEBALL 100+ CHAMPIONSHIP</h1>
+    <p>📅 Thời gian thi đấu: Tháng 01/2027</p>
+  </div>
+
+  <div class="form-body">
+    <form id="registrationForm">
+      <!-- VĐV 1 -->
+      <div class="player-section">
+        <h3>🎾 Vận động viên 1</h3>
+        <div class="form-group">
+          <label>Họ và tên *</label>
+          <input type="text" id="name1" required placeholder="Nhập họ và tên">
+          <div class="error-text" id="err-name1">Vui lòng nhập họ tên</div>
+        </div>
+        <div class="form-group">
+          <label>Năm sinh *</label>
+          <select id="yob1" required>
+            <option value="">-- Chọn năm sinh --</option>
+          </select>
+          <div class="error-text" id="err-yob1">Vui lòng chọn năm sinh</div>
+        </div>
+        <div class="form-group">
+          <label>Số điện thoại *</label>
+          <input type="tel" id="phone1" required placeholder="Ví dụ: 0912345678" maxlength="10">
+          <div class="error-text" id="err-phone1">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
+        </div>
+      </div>
+
+      <!-- VĐV 2 -->
+      <div class="player-section">
+        <h3>🎾 Vận động viên 2</h3>
+        <div class="form-group">
+          <label>Họ và tên *</label>
+          <input type="text" id="name2" required placeholder="Nhập họ và tên">
+          <div class="error-text" id="err-name2">Vui lòng nhập họ tên</div>
+        </div>
+        <div class="form-group">
+          <label>Năm sinh *</label>
+          <select id="yob2" required>
+            <option value="">-- Chọn năm sinh --</option>
+          </select>
+          <div class="error-text" id="err-yob2">Vui lòng chọn năm sinh</div>
+        </div>
+        <div class="form-group">
+          <label>Số điện thoại *</label>
+          <input type="tel" id="phone2" required placeholder="Ví dụ: 0912345678" maxlength="10">
+          <div class="error-text" id="err-phone2">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
+        </div>
+      </div>
+
+      <!-- Tổng kết -->
+      <div class="summary-box">
+        <div class="age-label">TỔNG TUỔI HAI VẬN ĐỘNG VIÊN (Tính đến năm 2027)</div>
+        <div class="age-display" id="totalAgeDisplay">0</div>
+      </div>
+
+      <div class="global-error" id="globalError">
+        ⚠️ Yêu cầu tổng tuổi 2 vận động viên từ 99 tuổi trở lên
+      </div>
+
+      <button type="button" class="btn-submit" id="submitBtn" onclick="openModal()">
+        Đăng ký tham gia
+      </button>
+    </form>
+    
+    <div class="loading" id="loadingMsg">⏳ Đang xử lý đăng ký, vui lòng chờ...</div>
+
+    <!-- Khu vực liên hệ -->
+    <div class="contact-section">
+      <p>Cần hỗ trợ? Liên hệ ngay Ban tổ chức:</p>
+      <div class="contact-buttons">
+        <a href="tel:09182346587" class="contact-btn phone">
+          📞 Gọi ngay: TEPPY 09182346587
+        </a>
+        <a href="https://zalo.me/09182346587" target="_blank" class="contact-btn zalo">
+          💬 Chat Zalo: TEPPY 09182346587
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="https://www.google.com" target="_blank">LY DUNG RITA</a>
+  </div>
+</div>
+
+<!-- Modal Xác nhận -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-content">
+    <div class="modal-header">XÁC NHẬN THÔNG TIN ĐĂNG KÝ</div>
+    <div class="modal-body" id="modalBody">
+      <!-- Nội dung sẽ được JS điền vào -->
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal()">Hủy bỏ</button>
+      <button class="btn-modal btn-confirm" onclick="submitToGoogleSheet()">Xác nhận đăng ký</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // URL Web App của bạn
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKNl4MaoDp8GfXuApFLGdNaPEWvCCgBRYug7IZubXG5Z-zZHS3LJ8BFHufv5KtGZJR/exec";
+  const CURRENT_YEAR = 2027;
+  const MIN_TOTAL_AGE = 99;
+
+  // 1. Khởi tạo dropdown năm sinh (1950 - 1987)
+  function initYearDropdowns() {
+    const selects = [document.getElementById('yob1'), document.getElementById('yob2')];
+    selects.forEach(select => {
+      for (let year = 1950; year <= 1987; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        select.appendChild(option);
+      }
+    });
+  }
+
+  // 2. Validation số điện thoại (10 số, bắt đầu bằng 0)
+  function isValidPhone(phone) {
+    return /^0\d{9}$/.test(phone);
+  }
+
+  // 3. Kiểm tra form và cập nhật giao diện real-time
+  function validateForm() {
+    const name1 = document.getElementById('name1').value.trim();
+    const yob1 = document.getElementById('yob1').value;
+    const phone1 = document.getElementById('phone1').value.trim();
+    
+    const name2 = document.getElementById('name2').value.trim();
+    const yob2 = document.getElementById('yob2').value;
+    const phone2 = document.getElementById('phone2').value.trim();
+
+    let isValid = true;
+
+    // Reset lỗi
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    document.getElementById('globalError').style.display = 'none';
+
+    // Check VĐV 1
+    if (!name1) { document.getElementById('err-name1').style.display = 'block'; isValid = false; }
+    if (!yob1) { document.getElementById('err-yob1').style.display = 'block'; isValid = false; }
+    if (!isValidPhone(phone1)) { document.getElementById('err-phone1').style.display = 'block'; isValid = false; }
+
+    // Check VĐV 2
+    if (!name2) { document.getElementById('err-name2').style.display = 'block'; isValid = false; }
+    if (!yob2) { document.getElementById('err-yob2').style.display = 'block'; isValid = false; }
+    if (!isValidPhone(phone2)) { document.getElementById('err-phone2').style.display = 'block'; isValid = false; }
+
+    // Tính tuổi
+    let totalAge = 0;
+    if (yob1 && yob2) {
+      const age1 = CURRENT_YEAR - parseInt(yob1);
+      const age2 = CURRENT_YEAR - parseInt(yob2);
+      totalAge = age1 + age2;
+    }
+    
+    document.getElementById('totalAgeDisplay').textContent = totalAge;
+
+    // Check điều kiện tuổi
+    if (isValid && totalAge >= MIN_TOTAL_AGE) {
+      document.getElementById('submitBtn').style.display = 'block';
+    } else {
+      document.getElementById('submitBtn').style.display = 'none';
+      if (isValid && totalAge > 0 && totalAge < MIN_TOTAL_AGE) {
+        document.getElementById('globalError').style.display = 'block';
+      }
+    }
+
+    return isValid && totalAge >= MIN_TOTAL_AGE;
+  }
+
+  // Gán sự kiện cho tất cả input để validate real-time
+  document.querySelectorAll('input, select').forEach(input => {
+    input.addEventListener('input', validateForm);
+    input.addEventListener('change', validateForm);
+  });
+
+  // 4. Modal Logic
+  function openModal() {
+    if (!validateForm()) return;
+
+    const data = {
+      name1: document.getElementById('name1').value.trim(),
+      yob1: document.getElementById('yob1').value,
+      phone1: document.getElementById('phone1').value.trim(),
+      name2: document.getElementById('name2').value.trim(),
+      yob2: document.getElementById('yob2').value,
+      phone2: document.getElementById('phone2').value.trim(),
+      totalAge: document.getElementById('totalAgeDisplay').textContent
+    };
+
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+      <div class="modal-row"><strong>VĐV 1:</strong> <span>${data.name1} (SN: ${data.yob1})</span></div>
+      <div class="modal-row"><strong>SĐT 1:</strong> <span>${data.phone1}</span></div>
+      <div style="margin: 10px 0; border-top: 1px dashed #ccc;"></div>
+      <div class="modal-row"><strong>VĐV 2:</strong> <span>${data.name2} (SN: ${data.yob2})</span></div>
+      <div class="modal-row"><strong>SĐT 2:</strong> <span>${data.phone2}</span></div>
+      <div style="margin: 10px 0; border-top: 1px dashed #ccc;"></div>
+      <div class="modal-row" style="color: var(--primary-blue); font-weight: 700; font-size: 16px;">
+        <strong>Tổng tuổi:</strong> <span>${data.totalAge} tuổi</span>
+      </div>
+    `;
+
+    document.getElementById('confirmModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+  }
+
+  // 5. Gửi dữ liệu lên Google Sheet qua Fetch API
+  function submitToGoogleSheet() {
+    closeModal();
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+
+    const data = {
+      name1: document.getElementById('name1').value.trim(),
+      yob1: document.getElementById('yob1').value,
+      phone1: document.getElementById('phone1').value.trim(),
+      name2: document.getElementById('name2').value.trim(),
+      yob2: document.getElementById('yob2').value,
+      phone2: document.getElementById('phone2').value.trim(),
+      totalAge: document.getElementById('totalAgeDisplay').textContent
+    };
+
+    // Sử dụng fetch để gửi dữ liệu đến URL Web App
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      // text/plain giúp tránh lỗi CORS preflight của Google Apps Script
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
+      
+      if (result.success) {
+        alert('🎉 ' + result.message);
+        document.getElementById('registrationForm').reset();
+        document.getElementById('totalAgeDisplay').textContent = '0';
+        document.getElementById('submitBtn').style.display = 'none';
+      } else {
+        alert('❌ ' + result.message);
+      }
+    })
+    .catch(error => {
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
+      alert('❌ Lỗi kết nối mạng hoặc hệ thống: ' + error.message);
+    });
+  }
+
+  // Khởi chạy khi tải trang
+  initYearDropdowns();
+</script>
+
+</body>
+</html>
