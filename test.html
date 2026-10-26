@@ -341,6 +341,33 @@
       font-size: 14px;
     }
 
+    /* Nút test kết nối */
+    .test-connection {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .test-connection button {
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 8px;
+      font-weight: 600;
+    }
+    .test-result {
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
     @media (max-width: 360px) {
       .header h1 { font-size: 18px; }
       .header p { font-size: 13px; }
@@ -355,11 +382,18 @@
 <div class="container">
   <div class="header">
     <h1>Đăng ký giải<br>PICKLEBALL 100+ CHAMPIONSHIP</h1>
-    <p> Thời gian thi đấu: Tháng 01/2027</p>
+    <p>📅 Thời gian thi đấu: Tháng 01/2027</p>
     <img src="image100.jpeg" alt="Pickleball 100+ Championship" class="header-image" onerror="this.style.display='none'">
   </div>
 
   <div class="form-body">
+    <!-- Khu vực test kết nối (có thể ẩn sau khi test xong) -->
+    <div class="test-connection" id="testConnectionBox">
+      <span>🔍 Kiểm tra kết nối đến server:</span>
+      <button onclick="testConnection()">Test ngay</button>
+      <div class="test-result" id="testResult"></div>
+    </div>
+
     <button type="button" class="btn-lookup" onclick="openLookupModal()">
        Tra cứu & Cập nhật thông tin đã đăng ký
     </button>
@@ -475,7 +509,7 @@
       
       <div id="verifyStep" style="display:none; margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px;">
         <p style="font-size: 13px; color: #555; margin-bottom: 10px; font-weight: 600;">
-          🔒 Để bảo mật, vui lòng chọn năm sinh của VĐV có số điện thoại này để xác thực:
+           Để bảo mật, vui lòng chọn năm sinh của VĐV có số điện thoại này để xác thực:
         </p>
         <div class="form-group">
           <select id="verifyYob">
@@ -577,7 +611,67 @@
   });
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
-  // --- LOGIC TRA CỨU ---
+  // ============================================
+  // HÀM GỬI DỮ LIỆU AN TOÀN CHO GOOGLE APPS SCRIPT
+  // Dùng XMLHttpRequest thay vì fetch để tránh lỗi CORS/NetworkError
+  // ============================================
+  function sendToGAS(data, onSuccess, onError) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', SCRIPT_URL, true);
+    // Quan trọng: dùng text/plain để tránh preflight OPTIONS request
+    xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+    
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            onSuccess(result);
+          } catch (e) {
+            onError({ message: 'Phản hồi không hợp lệ: ' + xhr.responseText });
+          }
+        } else {
+          onError({ message: 'Lỗi HTTP ' + xhr.status + ': ' + xhr.statusText });
+        }
+      }
+    };
+    
+    xhr.onerror = function() {
+      onError({ message: 'Lỗi kết nối mạng. Vui lòng kiểm tra URL Web App và thử lại.' });
+    };
+    
+    xhr.send(JSON.stringify(data));
+  }
+
+  // ============================================
+  // HÀM TEST KẾT NỐI
+  // ============================================
+  function testConnection() {
+    const resultEl = document.getElementById('testResult');
+    resultEl.textContent = '⏳ Đang kiểm tra...';
+    resultEl.style.color = 'var(--primary-blue)';
+    
+    sendToGAS(
+      { action: 'test' },
+      function(result) {
+        if (result.success) {
+          resultEl.textContent = '✅ Kết nối thành công! URL Web App hoạt động tốt.';
+          resultEl.style.color = 'var(--accent-green)';
+        } else {
+          resultEl.textContent = '⚠️ Server trả về: ' + result.message;
+          resultEl.style.color = '#856404';
+        }
+      },
+      function(error) {
+        resultEl.textContent = '❌ Lỗi: ' + error.message;
+        resultEl.style.color = 'var(--error-red)';
+      }
+    );
+  }
+
+  // ============================================
+  // LOGIC TRA CỨU
+  // ============================================
   function openLookupModal() {
     document.getElementById('lookupModal').style.display = 'flex';
     document.getElementById('verifyStep').style.display = 'none';
@@ -593,26 +687,6 @@
     document.getElementById('lookupModal').style.display = 'none';
   }
 
-  // Hàm fetch với retry và xử lý redirect
-  function fetchWithRetry(url, options, retries = 2) {
-    return fetch(url, options)
-      .then(response => {
-        // Nếu response là redirect, fetch sẽ tự follow
-        if (response.redirected) {
-          console.log('Request was redirected to:', response.url);
-        }
-        return response;
-      })
-      .catch(error => {
-        if (retries > 0) {
-          console.log('Retrying... (' + retries + ' attempts left)');
-          return new Promise(resolve => setTimeout(resolve, 1000))
-            .then(() => fetchWithRetry(url, options, retries - 1));
-        }
-        throw error;
-      });
-  }
-
   function searchRegistration() {
     const phone = document.getElementById('lookupPhone').value.trim();
     
@@ -623,46 +697,32 @@
     
     showLookupError('Đang tìm kiếm...', 'var(--primary-blue)');
 
-    // Sử dụng fetch với redirect: 'follow' để xử lý redirect của Google Apps Script
-    fetchWithRetry(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'cors',
-      redirect: 'follow',
-      headers: { 
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify({ action: 'search', phone: phone })
-    })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error('HTTP error! status: ' + res.status);
-      }
-      return res.json();
-    })
-    .then(result => {
-      if (result.success && result.data) {
-        tempSearchData = result.data;
-        currentEditRow = result.data.rowIndex;
-        
-        const verifySelect = document.getElementById('verifyYob');
-        verifySelect.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
-        for (let year = 1950; year <= 1987; year++) {
-          const opt = document.createElement('option');
-          opt.value = year;
-          opt.textContent = year;
-          verifySelect.appendChild(opt);
+    sendToGAS(
+      { action: 'search', phone: phone },
+      function(result) {
+        if (result.success && result.data) {
+          tempSearchData = result.data;
+          currentEditRow = result.data.rowIndex;
+          
+          const verifySelect = document.getElementById('verifyYob');
+          verifySelect.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
+          for (let year = 1950; year <= 1987; year++) {
+            const opt = document.createElement('option');
+            opt.value = year;
+            opt.textContent = year;
+            verifySelect.appendChild(opt);
+          }
+          
+          document.getElementById('verifyStep').style.display = 'block';
+          document.getElementById('lookupError').style.display = 'none';
+        } else {
+          showLookupError(result.message || 'Không tìm thấy thông tin.');
         }
-        
-        document.getElementById('verifyStep').style.display = 'block';
-        document.getElementById('lookupError').style.display = 'none';
-      } else {
-        showLookupError(result.message || 'Không tìm thấy thông tin.');
+      },
+      function(error) {
+        showLookupError('Lỗi kết nối: ' + error.message);
       }
-    })
-    .catch(err => {
-      console.error('Fetch error:', err);
-      showLookupError('Lỗi kết nối: ' + err.message + '. Vui lòng kiểm tra URL Web App hoặc thử lại sau.');
-    });
+    );
   }
 
   function verifyAndLoad() {
@@ -700,6 +760,9 @@
     errEl.style.display = 'block';
   }
 
+  // ============================================
+  // LOGIC ĐĂNG KÝ / CẬP NHẬT
+  // ============================================
   function openModal() {
     if (!validateForm()) return;
 
@@ -753,44 +816,33 @@
       totalAge: document.getElementById('totalAgeDisplay').textContent
     };
 
-    fetchWithRetry(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'cors',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(data)
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('HTTP error! status: ' + response.status);
-      }
-      return response.json();
-    })
-    .then(result => {
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
-      
-      if (result.success) {
-        alert('🎉 ' + result.message);
-        document.getElementById('registrationForm').reset();
-        document.getElementById('totalAgeDisplay').textContent = '0';
-        document.getElementById('submitBtn').style.display = 'none';
-        document.getElementById('commitmentBox').style.display = 'none';
-        document.getElementById('commitmentCheck').checked = false;
-        document.getElementById('updateBadge').style.display = 'none';
+    sendToGAS(
+      data,
+      function(result) {
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
         
-        currentEditRow = null;
-        tempSearchData = null;
-      } else {
-        alert('❌ ' + result.message);
+        if (result.success) {
+          alert('🎉 ' + result.message);
+          document.getElementById('registrationForm').reset();
+          document.getElementById('totalAgeDisplay').textContent = '0';
+          document.getElementById('submitBtn').style.display = 'none';
+          document.getElementById('commitmentBox').style.display = 'none';
+          document.getElementById('commitmentCheck').checked = false;
+          document.getElementById('updateBadge').style.display = 'none';
+          
+          currentEditRow = null;
+          tempSearchData = null;
+        } else {
+          alert('❌ ' + result.message);
+        }
+      },
+      function(error) {
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        alert('❌ Lỗi kết nối: ' + error.message + '\n\nVui lòng:\n1. Bấm nút "Test ngay" ở đầu trang để kiểm tra URL\n2. Đảm bảo đã Deploy phiên bản mới\n3. Thử lại sau vài giây');
       }
-    })
-    .catch(error => {
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
-      console.error('Submit error:', error);
-      alert('❌ Lỗi kết nối: ' + error.message + '\n\nVui lòng:\n1. Kiểm tra URL Web App\n2. Đảm bảo đã Deploy phiên bản mới\n3. Thử lại sau vài giây');
-    });
+    );
   }
 
   initYearDropdowns();
