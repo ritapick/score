@@ -86,9 +86,7 @@
       justify-content: center;
       gap: 8px;
     }
-    .btn-lookup:hover {
-      background: var(--light-blue);
-    }
+    .btn-lookup:hover { background: var(--light-blue); }
 
     .player-section {
       background: var(--light-blue);
@@ -223,6 +221,19 @@
     .btn-submit:hover { background: #218838; transform: translateY(-2px); }
     .btn-submit:disabled { background: #ccc; cursor: not-allowed; transform: none; }
     
+    .update-badge {
+      display: none;
+      background: var(--zalo-blue);
+      color: white;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: 700;
+      animation: fadeIn 0.3s ease;
+    }
+
     .contact-section {
       text-align: center;
       margin-top: 24px;
@@ -330,18 +341,6 @@
       font-size: 14px;
     }
 
-    .update-badge {
-      display: none;
-      background: var(--zalo-blue);
-      color: white;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      text-align: center;
-      font-weight: 700;
-    }
-    
     @media (max-width: 360px) {
       .header h1 { font-size: 18px; }
       .header p { font-size: 13px; }
@@ -361,7 +360,7 @@
   </div>
 
   <div class="form-body">
-    <!-- Nút tra cứu mới -->
+    <!-- Nút tra cứu -->
     <button type="button" class="btn-lookup" onclick="openLookupModal()">
       🔍 Tra cứu & Cập nhật thông tin đã đăng ký
     </button>
@@ -572,13 +571,13 @@
     return isValid && totalAge >= MIN_TOTAL_AGE && commitmentCheck.checked;
   }
 
-  document.querySelectorAll('input, select').forEach(input => {
+  document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(input => {
     input.addEventListener('input', validateForm);
     input.addEventListener('change', validateForm);
   });
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
-  // --- LOGIC TRA CỨU ---
+  // --- LOGIC TRA CỨU (CHỈ TÌM THEO SỐ ĐIỆN THOẠI) ---
   function openLookupModal() {
     document.getElementById('lookupModal').style.display = 'flex';
     document.getElementById('verifyStep').style.display = 'none';
@@ -586,6 +585,10 @@
     document.getElementById('verifyYob').value = '';
     document.getElementById('lookupError').style.display = 'none';
     tempSearchData = null;
+    
+    // Xóa các lỗi cũ từ form chính để tránh hiển thị nhầm
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    document.getElementById('globalError').style.display = 'none';
   }
 
   function closeLookupModal() {
@@ -594,6 +597,8 @@
 
   function searchRegistration() {
     const phone = document.getElementById('lookupPhone').value.trim();
+    
+    // CHỈ kiểm tra định dạng số điện thoại, KHÔNG kiểm tra họ tên
     if (!isValidPhone(phone)) {
       showLookupError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
       return;
@@ -650,7 +655,7 @@
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
       
-      validateForm(); // Kích hoạt lại logic hiển thị
+      validateForm(); // Kích hoạt lại logic hiển thị form chính
       
       document.getElementById('updateBadge').style.display = 'block';
       closeLookupModal();
