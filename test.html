@@ -589,7 +589,6 @@
     document.getElementById('lookupError').style.display = 'none';
     tempSearchData = null;
     
-    // Xóa các lỗi cũ từ form chính để tránh hiển thị nhầm
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
     document.getElementById('globalError').style.display = 'none';
   }
@@ -601,7 +600,6 @@
   function searchRegistration() {
     const phone = document.getElementById('lookupPhone').value.trim();
     
-    // CHỈ kiểm tra định dạng số điện thoại, KHÔNG kiểm tra họ tên
     if (!isValidPhone(phone)) {
       showLookupError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
       return;
@@ -636,7 +634,9 @@
       }
     })
     .catch(err => {
-      showLookupError('Lỗi kết nối: ' + err.message);
+      // ĐÃ SỬA: Tắt thông báo alert, chỉ log lỗi và hiện text nhẹ nhàng
+      console.error("Lỗi kết nối khi tra cứu:", err);
+      showLookupError('Không thể kết nối máy chủ. Vui lòng thử lại sau.');
     });
   }
 
@@ -647,11 +647,9 @@
       return;
     }
     
-    // Xác thực năm sinh của đúng VĐV có số điện thoại đó
     const targetYob = tempSearchData.matchedPlayer === 1 ? tempSearchData.yob1 : tempSearchData.yob2;
     
     if (selectedYob === String(targetYob)) {
-      // Xác thực thành công, điền dữ liệu vào form
       document.getElementById('name1').value = tempSearchData.name1;
       document.getElementById('yob1').value = tempSearchData.yob1;
       document.getElementById('phone1').value = tempSearchData.phone1;
@@ -659,11 +657,11 @@
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
       
-      validateForm(); // Kích hoạt lại logic hiển thị form chính
+      validateForm();
       
       document.getElementById('updateBadge').style.display = 'block';
       closeLookupModal();
-      alert('✅ Đã tải thông tin. Bạn có thể chỉnh sửa và nhấn "Đăng ký tham gia" để cập nhật (ghi đè) bản ghi cũ.');
+      alert('✅ Đã tải thông tin. Bạn có thể chỉnh sửa và nhấn "Đăng ký tham gia" để cập nhật bản ghi.');
       document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
     } else {
       showLookupError('Năm sinh không khớp. Vui lòng thử lại.');
@@ -723,7 +721,7 @@
 
     const data = {
       action: 'save',
-      rowIndex: currentEditRow, // Gửi rowIndex để backend biết cần ghi đè hay thêm mới
+      rowIndex: currentEditRow,
       name1: document.getElementById('name1').value.trim(),
       yob1: document.getElementById('yob1').value,
       phone1: document.getElementById('phone1').value.trim(),
@@ -752,7 +750,6 @@
         document.getElementById('commitmentCheck').checked = false;
         document.getElementById('updateBadge').style.display = 'none';
         
-        // Reset biến theo dõi sau khi ghi thành công
         currentEditRow = null;
         tempSearchData = null;
       } else {
@@ -760,9 +757,11 @@
       }
     })
     .catch(error => {
+      // ĐÃ SỬA: Tắt hoàn toàn thông báo alert lỗi mạng. 
+      // Chỉ ghi log để dev kiểm tra và khôi phục nút bấm để user thử lại.
+      console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
-      alert('❌ Lỗi kết nối: ' + error.message + '\n\nVui lòng kiểm tra:\n1. URL Web App đã đúng chưa\n2. Đã Deploy phiên bản mới chưa\n3. Quyền truy cập Internet');
     });
   }
 
