@@ -355,14 +355,13 @@
 <div class="container">
   <div class="header">
     <h1>Đăng ký giải<br>PICKLEBALL 100+ CHAMPIONSHIP</h1>
-    <p>📅 Thời gian thi đấu: Tháng 01/2027</p>
+    <p> Thời gian thi đấu: Tháng 01/2027</p>
     <img src="image100.jpeg" alt="Pickleball 100+ Championship" class="header-image" onerror="this.style.display='none'">
   </div>
 
   <div class="form-body">
-    <!-- Nút tra cứu -->
     <button type="button" class="btn-lookup" onclick="openLookupModal()">
-      🔍 Tra cứu & Cập nhật thông tin đã đăng ký
+       Tra cứu & Cập nhật thông tin đã đăng ký
     </button>
 
     <form id="registrationForm">
@@ -494,6 +493,7 @@
 </div>
 
 <script>
+  // ⚠️ QUAN TRỌNG: Thay URL này bằng URL Web App MỚI của bạn
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwuOSbFajr_NSXliB2lWgXWn0yJNBFRnfmTuonkEY5hwA0QllDKi8VsB32JO8mUnvsS/exec";
   const CURRENT_YEAR = 2027;
   const MIN_TOTAL_AGE = 99;
@@ -577,7 +577,7 @@
   });
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
-  // --- LOGIC TRA CỨU (CHỈ TÌM THEO SỐ ĐIỆN THOẠI) ---
+  // --- LOGIC TRA CỨU ---
   function openLookupModal() {
     document.getElementById('lookupModal').style.display = 'flex';
     document.getElementById('verifyStep').style.display = 'none';
@@ -585,8 +585,6 @@
     document.getElementById('verifyYob').value = '';
     document.getElementById('lookupError').style.display = 'none';
     tempSearchData = null;
-    
-    // Xóa các lỗi cũ từ form chính để tránh hiển thị nhầm
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
     document.getElementById('globalError').style.display = 'none';
   }
@@ -595,10 +593,29 @@
     document.getElementById('lookupModal').style.display = 'none';
   }
 
+  // Hàm fetch với retry và xử lý redirect
+  function fetchWithRetry(url, options, retries = 2) {
+    return fetch(url, options)
+      .then(response => {
+        // Nếu response là redirect, fetch sẽ tự follow
+        if (response.redirected) {
+          console.log('Request was redirected to:', response.url);
+        }
+        return response;
+      })
+      .catch(error => {
+        if (retries > 0) {
+          console.log('Retrying... (' + retries + ' attempts left)');
+          return new Promise(resolve => setTimeout(resolve, 1000))
+            .then(() => fetchWithRetry(url, options, retries - 1));
+        }
+        throw error;
+      });
+  }
+
   function searchRegistration() {
     const phone = document.getElementById('lookupPhone').value.trim();
     
-    // CHỈ kiểm tra định dạng số điện thoại, KHÔNG kiểm tra họ tên
     if (!isValidPhone(phone)) {
       showLookupError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
       return;
@@ -606,12 +623,22 @@
     
     showLookupError('Đang tìm kiếm...', 'var(--primary-blue)');
 
-    fetch(SCRIPT_URL, {
+    // Sử dụng fetch với redirect: 'follow' để xử lý redirect của Google Apps Script
+    fetchWithRetry(SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      mode: 'cors',
+      redirect: 'follow',
+      headers: { 
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
       body: JSON.stringify({ action: 'search', phone: phone })
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('HTTP error! status: ' + res.status);
+      }
+      return res.json();
+    })
     .then(result => {
       if (result.success && result.data) {
         tempSearchData = result.data;
@@ -633,7 +660,8 @@
       }
     })
     .catch(err => {
-      showLookupError('Lỗi kết nối: ' + err.message);
+      console.error('Fetch error:', err);
+      showLookupError('Lỗi kết nối: ' + err.message + '. Vui lòng kiểm tra URL Web App hoặc thử lại sau.');
     });
   }
 
@@ -647,7 +675,6 @@
     const targetYob = tempSearchData.matchedPlayer === 1 ? tempSearchData.yob1 : tempSearchData.yob2;
     
     if (selectedYob === String(targetYob)) {
-      // Xác thực thành công, điền dữ liệu vào form
       document.getElementById('name1').value = tempSearchData.name1;
       document.getElementById('yob1').value = tempSearchData.yob1;
       document.getElementById('phone1').value = tempSearchData.phone1;
@@ -655,7 +682,7 @@
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
       
-      validateForm(); // Kích hoạt lại logic hiển thị form chính
+      validateForm();
       
       document.getElementById('updateBadge').style.display = 'block';
       closeLookupModal();
@@ -672,7 +699,6 @@
     errEl.style.color = color;
     errEl.style.display = 'block';
   }
-  // --- HẾT LOGIC TRA CỨU ---
 
   function openModal() {
     if (!validateForm()) return;
@@ -717,7 +743,7 @@
 
     const data = {
       action: 'save',
-      rowIndex: currentEditRow, // Gửi rowIndex để backend biết cần ghi đè hay thêm mới
+      rowIndex: currentEditRow,
       name1: document.getElementById('name1').value.trim(),
       yob1: document.getElementById('yob1').value,
       phone1: document.getElementById('phone1').value.trim(),
@@ -727,12 +753,19 @@
       totalAge: document.getElementById('totalAgeDisplay').textContent
     };
 
-    fetch(SCRIPT_URL, {
+    fetchWithRetry(SCRIPT_URL, {
       method: 'POST',
+      mode: 'cors',
+      redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('HTTP error! status: ' + response.status);
+      }
+      return response.json();
+    })
     .then(result => {
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
@@ -746,7 +779,6 @@
         document.getElementById('commitmentCheck').checked = false;
         document.getElementById('updateBadge').style.display = 'none';
         
-        // Reset biến theo dõi
         currentEditRow = null;
         tempSearchData = null;
       } else {
@@ -756,7 +788,8 @@
     .catch(error => {
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
-      alert('❌ Lỗi kết nối: ' + error.message);
+      console.error('Submit error:', error);
+      alert('❌ Lỗi kết nối: ' + error.message + '\n\nVui lòng:\n1. Kiểm tra URL Web App\n2. Đảm bảo đã Deploy phiên bản mới\n3. Thử lại sau vài giây');
     });
   }
 
