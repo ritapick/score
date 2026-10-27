@@ -123,6 +123,10 @@
       -webkit-appearance: none;
       appearance: none;
     }
+    /* THÊM: Ép kiểu chữ in hoa cho ô nhập tên */
+    #name1, #name2 {
+      text-transform: uppercase;
+    }
     .form-group select {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230056b3' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
@@ -505,7 +509,7 @@
   function initYearDropdowns() {
     const selects = [document.getElementById('yob1'), document.getElementById('yob2')];
     selects.forEach(select => {
-      for (let year = 1950; year <= 1987; year++) {
+      for (let year = 1950; year <= 1986; year++) {
         const option = document.createElement('option');
         option.value = year;
         option.textContent = year;
@@ -579,6 +583,16 @@
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
   // ==========================================
+  // NÂNG CẤP: TỰ ĐỘNG CHUYỂN TÊN THÀNH CHỮ IN HOA
+  // ==========================================
+  document.getElementById('name1').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+  });
+  document.getElementById('name2').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+  });
+
+  // ==========================================
   // LOGIC TRA CỨU & XÁC THỰC
   // ==========================================
   function openLookupModal() {
@@ -620,7 +634,7 @@
         
         const verifySelect = document.getElementById('verifyYob');
         verifySelect.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
-        for (let year = 1950; year <= 1987; year++) {
+        for (let year = 1950; year <= 1986; year++) {
           const opt = document.createElement('option');
           opt.value = year;
           opt.textContent = year;
@@ -634,7 +648,6 @@
       }
     })
     .catch(err => {
-      // ĐÃ SỬA: Tắt thông báo alert, chỉ log lỗi và hiện text nhẹ nhàng
       console.error("Lỗi kết nối khi tra cứu:", err);
       showLookupError('Không thể kết nối máy chủ. Vui lòng thử lại sau.');
     });
@@ -650,10 +663,11 @@
     const targetYob = tempSearchData.matchedPlayer === 1 ? tempSearchData.yob1 : tempSearchData.yob2;
     
     if (selectedYob === String(targetYob)) {
-      document.getElementById('name1').value = tempSearchData.name1;
+      // NÂNG CẤP: Đảm bảo tên tải về cũng được chuyển thành in hoa
+      document.getElementById('name1').value = String(tempSearchData.name1).toUpperCase();
       document.getElementById('yob1').value = tempSearchData.yob1;
       document.getElementById('phone1').value = tempSearchData.phone1;
-      document.getElementById('name2').value = tempSearchData.name2;
+      document.getElementById('name2').value = String(tempSearchData.name2).toUpperCase();
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
       
@@ -685,10 +699,11 @@
     document.getElementById('confirmModalHeader').textContent = isUpdate ? 'XÁC NHẬN CẬP NHẬT THÔNG TIN' : 'XÁC NHẬN THÔNG TIN ĐĂNG KÝ';
 
     const data = {
-      name1: document.getElementById('name1').value.trim(),
+      // NÂNG CẤP: Ép kiểu in hoa trước khi hiển thị trong modal xác nhận
+      name1: document.getElementById('name1').value.trim().toUpperCase(),
       yob1: document.getElementById('yob1').value,
       phone1: document.getElementById('phone1').value.trim(),
-      name2: document.getElementById('name2').value.trim(),
+      name2: document.getElementById('name2').value.trim().toUpperCase(),
       yob2: document.getElementById('yob2').value,
       phone2: document.getElementById('phone2').value.trim(),
       totalAge: document.getElementById('totalAgeDisplay').textContent
@@ -722,10 +737,11 @@
     const data = {
       action: 'save',
       rowIndex: currentEditRow,
-      name1: document.getElementById('name1').value.trim(),
+      // NÂNG CẤP: Ép kiểu in hoa trước khi gửi lên server để lưu vào Data
+      name1: document.getElementById('name1').value.trim().toUpperCase(),
       yob1: document.getElementById('yob1').value,
       phone1: document.getElementById('phone1').value.trim(),
-      name2: document.getElementById('name2').value.trim(),
+      name2: document.getElementById('name2').value.trim().toUpperCase(),
       yob2: document.getElementById('yob2').value,
       phone2: document.getElementById('phone2').value.trim(),
       totalAge: document.getElementById('totalAgeDisplay').textContent
@@ -757,8 +773,6 @@
       }
     })
     .catch(error => {
-      // ĐÃ SỬA: Tắt hoàn toàn thông báo alert lỗi mạng. 
-      // Chỉ ghi log để dev kiểm tra và khôi phục nút bấm để user thử lại.
       console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
