@@ -69,7 +69,6 @@
     }
     .form-body { padding: 20px 16px; }
     
-    /* Nút tra cứu mới */
     .btn-lookup {
       width: 100%;
       padding: 14px;
@@ -89,10 +88,9 @@
     }
     .btn-lookup:hover { background: var(--light-blue); }
 
-    /* CSS cho dòng trạng thái người truy cập */
     .visitor-status {
       text-align: center;
-      color: #888; /* Màu xám nhạt */
+      color: #888;
       font-size: 12px;
       font-weight: 600;
       margin-bottom: 20px;
@@ -136,7 +134,6 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    /* Ép kiểu chữ in hoa cho ô nhập tên */
     #name1, #name2 {
       text-transform: uppercase;
     }
@@ -237,7 +234,13 @@
       box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
     }
     .btn-submit:hover { background: #218838; transform: translateY(-2px); }
-    .btn-submit:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .btn-submit:disabled { 
+      background: #ccc; 
+      color: #666;
+      cursor: not-allowed; 
+      transform: none; 
+      box-shadow: none;
+    }
     
     .update-badge {
       display: none;
@@ -288,7 +291,6 @@
     .footer a { color: var(--primary-blue); text-decoration: none; transition: color 0.3s; }
     .footer a:hover { color: var(--accent-green); text-decoration: underline; }
     
-    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -378,12 +380,10 @@
   </div>
 
   <div class="form-body">
-    <!-- Nút tra cứu -->
     <button type="button" class="btn-lookup" onclick="openLookupModal()">
       🔍 Tra cứu & Cập nhật thông tin<BR> đã đăng ký
     </button>
 
-    <!-- Dòng trạng thái người truy cập -->
     <div class="visitor-status" id="visitorStatus">Hiện đang có: 0 người truy cập</div>
 
     <form id="registrationForm">
@@ -520,7 +520,7 @@
   const MIN_TOTAL_AGE = 99;
 
   let tempSearchData = null;
-  let currentEditRow = null; // Biến lưu dòng cần ghi đè
+  let currentEditRow = null; 
 
   function initYearDropdowns() {
     const selects = [document.getElementById('yob1'), document.getElementById('yob2')];
@@ -598,9 +598,6 @@
   });
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
-  // ==========================================
-  // TỰ ĐỘNG CHUYỂN TÊN THÀNH CHỮ IN HOA
-  // ==========================================
   document.getElementById('name1').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
   });
@@ -608,35 +605,20 @@
     e.target.value = e.target.value.toUpperCase();
   });
 
-  // ==========================================
-  // NÂNG CẤP: LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP THEO GIỜ
-  // ==========================================
   function updateVisitorCount() {
     const statusElement = document.getElementById('visitorStatus');
     if (!statusElement) return;
-
-    // Lấy giờ hiện tại của hệ thống (0 - 23)
     const currentHour = new Date().getHours();
-
-    // Từ 9h00 (9) đến trước 18h00 (18)
     if (currentHour >= 9 && currentHour < 18) {
       const randomVisitors = Math.floor(Math.random() * 7) + 1;
       statusElement.textContent = `Hiện đang có: ${randomVisitors} người truy cập`;
-    } 
-    // Từ 18h00 đến 9h00 sáng hôm sau
-    else {
+    } else {
       statusElement.textContent = "Hiện đang có: 1 người truy cập";
     }
   }
-
-  // Gọi ngay khi tải trang để không bị trễ 10 giây đầu tiên
   updateVisitorCount();
-  // Cập nhật lại mỗi 10 giây (10000 milliseconds)
   setInterval(updateVisitorCount, 10000);
 
-  // ==========================================
-  // LOGIC TRA CỨU & XÁC THỰC
-  // ==========================================
   function openLookupModal() {
     document.getElementById('lookupModal').style.display = 'flex';
     document.getElementById('verifyStep').style.display = 'none';
@@ -644,7 +626,6 @@
     document.getElementById('verifyYob').value = '';
     document.getElementById('lookupError').style.display = 'none';
     tempSearchData = null;
-    
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
     document.getElementById('globalError').style.display = 'none';
   }
@@ -655,12 +636,10 @@
 
   function searchRegistration() {
     const phone = document.getElementById('lookupPhone').value.trim();
-    
     if (!isValidPhone(phone)) {
       showLookupError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
       return;
     }
-    
     showLookupError('Đang tìm kiếm...', 'var(--primary-blue)');
 
     fetch(SCRIPT_URL, {
@@ -682,7 +661,6 @@
           opt.textContent = year;
           verifySelect.appendChild(opt);
         }
-        
         document.getElementById('verifyStep').style.display = 'block';
         document.getElementById('lookupError').style.display = 'none';
       } else {
@@ -730,9 +708,6 @@
     errEl.style.display = 'block';
   }
 
-  // ==========================================
-  // LOGIC ĐĂNG KÝ / GHI ĐÈ
-  // ==========================================
   function openModal() {
     if (!validateForm()) return;
 
@@ -769,8 +744,31 @@
     document.getElementById('confirmModal').style.display = 'none';
   }
 
+  // ==========================================
+  // HÀM RESET FORM (Tách riêng để tái sử dụng, đảm bảo luôn xóa sạch)
+  // ==========================================
+  function resetFormCompletely() {
+    document.getElementById('registrationForm').reset();
+    document.getElementById('totalAgeDisplay').textContent = '0';
+    document.getElementById('commitmentBox').style.display = 'none';
+    document.getElementById('commitmentCheck').checked = false;
+    document.getElementById('updateBadge').style.display = 'none';
+    document.getElementById('globalError').style.display = 'none';
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    
+    currentEditRow = null;
+    tempSearchData = null;
+    
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').style.display = 'none';
+  }
+
+  // ==========================================
+  // ĐÃ SỬA LỖI: Dùng response.text() + JSON.parse() để tránh lỗi redirect của Google
+  // ==========================================
   function submitToGoogleSheet() {
     closeModal();
+    
     document.getElementById('loadingMsg').style.display = 'block';
     document.getElementById('submitBtn').disabled = true;
 
@@ -791,30 +789,34 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(response => response.json())
-    .then(result => {
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
-      
-      if (result.success) {
-        alert('🎉 ' + result.message);
-        document.getElementById('registrationForm').reset();
-        document.getElementById('totalAgeDisplay').textContent = '0';
-        document.getElementById('submitBtn').style.display = 'none';
-        document.getElementById('commitmentBox').style.display = 'none';
-        document.getElementById('commitmentCheck').checked = false;
-        document.getElementById('updateBadge').style.display = 'none';
+    .then(response => response.text()) // SỬA: Lấy dạng text trước
+    .then(text => {
+      try {
+        const result = JSON.parse(text); // SỬA: Parse thủ công
         
-        currentEditRow = null;
-        tempSearchData = null;
-      } else {
-        alert('❌ ' + result.message);
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        
+        if (result.success) {
+          alert('🎉 ' + result.message);
+          resetFormCompletely(); // Gọi hàm reset khi thành công
+        } else {
+          alert('❌ ' + result.message);
+        }
+      } catch (e) {
+        // Nếu server trả về HTML lỗi thay vì JSON, vẫn cố gắng reset form để người dùng không bị kẹt
+        console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        resetFormCompletely(); 
       }
     })
     .catch(error => {
-      console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
+      // ĐÃ XÓA THÔNG BÁO ALERT THEO YÊU CẦU
+      console.error("Lỗi kết nối mạng:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
+      resetFormCompletely(); // Vẫn giữ logic reset form để giao diện không bị treo
     });
   }
 
