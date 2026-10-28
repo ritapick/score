@@ -808,16 +808,15 @@
         console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('submitBtn').disabled = false;
-        alert('⚠️ Hệ thống có thể đã lưu, nhưng không nhận được phản hồi xác nhận. Form đã được làm mới.');
         resetFormCompletely(); 
       }
     })
     .catch(error => {
+      // ĐÃ XÓA THÔNG BÁO ALERT THEO YÊU CẦU
       console.error("Lỗi kết nối mạng:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
-      alert('⚠️ Lỗi kết nối mạng. Form đã được làm mới để bạn thử lại.');
-      resetFormCompletely(); // Gọi hàm reset ngay cả khi lỗi mạng để form không bị kẹt
+      resetFormCompletely(); // Vẫn giữ logic reset form để giao diện không bị treo
     });
   }
 
