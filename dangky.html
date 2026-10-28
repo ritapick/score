@@ -81,13 +81,26 @@
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s;
-      margin-bottom: 20px;
+      margin-bottom: 12px; /* Giảm margin để sát với dòng trạng thái */
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
     }
     .btn-lookup:hover { background: var(--light-blue); }
+
+    /* THÊM: CSS cho dòng trạng thái người truy cập */
+    .visitor-status {
+      text-align: center;
+      color: #888; /* Màu xám nhạt */
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      background-color: #f8f9fa;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
 
     .player-section {
       background: var(--light-blue);
@@ -123,7 +136,7 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    /* THÊM: Ép kiểu chữ in hoa cho ô nhập tên */
+    /* Ép kiểu chữ in hoa cho ô nhập tên */
     #name1, #name2 {
       text-transform: uppercase;
     }
@@ -365,10 +378,13 @@
   </div>
 
   <div class="form-body">
-    <!-- Nút tra cứu mới -->
+    <!-- Nút tra cứu -->
     <button type="button" class="btn-lookup" onclick="openLookupModal()">
       🔍 Tra cứu & Cập nhật thông tin<BR> đã đăng ký
     </button>
+
+    <!-- THÊM: Dòng trạng thái người truy cập -->
+    <div class="visitor-status" id="visitorStatus">Hiện đang có: 0 người truy cập</div>
 
     <form id="registrationForm">
       <div class="update-badge" id="updateBadge">🔄 CẬP NHẬT THÔNG TIN ĐÃ ĐĂNG KÝ</div>
@@ -427,7 +443,7 @@
       <div class="commitment-box" id="commitmentBox">
         <label class="commitment-label">
           <input type="checkbox" id="commitmentCheck">
-          <span>Cam kết chưa từng nhận giải thưởng từ hệ thống PVNA, Baseline.</span>
+          <span>Xác nhận thông tin trên đúng với CCCD hoặc VNeid.</span>
         </label>
       </div>
 
@@ -583,7 +599,7 @@
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
   // ==========================================
-  // NÂNG CẤP: TỰ ĐỘNG CHUYỂN TÊN THÀNH CHỮ IN HOA
+  // TỰ ĐỘNG CHUYỂN TÊN THÀNH CHỮ IN HOA
   // ==========================================
   document.getElementById('name1').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
@@ -591,6 +607,23 @@
   document.getElementById('name2').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
   });
+
+  // ==========================================
+  // NÂNG CẤP: LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP ẢO
+  // ==========================================
+  function updateVisitorCount() {
+    // Tạo số ngẫu nhiên từ 1 đến 7
+    const randomVisitors = Math.floor(Math.random() * 7) + 1;
+    const statusElement = document.getElementById('visitorStatus');
+    if (statusElement) {
+      statusElement.textContent = `Hiện đang có: ${randomVisitors} người truy cập`;
+    }
+  }
+
+  // Gọi ngay khi tải trang để không bị trễ 10 giây đầu tiên
+  updateVisitorCount();
+  // Cập nhật lại mỗi 10 giây (10000 milliseconds)
+  setInterval(updateVisitorCount, 10000);
 
   // ==========================================
   // LOGIC TRA CỨU & XÁC THỰC
@@ -663,7 +696,6 @@
     const targetYob = tempSearchData.matchedPlayer === 1 ? tempSearchData.yob1 : tempSearchData.yob2;
     
     if (selectedYob === String(targetYob)) {
-      // NÂNG CẤP: Đảm bảo tên tải về cũng được chuyển thành in hoa
       document.getElementById('name1').value = String(tempSearchData.name1).toUpperCase();
       document.getElementById('yob1').value = tempSearchData.yob1;
       document.getElementById('phone1').value = tempSearchData.phone1;
@@ -699,7 +731,6 @@
     document.getElementById('confirmModalHeader').textContent = isUpdate ? 'XÁC NHẬN CẬP NHẬT THÔNG TIN' : 'XÁC NHẬN THÔNG TIN ĐĂNG KÝ';
 
     const data = {
-      // NÂNG CẤP: Ép kiểu in hoa trước khi hiển thị trong modal xác nhận
       name1: document.getElementById('name1').value.trim().toUpperCase(),
       yob1: document.getElementById('yob1').value,
       phone1: document.getElementById('phone1').value.trim(),
@@ -737,7 +768,6 @@
     const data = {
       action: 'save',
       rowIndex: currentEditRow,
-      // NÂNG CẤP: Ép kiểu in hoa trước khi gửi lên server để lưu vào Data
       name1: document.getElementById('name1').value.trim().toUpperCase(),
       yob1: document.getElementById('yob1').value,
       phone1: document.getElementById('phone1').value.trim(),
