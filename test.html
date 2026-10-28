@@ -234,6 +234,7 @@
       box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
     }
     .btn-submit:hover { background: #218838; transform: translateY(-2px); }
+    /* Điểm nâng cấp 1: CSS làm mờ nút khi bị disabled */
     .btn-submit:disabled { 
       background: #ccc; 
       color: #666;
@@ -837,7 +838,7 @@
   }
 
   // ==========================================
-  // NÂNG CẤP: XỬ LÝ NÚT MỜ VÀ RESET FORM SAU KHI LƯU
+  // NÂNG CẤP: CHỈ THỰC HIỆN 3 ĐIỂM 1, 2, 3 (BỎ XỬ LÝ LỖI MẠNG)
   // ==========================================
   function submitToGoogleSheet() {
     closeModal();
@@ -865,13 +866,13 @@
     })
     .then(response => response.json())
     .then(result => {
-      // 2. Hệ thống đã lưu xong, ẩn loading
+      // Ẩn loading khi hệ thống phản hồi
       document.getElementById('loadingMsg').style.display = 'none';
       
       if (result.success) {
         alert('🎉 ' + result.message);
         
-        // 3. Xóa toàn bộ giá trị trong form, trở về trạng thái nhập liệu mới
+        // 2. Xóa toàn bộ giá trị trong form
         document.getElementById('registrationForm').reset();
         document.getElementById('totalAgeDisplay').textContent = '0';
         document.getElementById('commitmentBox').style.display = 'none';
@@ -880,7 +881,7 @@
         document.getElementById('globalError').style.display = 'none';
         document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
         
-        // 4. Reset toàn bộ biến trạng thái
+        // 3. Trở lại trạng thái nhập liệu dữ liệu mới (Reset biến và nút)
         currentEditRow = null;
         tempSearchData = null;
         originalPhone1 = "";
@@ -888,22 +889,18 @@
         isPhone1Duplicate = false;
         isPhone2Duplicate = false;
         
-        // 5. Khôi phục trạng thái nút (ẩn đi vì form đã trống, sẽ hiện lại khi nhập đủ điều kiện)
         document.getElementById('submitBtn').disabled = false;
-        document.getElementById('submitBtn').style.display = 'none';
+        document.getElementById('submitBtn').style.display = 'none'; // Ẩn đi, chờ nhập liệu mới
         
       } else {
-        // Nếu lỗi logic từ server, vẫn cho phép bấm lại
+        // Nếu server trả về lỗi logic (ví dụ: dữ liệu không hợp lệ), vẫn cho phép bấm lại
         alert('❌ ' + result.message);
         document.getElementById('submitBtn').disabled = false;
       }
     })
     .catch(error => {
-      console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
-      document.getElementById('loadingMsg').style.display = 'none';
-      // Nếu lỗi mạng, khôi phục nút để người dùng thử lại
-      document.getElementById('submitBtn').disabled = false;
-      alert('⚠️ Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.');
+      // BỎ XỬ LÝ LỖI MẠNG: Chỉ ghi log, không thay đổi giao diện, không mở khóa nút
+      console.error("Lỗi kết nối mạng:", error);
     });
   }
 
