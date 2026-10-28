@@ -81,7 +81,7 @@
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s;
-      margin-bottom: 12px; /* Giảm margin để sát với dòng trạng thái */
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -89,7 +89,7 @@
     }
     .btn-lookup:hover { background: var(--light-blue); }
 
-    /* THÊM: CSS cho dòng trạng thái người truy cập */
+    /* CSS cho dòng trạng thái người truy cập */
     .visitor-status {
       text-align: center;
       color: #888; /* Màu xám nhạt */
@@ -383,7 +383,7 @@
       🔍 Tra cứu & Cập nhật thông tin<BR> đã đăng ký
     </button>
 
-    <!-- THÊM: Dòng trạng thái người truy cập -->
+    <!-- Dòng trạng thái người truy cập -->
     <div class="visitor-status" id="visitorStatus">Hiện đang có: 0 người truy cập</div>
 
     <form id="registrationForm">
@@ -609,14 +609,23 @@
   });
 
   // ==========================================
-  // NÂNG CẤP: LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP ẢO
+  // NÂNG CẤP: LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP THEO GIỜ
   // ==========================================
   function updateVisitorCount() {
-    // Tạo số ngẫu nhiên từ 1 đến 7
-    const randomVisitors = Math.floor(Math.random() * 7) + 1;
     const statusElement = document.getElementById('visitorStatus');
-    if (statusElement) {
+    if (!statusElement) return;
+
+    // Lấy giờ hiện tại của hệ thống (0 - 23)
+    const currentHour = new Date().getHours();
+
+    // Từ 9h00 (9) đến trước 18h00 (18)
+    if (currentHour >= 9 && currentHour < 18) {
+      const randomVisitors = Math.floor(Math.random() * 7) + 1;
       statusElement.textContent = `Hiện đang có: ${randomVisitors} người truy cập`;
+    } 
+    // Từ 18h00 đến 9h00 sáng hôm sau
+    else {
+      statusElement.textContent = "Hiện đang có: 1 người truy cập";
     }
   }
 
