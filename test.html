@@ -407,7 +407,6 @@
           <label>Số điện thoại *</label>
           <input type="tel" id="phone1" required placeholder="Ví dụ: 0912345678" maxlength="10">
           <div class="error-text" id="err-phone1">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
-          <div class="error-text" id="err-phone1-dup"></div>
         </div>
       </div>
 
@@ -429,7 +428,6 @@
           <label>Số điện thoại *</label>
           <input type="tel" id="phone2" required placeholder="Ví dụ: 0912345678" maxlength="10">
           <div class="error-text" id="err-phone2">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
-          <div class="error-text" id="err-phone2-dup"></div>
         </div>
       </div>
 
@@ -460,7 +458,7 @@
       <p>LỆ PHÍ 300K/VĐV <BR>Liên hệ Ban tổ chức:</p>
       <div class="contact-buttons">
         <a href="tel:0911100989" class="contact-btn phone">
-           📞 Gọi ngay: TEPPY 0911.10.09.89
+          📞 Gọi ngay: TEPPY 0911.10.09.89
         </a>
         <a href="https://zalo.me/0911100989" target="_blank" class="contact-btn zalo">
           💬 Chat Zalo: TEPPY 0911.10.09.89
@@ -523,12 +521,6 @@
 
   let tempSearchData = null;
   let currentEditRow = null; 
-  
-  let originalPhone1 = "";
-  let originalPhone2 = "";
-
-  let isPhone1Duplicate = false;
-  let isPhone2Duplicate = false;
 
   function initYearDropdowns() {
     const selects = [document.getElementById('yob1'), document.getElementById('yob2')];
@@ -566,15 +558,6 @@
     if (!name2) { document.getElementById('err-name2').style.display = 'block'; isValid = false; }
     if (!yob2) { document.getElementById('err-yob2').style.display = 'block'; isValid = false; }
     if (!isValidPhone(phone2)) { document.getElementById('err-phone2').style.display = 'block'; isValid = false; }
-
-    if (isPhone1Duplicate) {
-      document.getElementById('err-phone1-dup').style.display = 'block';
-      isValid = false;
-    }
-    if (isPhone2Duplicate) {
-      document.getElementById('err-phone2-dup').style.display = 'block';
-      isValid = false;
-    }
 
     let totalAge = 0;
     if (yob1 && yob2) {
@@ -620,73 +603,6 @@
   });
   document.getElementById('name2').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
-  });
-
-  let debounceTimer1, debounceTimer2;
-
-  function checkDuplicatePhone(phone, playerNum) {
-    if (currentEditRow !== null) {
-      if (playerNum === 1 && phone === originalPhone1) {
-        isPhone1Duplicate = false;
-        document.getElementById('err-phone1-dup').style.display = 'none';
-        validateForm();
-        return;
-      }
-      if (playerNum === 2 && phone === originalPhone2) {
-        isPhone2Duplicate = false;
-        document.getElementById('err-phone2-dup').style.display = 'none';
-        validateForm();
-        return;
-      }
-    }
-
-    if (!isValidPhone(phone)) {
-      if (playerNum === 1) isPhone1Duplicate = false;
-      else isPhone2Duplicate = false;
-      document.getElementById(`err-phone${playerNum}-dup`).style.display = 'none';
-      validateForm();
-      return;
-    }
-
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'search', phone: phone })
-    })
-    .then(res => res.json())
-    .then(result => {
-      const errEl = document.getElementById(`err-phone${playerNum}-dup`);
-      if (result.success && result.data) {
-        if (playerNum === 1) isPhone1Duplicate = true;
-        else isPhone2Duplicate = true;
-
-        const dupName = result.data.matchedPlayer === 1 ? result.data.name1 : result.data.name2;
-        errEl.textContent = `⚠️ Đã có VĐV ${dupName} đăng ký bằng số điện thoại này.`;
-        errEl.style.display = 'block';
-      } else {
-        if (playerNum === 1) isPhone1Duplicate = false;
-        else isPhone2Duplicate = false;
-        errEl.style.display = 'none';
-      }
-      validateForm();
-    })
-    .catch(err => {
-      console.error("Lỗi kiểm tra trùng SĐT:", err);
-      if (playerNum === 1) isPhone1Duplicate = false;
-      else isPhone2Duplicate = false;
-      document.getElementById(`err-phone${playerNum}-dup`).style.display = 'none';
-      validateForm();
-    });
-  }
-
-  document.getElementById('phone1').addEventListener('input', function(e) {
-    clearTimeout(debounceTimer1);
-    debounceTimer1 = setTimeout(() => checkDuplicatePhone(e.target.value.trim(), 1), 600);
-  });
-
-  document.getElementById('phone2').addEventListener('input', function(e) {
-    clearTimeout(debounceTimer2);
-    debounceTimer2 = setTimeout(() => checkDuplicatePhone(e.target.value.trim(), 2), 600);
   });
 
   function updateVisitorCount() {
@@ -774,14 +690,6 @@
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
       
-      originalPhone1 = tempSearchData.phone1;
-      originalPhone2 = tempSearchData.phone2;
-      
-      isPhone1Duplicate = false;
-      isPhone2Duplicate = false;
-      document.getElementById('err-phone1-dup').style.display = 'none';
-      document.getElementById('err-phone2-dup').style.display = 'none';
-      
       validateForm();
       
       document.getElementById('updateBadge').style.display = 'block';
@@ -837,7 +745,7 @@
   }
 
   // ==========================================
-  // ĐẢM BẢO XÓA SẠCH DỮ LIỆU SAU KHI LƯU THÀNH CÔNG
+  // NÂNG CẤP: XÓA SẠCH FORM SAU KHI XÁC NHẬN THÀNH CÔNG
   // ==========================================
   function submitToGoogleSheet() {
     closeModal();
@@ -863,58 +771,43 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(response => response.text()) // Lấy text trước để tránh lỗi redirect của Google
-    .then(text => {
-      try {
-        const result = JSON.parse(text); // Parse thủ công
+    .then(response => response.json())
+    .then(result => {
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
+      
+      if (result.success) {
+        alert('🎉 ' + result.message);
         
-        // Tắt loading khi đã có phản hồi
-        document.getElementById('loadingMsg').style.display = 'none';
+        // 2. XÓA TOÀN BỘ GIÁ TRỊ TRONG FORM (Reset về mặc định)
+        document.getElementById('registrationForm').reset();
         
-        if (result.success) {
-          alert('🎉 ' + result.message);
-          
-          // 2. XÓA TOÀN BỘ GIÁ TRỊ TRONG FORM
-          document.getElementById('registrationForm').reset(); // Reset các input về rỗng/mặc định
-          
-          // Reset các giá trị hiển thị và trạng thái
-          document.getElementById('totalAgeDisplay').textContent = '0';
-          document.getElementById('commitmentBox').style.display = 'none';
-          document.getElementById('commitmentCheck').checked = false;
-          document.getElementById('updateBadge').style.display = 'none';
-          document.getElementById('globalError').style.display = 'none';
-          
-          // Ẩn tất cả các thông báo lỗi
-          document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
-          
-          // 3. TRỞ LẠI TRẠNG THÁI NHẬP LIỆU DỮ LIỆU MỚI (Reset biến)
-          currentEditRow = null;
-          tempSearchData = null;
-          originalPhone1 = "";
-          originalPhone2 = "";
-          isPhone1Duplicate = false;
-          isPhone2Duplicate = false;
-          
-          // Mở khóa và ẩn nút submit để chờ nhập liệu mới
-          document.getElementById('submitBtn').disabled = false;
-          document.getElementById('submitBtn').style.display = 'none';
-          
-        } else {
-          alert('❌ ' + result.message);
-          document.getElementById('submitBtn').disabled = false; // Mở khóa để sửa và thử lại
-        }
-      } catch (e) {
-        console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
-        document.getElementById('loadingMsg').style.display = 'none';
-        document.getElementById('submitBtn').disabled = false;
-        alert('⚠️ Hệ thống có thể đã lưu, nhưng không nhận được phản hồi xác nhận. Vui lòng kiểm tra lại.');
+        // Reset các giá trị hiển thị và trạng thái
+        document.getElementById('totalAgeDisplay').textContent = '0';
+        document.getElementById('commitmentBox').style.display = 'none';
+        document.getElementById('commitmentCheck').checked = false;
+        document.getElementById('updateBadge').style.display = 'none';
+        document.getElementById('globalError').style.display = 'none';
+        
+        // Ẩn tất cả các thông báo lỗi validation (nếu có)
+        document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+        
+        // 3. Reset biến trạng thái để sẵn sàng cho lần nhập liệu mới
+        currentEditRow = null;
+        tempSearchData = null;
+        
+        // 4. Đưa nút submit về trạng thái ban đầu (ẩn đi, chờ nhập đủ điều kiện)
+        document.getElementById('submitBtn').style.display = 'none';
+        
+      } else {
+        alert('❌ ' + result.message);
       }
     })
     .catch(error => {
-      // Bắt buộc phải tắt loading và mở khóa nút để tránh kẹt giao diện
-      console.error("Lỗi kết nối:", error);
+      console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
+      alert('⚠️ Lỗi kết nối. Vui lòng thử lại.');
     });
   }
 
