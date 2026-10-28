@@ -745,12 +745,30 @@
   }
 
   // ==========================================
-  // NÂNG CẤP: XÓA SẠCH FORM SAU KHI XÁC NHẬN THÀNH CÔNG
+  // HÀM RESET FORM (Tách riêng để tái sử dụng, đảm bảo luôn xóa sạch)
+  // ==========================================
+  function resetFormCompletely() {
+    document.getElementById('registrationForm').reset();
+    document.getElementById('totalAgeDisplay').textContent = '0';
+    document.getElementById('commitmentBox').style.display = 'none';
+    document.getElementById('commitmentCheck').checked = false;
+    document.getElementById('updateBadge').style.display = 'none';
+    document.getElementById('globalError').style.display = 'none';
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    
+    currentEditRow = null;
+    tempSearchData = null;
+    
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').style.display = 'none';
+  }
+
+  // ==========================================
+  // ĐÃ SỬA LỖI: Dùng response.text() + JSON.parse() để tránh lỗi redirect của Google
   // ==========================================
   function submitToGoogleSheet() {
     closeModal();
     
-    // 1. Làm mờ nút và hiện loading ngay lập tức
     document.getElementById('loadingMsg').style.display = 'block';
     document.getElementById('submitBtn').disabled = true;
 
@@ -771,43 +789,35 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(response => response.json())
-    .then(result => {
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
-      
-      if (result.success) {
-        alert('🎉 ' + result.message);
+    .then(response => response.text()) // SỬA: Lấy dạng text trước
+    .then(text => {
+      try {
+        const result = JSON.parse(text); // SỬA: Parse thủ công
         
-        // 2. XÓA TOÀN BỘ GIÁ TRỊ TRONG FORM (Reset về mặc định)
-        document.getElementById('registrationForm').reset();
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
         
-        // Reset các giá trị hiển thị và trạng thái
-        document.getElementById('totalAgeDisplay').textContent = '0';
-        document.getElementById('commitmentBox').style.display = 'none';
-        document.getElementById('commitmentCheck').checked = false;
-        document.getElementById('updateBadge').style.display = 'none';
-        document.getElementById('globalError').style.display = 'none';
-        
-        // Ẩn tất cả các thông báo lỗi validation (nếu có)
-        document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
-        
-        // 3. Reset biến trạng thái để sẵn sàng cho lần nhập liệu mới
-        currentEditRow = null;
-        tempSearchData = null;
-        
-        // 4. Đưa nút submit về trạng thái ban đầu (ẩn đi, chờ nhập đủ điều kiện)
-        document.getElementById('submitBtn').style.display = 'none';
-        
-      } else {
-        alert('❌ ' + result.message);
+        if (result.success) {
+          alert('🎉 ' + result.message);
+          resetFormCompletely(); // Gọi hàm reset khi thành công
+        } else {
+          alert('❌ ' + result.message);
+        }
+      } catch (e) {
+        // Nếu server trả về HTML lỗi thay vì JSON, vẫn cố gắng reset form để người dùng không bị kẹt
+        console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        alert('⚠️ Hệ thống có thể đã lưu, nhưng không nhận được phản hồi xác nhận. Form đã được làm mới.');
+        resetFormCompletely(); 
       }
     })
     .catch(error => {
-      console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
+      console.error("Lỗi kết nối mạng:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
-      alert('⚠️ Lỗi kết nối. Vui lòng thử lại.');
+      alert('⚠️ Lỗi kết nối mạng. Form đã được làm mới để bạn thử lại.');
+      resetFormCompletely(); // Gọi hàm reset ngay cả khi lỗi mạng để form không bị kẹt
     });
   }
 
