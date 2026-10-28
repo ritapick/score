@@ -412,7 +412,7 @@
       </div>
 
       <div class="player-section">
-        <h3> Vận động viên 2</h3>
+        <h3>🎾 Vận động viên 2</h3>
         <div class="form-group">
           <label>Họ và tên *</label>
           <input type="text" id="name2" required placeholder="Nhập họ và tên">
@@ -460,7 +460,7 @@
       <p>LỆ PHÍ 300K/VĐV <BR>Liên hệ Ban tổ chức:</p>
       <div class="contact-buttons">
         <a href="tel:0911100989" class="contact-btn phone">
-           Gọi ngay: TEPPY 0911.10.09.89
+           📞 Gọi ngay: TEPPY 0911.10.09.89
         </a>
         <a href="https://zalo.me/0911100989" target="_blank" class="contact-btn zalo">
           💬 Chat Zalo: TEPPY 0911.10.09.89
@@ -837,7 +837,7 @@
   }
 
   // ==========================================
-  // ĐÃ SỬA LỖI: Dùng response.text() + JSON.parse() để tránh kẹt loading
+  // ĐẢM BẢO XÓA SẠCH DỮ LIỆU SAU KHI LƯU THÀNH CÔNG
   // ==========================================
   function submitToGoogleSheet() {
     closeModal();
@@ -863,7 +863,7 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(response => response.text()) // ĐỔI: Lấy text trước để tránh lỗi redirect của Google
+    .then(response => response.text()) // Lấy text trước để tránh lỗi redirect của Google
     .then(text => {
       try {
         const result = JSON.parse(text); // Parse thủ công
@@ -874,16 +874,20 @@
         if (result.success) {
           alert('🎉 ' + result.message);
           
-          // 2. Xóa toàn bộ giá trị trong form
-          document.getElementById('registrationForm').reset();
+          // 2. XÓA TOÀN BỘ GIÁ TRỊ TRONG FORM
+          document.getElementById('registrationForm').reset(); // Reset các input về rỗng/mặc định
+          
+          // Reset các giá trị hiển thị và trạng thái
           document.getElementById('totalAgeDisplay').textContent = '0';
           document.getElementById('commitmentBox').style.display = 'none';
           document.getElementById('commitmentCheck').checked = false;
           document.getElementById('updateBadge').style.display = 'none';
           document.getElementById('globalError').style.display = 'none';
+          
+          // Ẩn tất cả các thông báo lỗi
           document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
           
-          // 3. Trở lại trạng thái nhập liệu dữ liệu mới
+          // 3. TRỞ LẠI TRẠNG THÁI NHẬP LIỆU DỮ LIỆU MỚI (Reset biến)
           currentEditRow = null;
           tempSearchData = null;
           originalPhone1 = "";
@@ -891,15 +895,15 @@
           isPhone1Duplicate = false;
           isPhone2Duplicate = false;
           
+          // Mở khóa và ẩn nút submit để chờ nhập liệu mới
           document.getElementById('submitBtn').disabled = false;
           document.getElementById('submitBtn').style.display = 'none';
           
         } else {
           alert('❌ ' + result.message);
-          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').disabled = false; // Mở khóa để sửa và thử lại
         }
       } catch (e) {
-        // Nếu server trả về HTML lỗi thay vì JSON
         console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('submitBtn').disabled = false;
@@ -907,7 +911,7 @@
       }
     })
     .catch(error => {
-      // BẮT BUỘC phải tắt loading và mở khóa nút để tránh kẹt giao diện
+      // Bắt buộc phải tắt loading và mở khóa nút để tránh kẹt giao diện
       console.error("Lỗi kết nối:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
