@@ -234,7 +234,13 @@
       box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
     }
     .btn-submit:hover { background: #218838; transform: translateY(-2px); }
-    .btn-submit:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .btn-submit:disabled { 
+      background: #ccc; 
+      color: #666;
+      cursor: not-allowed; 
+      transform: none; 
+      box-shadow: none;
+    }
     
     .update-badge {
       display: none;
@@ -401,7 +407,7 @@
           <label>Số điện thoại *</label>
           <input type="tel" id="phone1" required placeholder="Ví dụ: 0912345678" maxlength="10">
           <div class="error-text" id="err-phone1">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
-          <div class="error-text" id="err-phone1-dup"></div> <!-- Lỗi trùng SĐT 1 -->
+          <div class="error-text" id="err-phone1-dup"></div>
         </div>
       </div>
 
@@ -423,7 +429,7 @@
           <label>Số điện thoại *</label>
           <input type="tel" id="phone2" required placeholder="Ví dụ: 0912345678" maxlength="10">
           <div class="error-text" id="err-phone2">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
-          <div class="error-text" id="err-phone2-dup"></div> <!-- Lỗi trùng SĐT 2 -->
+          <div class="error-text" id="err-phone2-dup"></div>
         </div>
       </div>
 
@@ -518,11 +524,9 @@
   let tempSearchData = null;
   let currentEditRow = null; 
   
-  // Biến lưu số điện thoại gốc khi đang ở chế độ cập nhật (để không báo trùng chính mình)
   let originalPhone1 = "";
   let originalPhone2 = "";
 
-  // Biến trạng thái trùng lặp
   let isPhone1Duplicate = false;
   let isPhone2Duplicate = false;
 
@@ -563,7 +567,6 @@
     if (!yob2) { document.getElementById('err-yob2').style.display = 'block'; isValid = false; }
     if (!isValidPhone(phone2)) { document.getElementById('err-phone2').style.display = 'block'; isValid = false; }
 
-    // Kiểm tra trùng số điện thoại
     if (isPhone1Duplicate) {
       document.getElementById('err-phone1-dup').style.display = 'block';
       isValid = false;
@@ -619,13 +622,9 @@
     e.target.value = e.target.value.toUpperCase();
   });
 
-  // ==========================================
-  // LOGIC KIỂM TRA TRÙNG SỐ ĐIỆN THOẠI (DEBOUNCE)
-  // ==========================================
   let debounceTimer1, debounceTimer2;
 
   function checkDuplicatePhone(phone, playerNum) {
-    // Nếu đang ở chế độ cập nhật và SĐT nhập vào giống SĐT gốc của chính dòng đó -> không báo trùng
     if (currentEditRow !== null) {
       if (playerNum === 1 && phone === originalPhone1) {
         isPhone1Duplicate = false;
@@ -658,7 +657,6 @@
     .then(result => {
       const errEl = document.getElementById(`err-phone${playerNum}-dup`);
       if (result.success && result.data) {
-        // Tìm thấy trùng!
         if (playerNum === 1) isPhone1Duplicate = true;
         else isPhone2Duplicate = true;
 
@@ -666,16 +664,14 @@
         errEl.textContent = `⚠️ Đã có VĐV ${dupName} đăng ký bằng số điện thoại này.`;
         errEl.style.display = 'block';
       } else {
-        // Không trùng
         if (playerNum === 1) isPhone1Duplicate = false;
         else isPhone2Duplicate = false;
         errEl.style.display = 'none';
       }
-      validateForm(); // Cập nhật lại trạng thái nút submit
+      validateForm();
     })
     .catch(err => {
       console.error("Lỗi kiểm tra trùng SĐT:", err);
-      // Nếu lỗi mạng, tạm thời cho phép để không chặn người dùng vĩnh viễn
       if (playerNum === 1) isPhone1Duplicate = false;
       else isPhone2Duplicate = false;
       document.getElementById(`err-phone${playerNum}-dup`).style.display = 'none';
@@ -683,7 +679,6 @@
     });
   }
 
-  // Gán sự kiện input với debounce (chờ 600ms sau khi ngừng gõ mới kiểm tra)
   document.getElementById('phone1').addEventListener('input', function(e) {
     clearTimeout(debounceTimer1);
     debounceTimer1 = setTimeout(() => checkDuplicatePhone(e.target.value.trim(), 1), 600);
@@ -694,9 +689,6 @@
     debounceTimer2 = setTimeout(() => checkDuplicatePhone(e.target.value.trim(), 2), 600);
   });
 
-  // ==========================================
-  // LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP THEO GIỜ
-  // ==========================================
   function updateVisitorCount() {
     const statusElement = document.getElementById('visitorStatus');
     if (!statusElement) return;
@@ -711,9 +703,6 @@
   updateVisitorCount();
   setInterval(updateVisitorCount, 10000);
 
-  // ==========================================
-  // LOGIC TRA CỨU & XÁC THỰC
-  // ==========================================
   function openLookupModal() {
     document.getElementById('lookupModal').style.display = 'flex';
     document.getElementById('verifyStep').style.display = 'none';
@@ -785,11 +774,9 @@
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
       
-      // Lưu lại SĐT gốc để không báo trùng khi đang cập nhật chính dòng này
       originalPhone1 = tempSearchData.phone1;
       originalPhone2 = tempSearchData.phone2;
       
-      // Reset trạng thái trùng lặp vì đây là dữ liệu hợp lệ của chính nó
       isPhone1Duplicate = false;
       isPhone2Duplicate = false;
       document.getElementById('err-phone1-dup').style.display = 'none';
@@ -813,9 +800,6 @@
     errEl.style.display = 'block';
   }
 
-  // ==========================================
-  // LOGIC ĐĂNG KÝ / GHI ĐÈ
-  // ==========================================
   function openModal() {
     if (!validateForm()) return;
 
@@ -852,8 +836,13 @@
     document.getElementById('confirmModal').style.display = 'none';
   }
 
+  // ==========================================
+  // NÂNG CẤP: XỬ LÝ NÚT MỜ VÀ RESET FORM SAU KHI LƯU
+  // ==========================================
   function submitToGoogleSheet() {
     closeModal();
+    
+    // 1. Làm mờ nút và hiện loading ngay lập tức
     document.getElementById('loadingMsg').style.display = 'block';
     document.getElementById('submitBtn').disabled = true;
 
@@ -876,35 +865,45 @@
     })
     .then(response => response.json())
     .then(result => {
+      // 2. Hệ thống đã lưu xong, ẩn loading
       document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
       
       if (result.success) {
         alert('🎉 ' + result.message);
+        
+        // 3. Xóa toàn bộ giá trị trong form, trở về trạng thái nhập liệu mới
         document.getElementById('registrationForm').reset();
         document.getElementById('totalAgeDisplay').textContent = '0';
-        document.getElementById('submitBtn').style.display = 'none';
         document.getElementById('commitmentBox').style.display = 'none';
         document.getElementById('commitmentCheck').checked = false;
         document.getElementById('updateBadge').style.display = 'none';
+        document.getElementById('globalError').style.display = 'none';
+        document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
         
-        // Reset toàn bộ trạng thái
+        // 4. Reset toàn bộ biến trạng thái
         currentEditRow = null;
         tempSearchData = null;
         originalPhone1 = "";
         originalPhone2 = "";
         isPhone1Duplicate = false;
         isPhone2Duplicate = false;
-        document.getElementById('err-phone1-dup').style.display = 'none';
-        document.getElementById('err-phone2-dup').style.display = 'none';
+        
+        // 5. Khôi phục trạng thái nút (ẩn đi vì form đã trống, sẽ hiện lại khi nhập đủ điều kiện)
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').style.display = 'none';
+        
       } else {
+        // Nếu lỗi logic từ server, vẫn cho phép bấm lại
         alert('❌ ' + result.message);
+        document.getElementById('submitBtn').disabled = false;
       }
     })
     .catch(error => {
       console.error("Lỗi kết nối mạng khi gửi dữ liệu:", error);
       document.getElementById('loadingMsg').style.display = 'none';
+      // Nếu lỗi mạng, khôi phục nút để người dùng thử lại
       document.getElementById('submitBtn').disabled = false;
+      alert('⚠️ Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.');
     });
   }
 
