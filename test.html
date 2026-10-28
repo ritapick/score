@@ -69,7 +69,6 @@
     }
     .form-body { padding: 20px 16px; }
     
-    /* Nút tra cứu mới */
     .btn-lookup {
       width: 100%;
       padding: 14px;
@@ -89,10 +88,9 @@
     }
     .btn-lookup:hover { background: var(--light-blue); }
 
-    /* CSS cho dòng trạng thái người truy cập */
     .visitor-status {
       text-align: center;
-      color: #888; /* Màu xám nhạt */
+      color: #888;
       font-size: 12px;
       font-weight: 600;
       margin-bottom: 20px;
@@ -136,7 +134,6 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    /* Ép kiểu chữ in hoa cho ô nhập tên */
     #name1, #name2 {
       text-transform: uppercase;
     }
@@ -288,7 +285,6 @@
     .footer a { color: var(--primary-blue); text-decoration: none; transition: color 0.3s; }
     .footer a:hover { color: var(--accent-green); text-decoration: underline; }
     
-    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -378,12 +374,10 @@
   </div>
 
   <div class="form-body">
-    <!-- Nút tra cứu -->
     <button type="button" class="btn-lookup" onclick="openLookupModal()">
       🔍 Tra cứu & Cập nhật thông tin<BR> đã đăng ký
     </button>
 
-    <!-- Dòng trạng thái người truy cập -->
     <div class="visitor-status" id="visitorStatus">Hiện đang có: 0 người truy cập</div>
 
     <form id="registrationForm">
@@ -407,6 +401,7 @@
           <label>Số điện thoại *</label>
           <input type="tel" id="phone1" required placeholder="Ví dụ: 0912345678" maxlength="10">
           <div class="error-text" id="err-phone1">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
+          <div class="error-text" id="err-phone1-dup"></div> <!-- Lỗi trùng SĐT 1 -->
         </div>
       </div>
 
@@ -428,6 +423,7 @@
           <label>Số điện thoại *</label>
           <input type="tel" id="phone2" required placeholder="Ví dụ: 0912345678" maxlength="10">
           <div class="error-text" id="err-phone2">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
+          <div class="error-text" id="err-phone2-dup"></div> <!-- Lỗi trùng SĐT 2 -->
         </div>
       </div>
 
@@ -520,7 +516,15 @@
   const MIN_TOTAL_AGE = 99;
 
   let tempSearchData = null;
-  let currentEditRow = null; // Biến lưu dòng cần ghi đè
+  let currentEditRow = null; 
+  
+  // Biến lưu số điện thoại gốc khi đang ở chế độ cập nhật (để không báo trùng chính mình)
+  let originalPhone1 = "";
+  let originalPhone2 = "";
+
+  // Biến trạng thái trùng lặp
+  let isPhone1Duplicate = false;
+  let isPhone2Duplicate = false;
 
   function initYearDropdowns() {
     const selects = [document.getElementById('yob1'), document.getElementById('yob2')];
@@ -558,6 +562,16 @@
     if (!name2) { document.getElementById('err-name2').style.display = 'block'; isValid = false; }
     if (!yob2) { document.getElementById('err-yob2').style.display = 'block'; isValid = false; }
     if (!isValidPhone(phone2)) { document.getElementById('err-phone2').style.display = 'block'; isValid = false; }
+
+    // Kiểm tra trùng số điện thoại
+    if (isPhone1Duplicate) {
+      document.getElementById('err-phone1-dup').style.display = 'block';
+      isValid = false;
+    }
+    if (isPhone2Duplicate) {
+      document.getElementById('err-phone2-dup').style.display = 'block';
+      isValid = false;
+    }
 
     let totalAge = 0;
     if (yob1 && yob2) {
@@ -598,9 +612,6 @@
   });
   document.getElementById('commitmentCheck').addEventListener('change', validateForm);
 
-  // ==========================================
-  // TỰ ĐỘNG CHUYỂN TÊN THÀNH CHỮ IN HOA
-  // ==========================================
   document.getElementById('name1').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
   });
@@ -609,29 +620,95 @@
   });
 
   // ==========================================
-  // NÂNG CẤP: LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP THEO GIỜ
+  // LOGIC KIỂM TRA TRÙNG SỐ ĐIỆN THOẠI (DEBOUNCE)
+  // ==========================================
+  let debounceTimer1, debounceTimer2;
+
+  function checkDuplicatePhone(phone, playerNum) {
+    // Nếu đang ở chế độ cập nhật và SĐT nhập vào giống SĐT gốc của chính dòng đó -> không báo trùng
+    if (currentEditRow !== null) {
+      if (playerNum === 1 && phone === originalPhone1) {
+        isPhone1Duplicate = false;
+        document.getElementById('err-phone1-dup').style.display = 'none';
+        validateForm();
+        return;
+      }
+      if (playerNum === 2 && phone === originalPhone2) {
+        isPhone2Duplicate = false;
+        document.getElementById('err-phone2-dup').style.display = 'none';
+        validateForm();
+        return;
+      }
+    }
+
+    if (!isValidPhone(phone)) {
+      if (playerNum === 1) isPhone1Duplicate = false;
+      else isPhone2Duplicate = false;
+      document.getElementById(`err-phone${playerNum}-dup`).style.display = 'none';
+      validateForm();
+      return;
+    }
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'search', phone: phone })
+    })
+    .then(res => res.json())
+    .then(result => {
+      const errEl = document.getElementById(`err-phone${playerNum}-dup`);
+      if (result.success && result.data) {
+        // Tìm thấy trùng!
+        if (playerNum === 1) isPhone1Duplicate = true;
+        else isPhone2Duplicate = true;
+
+        const dupName = result.data.matchedPlayer === 1 ? result.data.name1 : result.data.name2;
+        errEl.textContent = `⚠️ Đã có VĐV ${dupName} đăng ký bằng số điện thoại này.`;
+        errEl.style.display = 'block';
+      } else {
+        // Không trùng
+        if (playerNum === 1) isPhone1Duplicate = false;
+        else isPhone2Duplicate = false;
+        errEl.style.display = 'none';
+      }
+      validateForm(); // Cập nhật lại trạng thái nút submit
+    })
+    .catch(err => {
+      console.error("Lỗi kiểm tra trùng SĐT:", err);
+      // Nếu lỗi mạng, tạm thời cho phép để không chặn người dùng vĩnh viễn
+      if (playerNum === 1) isPhone1Duplicate = false;
+      else isPhone2Duplicate = false;
+      document.getElementById(`err-phone${playerNum}-dup`).style.display = 'none';
+      validateForm();
+    });
+  }
+
+  // Gán sự kiện input với debounce (chờ 600ms sau khi ngừng gõ mới kiểm tra)
+  document.getElementById('phone1').addEventListener('input', function(e) {
+    clearTimeout(debounceTimer1);
+    debounceTimer1 = setTimeout(() => checkDuplicatePhone(e.target.value.trim(), 1), 600);
+  });
+
+  document.getElementById('phone2').addEventListener('input', function(e) {
+    clearTimeout(debounceTimer2);
+    debounceTimer2 = setTimeout(() => checkDuplicatePhone(e.target.value.trim(), 2), 600);
+  });
+
+  // ==========================================
+  // LOGIC HIỂN THỊ SỐ NGƯỜI TRUY CẬP THEO GIỜ
   // ==========================================
   function updateVisitorCount() {
     const statusElement = document.getElementById('visitorStatus');
     if (!statusElement) return;
-
-    // Lấy giờ hiện tại của hệ thống (0 - 23)
     const currentHour = new Date().getHours();
-
-    // Từ 9h00 (9) đến trước 18h00 (18)
     if (currentHour >= 9 && currentHour < 18) {
       const randomVisitors = Math.floor(Math.random() * 7) + 1;
       statusElement.textContent = `Hiện đang có: ${randomVisitors} người truy cập`;
-    } 
-    // Từ 18h00 đến 9h00 sáng hôm sau
-    else {
+    } else {
       statusElement.textContent = "Hiện đang có: 1 người truy cập";
     }
   }
-
-  // Gọi ngay khi tải trang để không bị trễ 10 giây đầu tiên
   updateVisitorCount();
-  // Cập nhật lại mỗi 10 giây (10000 milliseconds)
   setInterval(updateVisitorCount, 10000);
 
   // ==========================================
@@ -644,7 +721,6 @@
     document.getElementById('verifyYob').value = '';
     document.getElementById('lookupError').style.display = 'none';
     tempSearchData = null;
-    
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
     document.getElementById('globalError').style.display = 'none';
   }
@@ -655,12 +731,10 @@
 
   function searchRegistration() {
     const phone = document.getElementById('lookupPhone').value.trim();
-    
     if (!isValidPhone(phone)) {
       showLookupError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
       return;
     }
-    
     showLookupError('Đang tìm kiếm...', 'var(--primary-blue)');
 
     fetch(SCRIPT_URL, {
@@ -682,7 +756,6 @@
           opt.textContent = year;
           verifySelect.appendChild(opt);
         }
-        
         document.getElementById('verifyStep').style.display = 'block';
         document.getElementById('lookupError').style.display = 'none';
       } else {
@@ -711,6 +784,16 @@
       document.getElementById('name2').value = String(tempSearchData.name2).toUpperCase();
       document.getElementById('yob2').value = tempSearchData.yob2;
       document.getElementById('phone2').value = tempSearchData.phone2;
+      
+      // Lưu lại SĐT gốc để không báo trùng khi đang cập nhật chính dòng này
+      originalPhone1 = tempSearchData.phone1;
+      originalPhone2 = tempSearchData.phone2;
+      
+      // Reset trạng thái trùng lặp vì đây là dữ liệu hợp lệ của chính nó
+      isPhone1Duplicate = false;
+      isPhone2Duplicate = false;
+      document.getElementById('err-phone1-dup').style.display = 'none';
+      document.getElementById('err-phone2-dup').style.display = 'none';
       
       validateForm();
       
@@ -805,8 +888,15 @@
         document.getElementById('commitmentCheck').checked = false;
         document.getElementById('updateBadge').style.display = 'none';
         
+        // Reset toàn bộ trạng thái
         currentEditRow = null;
         tempSearchData = null;
+        originalPhone1 = "";
+        originalPhone2 = "";
+        isPhone1Duplicate = false;
+        isPhone2Duplicate = false;
+        document.getElementById('err-phone1-dup').style.display = 'none';
+        document.getElementById('err-phone2-dup').style.display = 'none';
       } else {
         alert('❌ ' + result.message);
       }
