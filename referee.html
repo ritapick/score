@@ -99,7 +99,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .toast.show{opacity:1}
 .login-input{width:100%;padding:8px;margin-bottom:8px;background:var(--bg);border:1px solid var(--ln);border-radius:6px;color:var(--tx);font-size:13px}
 
-/* --- CSS CHO MODAL XÚC XẮC --- */
 .dice-display {
     font-size: 80px;
     font-weight: 900;
@@ -161,7 +160,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
     transform: scale(0.96); 
 }
 
-/* --- CSS CHO MODAL FAIRPLAY --- */
 .fairplay-text {
     font-size: 16px;
     font-weight: 700;
@@ -196,7 +194,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 
 <div id="timeout-modal" class="modal-bg"><div class="modal"><div class="modal-header"><h3>⏱ TIMEOUT</h3><button class="modal-close" onclick="closeTimeoutModal()">×</button></div><div class="timeout-display" id="timeout-display">00:00</div><div class="modal-actions" style="margin-top:0; grid-template-columns: 1fr;"><button class="btn btn-l" onclick="closeTimeoutModal()">✕ Đóng</button></div></div></div>
 
-<!-- MODAL THÔNG BÁO FAIRPLAY (MỚI) -->
 <div id="fairplay-modal" class="modal-bg">
   <div class="modal" style="border: 2px solid var(--li); background: linear-gradient(135deg, var(--sf), #1e3a5f);">
     <div class="modal-header">
@@ -216,7 +213,6 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
   </div>
 </div>
 
-<!-- MODAL XÚC XẮC HỢP NHẤT (CHỈ 1 NÚT) -->
 <div id="dice-modal" class="modal-bg">
   <div class="modal">
     <div class="modal-header">
@@ -253,6 +249,108 @@ var diceRollInterval = null, diceRollTimeout = null;
 function el(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
+
+// ✅ FIX: Resolve bracket positions to team IDs before rendering
+function resolveKnockoutBracketPositions() {
+  var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
+  var positionToTeamId = {};
+  
+  if (DATA.gStage) {
+    var groups = DATA.groups.filter(function(g) { return g.stage_id === DATA.gStage.id; });
+    groups.forEach(function(g) {
+      var st = standings(g.id);
+      st.forEach(function(team, idx) {
+        var pos = (idx + 1) + g.code;
+        positionToTeamId[pos] = team.id;
+      });
+    });
+  }
+  
+  var v16Matches = koMatches.filter(function(m) { return Number(m.round) === 1; });
+  v16Matches.forEach(function(m) {
+    if (!m.home_team_id && m.home_bracket_position) {
+      m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
+    }
+    if (!m.away_team_id && m.away_bracket_position) {
+      m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
+    }
+  });
+  
+  var tkMatches = koMatches.filter(function(m) { return Number(m.round) === 2; });
+  tkMatches.forEach(function(m) {
+    if (!m.home_team_id && m.home_bracket_position) {
+      var winner = findWinnerFromV16(m.home_bracket_position);
+      if (winner) m.home_team_id = winner;
+    }
+    if (!m.away_team_id && m.away_bracket_position) {
+      var winner = findWinnerFromV16(m.away_bracket_position);
+      if (winner) m.away_team_id = winner;
+    }
+  });
+  
+  var bkMatches = koMatches.filter(function(m) { return Number(m.round) === 3; });
+  bkMatches.forEach(function(m) {
+    if (!m.home_team_id && m.home_bracket_position) {
+      var winner = findWinnerFromTK(m.home_bracket_position);
+      if (winner) m.home_team_id = winner;
+    }
+    if (!m.away_team_id && m.away_bracket_position) {
+      var winner = findWinnerFromTK(m.away_bracket_position);
+      if (winner) m.away_team_id = winner;
+    }
+  });
+  
+  var ckMatches = koMatches.filter(function(m) { return Number(m.round) === 4; });
+  ckMatches.forEach(function(m) {
+    if (!m.home_team_id && m.home_bracket_position) {
+      var winner = findWinnerFromBK(m.home_bracket_position);
+      if (winner) m.home_team_id = winner;
+    }
+    if (!m.away_team_id && m.away_bracket_position) {
+      var winner = findWinnerFromBK(m.away_bracket_position);
+      if (winner) m.away_team_id = winner;
+    }
+  });
+}
+
+function findWinnerFromV16(positionRef) {
+  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  var v16Match = DATA.matches.find(function(m) { 
+    return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum; 
+  });
+  if (!v16Match) return null;
+  var h = Number(v16Match.home_score) || 0;
+  var a = Number(v16Match.away_score) || 0;
+  if (h > a) return v16Match.home_team_id;
+  if (a > h) return v16Match.away_team_id;
+  return null;
+}
+
+function findWinnerFromTK(positionRef) {
+  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  var tkMatch = DATA.matches.find(function(m) { 
+    return Number(m.round) === 2 && String(displayCode(m)).includes('TK' + matchNum); 
+  });
+  if (!tkMatch) return null;
+  var h = Number(tkMatch.home_score) || 0;
+  var a = Number(tkMatch.away_score) || 0;
+  if (h > a) return tkMatch.home_team_id;
+  if (a > h) return tkMatch.away_team_id;
+  return null;
+}
+
+function findWinnerFromBK(positionRef) {
+  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  var bkMatch = DATA.matches.find(function(m) { 
+    return Number(m.round) === 3 && String(displayCode(m)).includes('BK' + matchNum); 
+  });
+  if (!bkMatch) return null;
+  var h = Number(bkMatch.home_score) || 0;
+  var a = Number(bkMatch.away_score) || 0;
+  if (h > a) return bkMatch.home_team_id;
+  if (a > h) return bkMatch.away_team_id;
+  return null;
+}
 
 function openLogin(){el("login-modal").classList.add("show");el("lmsg").textContent=""}
 function closeLogin(){el("login-modal").classList.remove("show")}
@@ -378,6 +476,10 @@ async function loadMatches(){
         }else{DATA.groups=[];DATA.groupTeams=[]}
       }else{DATA.groups=[];DATA.groupTeams=[]}
     }else{DATA.teams=[];DATA.players=[];DATA.stages=[];DATA.groups=[];DATA.groupTeams=[]}
+    
+    // ✅ RESOLVE BRACKET POSITIONS BEFORE RENDERING
+    resolveKnockoutBracketPositions();
+    
     renderMatchesByRound()
   }catch(e){console.error(e)}
 }
@@ -881,6 +983,7 @@ async function syncKO(){
   if(updated){
     console.log("[syncKO] ✅ Đã cập nhật thành công");
     toast("✅ Đã tự động cập nhật đội vào vòng tiếp theo!");
+    resolveKnockoutBracketPositions(); // ✅ ADD HERE
     renderMatchesByRound();
   }else{
     console.log("[syncKO] ℹ️ Không có thay đổi");
@@ -927,38 +1030,28 @@ function startTimeout(){timeoutRunning=true;el("timeout-display").classList.add(
 function stopTimeout(){timeoutRunning=false;if(timeoutInterval){clearInterval(timeoutInterval);timeoutInterval=null}el("timeout-display").classList.remove('running')}
 function updateTimeoutDisplay(){var m=Math.floor(timeoutElapsed/60),s=timeoutElapsed%60;el("timeout-display").textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s}
 
-// --- CÁC HÀM MỚI CHO CHỨC NĂNG XÚC XẮC VÀ FAIRPLAY ---
-
-// 1. Khi bấm nút Quay số, hiện popup Fairplay trước
 function openDiceModal() {
   if(!currentMatchData) return;
   el("fairplay-modal").classList.add("show");
 }
 
-// 2. Đóng popup Fairplay và chuyển sang giao diện Quay số
 function closeFairplayModal() {
   el("fairplay-modal").classList.remove("show");
-  
-  // Reset trạng thái modal quay số
   el("dice-main-display").textContent = "?";
   el("dice-main-display").className = "dice-display"; 
   el("dice-main-result").textContent = "";
   el("dice-status-text").textContent = "Sẵn sàng quay số";
   el("dice-main-btn").disabled = false;
   el("dice-main-btn").textContent = "🎲 QUAY SỐ";
-  
-  // Hiển thị modal quay số
   el("dice-modal").classList.add("show");
 }
 
-// 3. Đóng hoàn toàn modal quay số (về màn hình ghi điểm)
 function closeDiceModal() {
   if(diceRollInterval) clearInterval(diceRollInterval);
   if(diceRollTimeout) clearTimeout(diceRollTimeout);
   el("dice-modal").classList.remove("show");
 }
 
-// 4. Logic quay số (giữ nguyên như cũ)
 function rollDice() {
   var displayEl = el("dice-main-display");
   var btnEl = el("dice-main-btn");
@@ -1011,6 +1104,7 @@ function startRealtime(){
         }
         if(changed){
           DATA.matches=(m.data||[]).slice();
+          resolveKnockoutBracketPositions(); // ✅ ADD HERE
           renderMatchesByRound();
           if(currentMatchId&&currentMatchData){
             var cm=DATA.matches.find(function(x){return x&&x.id===currentMatchId});
