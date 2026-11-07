@@ -1037,7 +1037,6 @@ function computeKOTeams() {
         code: rule.code, h_pos: homeTeam ? homeTeam.pos : rule.home, a_pos: awayTeam ? awayTeam.pos : rule.away
       });
     });
-    // ✅ ĐÃ SỬA LOGIC BÁN KẾT (BK) THEO YÊU CẦU: BK1 = TK1 vs TK3, BK2 = TK2 vs TK4
     matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK3"});
     matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK2", a_pos: "Thắng TK4"});
     matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -1061,7 +1060,6 @@ function computeKOTeams() {
   if (numGroups === 2) {
     var pos1A = advancing[0].pos1, pos2A = advancing[0].pos2;
     var pos1B = advancing[1].pos1, pos2B = advancing[1].pos2;
-    // ✅ LOGIC BÁN KẾT (2 BẢNG): 1A vs 1B và 2A vs 2B (không có vòng TK)
     result.matches.push({round: 3, slot: 13, h: pos1A.teamId, a: pos1B.teamId, code: "BK1", h_pos: pos1A.pos, a_pos: pos1B.pos});
     result.matches.push({round: 3, slot: 14, h: pos2A.teamId, a: pos2B.teamId, code: "BK2", h_pos: pos2A.pos, a_pos: pos2B.pos});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -1087,7 +1085,6 @@ function computeKOTeams() {
     result.matches.push({round: 2, slot: 10, h: team1B.teamId, a: team3_1 ? team3_1.teamId : null, code: "TK2", h_pos: team1B.pos, a_pos: team3_1 ? team3_1.pos : "3-1"});
     result.matches.push({round: 2, slot: 11, h: team2A.teamId, a: team1C.teamId, code: "TK3", h_pos: team2A.pos, a_pos: team1C.pos});
     result.matches.push({round: 2, slot: 12, h: team2B.teamId, a: team2C.teamId, code: "TK4", h_pos: team2B.pos, a_pos: team2C.pos});
-    // ✅ ĐÃ SỬA LOGIC BÁN KẾT (BK) THEO YÊU CẦU: BK1 = TK1 vs TK3, BK2 = TK2 vs TK4
     result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK3"});
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK2", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -1141,7 +1138,6 @@ function computeKOTeams() {
     result.matches.push({round: 2, slot: 10, h: null, a: null, code: "TK2", h_pos: "Thắng V16-4", a_pos: "Thắng V16-5"});
     result.matches.push({round: 2, slot: 11, h: null, a: null, code: "TK3", h_pos: "Thắng V16-3", a_pos: "Thắng V16-6"});
     result.matches.push({round: 2, slot: 12, h: null, a: null, code: "TK4", h_pos: "Thắng V16-2", a_pos: "Thắng V16-7"});
-    // ✅ ĐÃ SỬA LOGIC BÁN KẾT (BK) THEO YÊU CẦU: BK1 = TK1 vs TK3, BK2 = TK2 vs TK4
     result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK3"});
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK2", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -1751,16 +1747,42 @@ function renderMatchRow(m, isKO) {
   else if (status === 'finished') rowClass += " finished";
   var H = '<div class="'+rowClass+'" data-match-id="'+m.id+'">';
   H += '<div class="m-code">'+esc(displayCode(m))+'</div>';
-  var homeClass = m.home_team_id ? "home" : "home tbd-placeholder";
-  var awayClass = m.away_team_id ? "away" : "away tbd-placeholder";
-  H += '<div class="m-team '+homeClass+'">'+esc(hn)+'</div>';
+  
+  if (isKO) {
+    var homeOptions = '<option value="">-- Chọn đội --</option>';
+    DATA.teams.forEach(function(t) {
+      homeOptions += '<option value="'+t.id+'" '+(m.home_team_id === t.id ? 'selected' : '')+'>'+esc(sn(t.name))+'</option>';
+    });
+    H += '<div style="display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-end">';
+    H += '<select id="ko-home-'+m.id+'" style="flex:1;background:#0d1626;border:1px solid var(--ln);border-radius:6px;padding:4px;color:var(--tx);font-size:11px;font-weight:700;text-align:right;max-width:150px;">'+homeOptions+'</select>';
+    H += '<button class="btn btn-p btn-xs" onclick="saveKoTeam(\''+m.id+'\', \'home\', document.getElementById(\'ko-home-'+m.id+'\').value)" title="Lưu">💾</button>';
+    H += '</div>';
+  } else {
+    var homeClass = m.home_team_id ? "home" : "home tbd-placeholder";
+    H += '<div class="m-team '+homeClass+'">'+esc(hn)+'</div>';
+  }
+
   H += '<div class="m-score-box">';
   H += '<input class="m-score-input" type="number" min="0" max="99" data-field="home_score" value="'+(m.home_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'home_score\',this.value)"/>';
   H += '<span class="m-sep">:</span>';
   H += '<input class="m-score-input" type="number" min="0" max="99" data-field="away_score" value="'+(m.away_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'away_score\',this.value)"/>';
   H += '</div>';
   H += '<button class="m-reset-btn" onclick="resetMatchScore(\''+m.id+'\', event)" title="Xóa tỷ số">🗑</button>';
-  H += '<div class="m-team '+awayClass+'">'+esc(an)+'</div>';
+
+  if (isKO) {
+    var awayOptions = '<option value="">-- Chọn đội --</option>';
+    DATA.teams.forEach(function(t) {
+      awayOptions += '<option value="'+t.id+'" '+(m.away_team_id === t.id ? 'selected' : '')+'>'+esc(sn(t.name))+'</option>';
+    });
+    H += '<div style="display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-start">';
+    H += '<button class="btn btn-p btn-xs" onclick="saveKoTeam(\''+m.id+'\', \'away\', document.getElementById(\'ko-away-'+m.id+'\').value)" title="Lưu">💾</button>';
+    H += '<select id="ko-away-'+m.id+'" style="flex:1;background:#0d1626;border:1px solid var(--ln);border-radius:6px;padding:4px;color:var(--tx);font-size:11px;font-weight:700;text-align:left;max-width:150px;">'+awayOptions+'</select>';
+    H += '</div>';
+  } else {
+    var awayClass = m.away_team_id ? "away" : "away tbd-placeholder";
+    H += '<div class="m-team '+awayClass+'">'+esc(an)+'</div>';
+  }
+
   var servingText = '';
   if (status === 'live' && m.serving_player_id) {
     var player = DATA.players.find(p => p.id === m.serving_player_id);
@@ -1773,6 +1795,22 @@ function renderMatchRow(m, isKO) {
   H += '<button class="m-ref-btn" onclick="openRefModal(\''+m.id+'\')" title="'+btnTitle+'">🎯</button>';
   H += '</div>';
   return H;
+}
+
+async function saveKoTeam(matchId, side, teamId) {
+  var update = {};
+  update[side + '_team_id'] = teamId || null;
+  try {
+    await sb.from("matches").update(update).eq("id", matchId);
+    var m = DATA.matches.find(x => x.id === matchId);
+    if (m) {
+      m[side + '_team_id'] = teamId || null;
+    }
+    toast("✅ Đã cập nhật đội cho trận đấu");
+    render();
+  } catch(e) {
+    alert("❌ Lỗi: " + e.message);
+  }
 }
 
 function renderKOGroup(title, cls, matches) {
