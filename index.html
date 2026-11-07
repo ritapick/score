@@ -432,18 +432,39 @@ function getMatchTeamName(teamId, bracketPos) {
   return t ? (t.name || 'TBD') : 'TBD';
 }
 
+// ✅ HÀM KIỂM TRA TẤT CẢ CÁC TRẬN ĐƯỢC LỌC ĐÃ FINISH CHƯA
+function areMatchesFinished(filterFn) {
+  var matches = DATA.matches.filter(filterFn);
+  if (matches.length === 0) return true;
+  return matches.every(function(m) {
+    var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
+    return status === 'finished' || status === 'completed' || status === 'bye';
+  });
+}
+
+// ✅ NÂNG CẤP: Ẩn tên đội ở các vòng loại trực tiếp nếu vòng trước chưa hoàn tất (FIN)
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
-  var isTK = Number(match.round) === 2 || (match.match_code && String(match.match_code).toUpperCase().includes('TK'));
-  if (isTK) {
-    var allGroupMatchesScored = DATA.matches.every(function(m) {
-      if (!m.group_id) return true;
-      var hasScore = Number(m.home_score) > 0 || Number(m.away_score) > 0;
-      var isDone = m.match_status === 'completed' || m.match_status === 'finished' || m.match_status === 'bye' || m.match_status === 'live';
-      return hasScore || isDone;
-    });
-    if (!allGroupMatchesScored) return isHome ? "TEAM A" : "TEAM B";
+  
+  var round = Number(match.round);
+  
+  if (round === 2) {
+    // Tứ kết: chờ tất cả trận vòng bảng fin
+    if (!areMatchesFinished(function(m) { return m.group_id; })) {
+      return isHome ? "TEAM A" : "TEAM B";
+    }
+  } else if (round === 3) {
+    // Bán kết: chờ tất cả trận tứ kết fin
+    if (!areMatchesFinished(function(m) { return Number(m.round) === 2; })) {
+      return isHome ? "TEAM A" : "TEAM B";
+    }
+  } else if (round === 4) {
+    // Chung kết: chờ tất cả trận bán kết fin
+    if (!areMatchesFinished(function(m) { return Number(m.round) === 3; })) {
+      return isHome ? "TEAM A" : "TEAM B";
+    }
   }
+  
   return getMatchTeamName(teamId, bracketPos);
 }
 
