@@ -88,7 +88,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
 .m-serving-info{font-size:9px;color:var(--or);white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis}
 
-/* 🌟 Styles cho chế độ thiết lập thủ công vòng KO */
 .ko-side{display:flex;align-items:center;gap:3px;flex:1;min-width:0}
 .ko-side.home{justify-content:flex-end}
 .ko-side.away{justify-content:flex-start}
@@ -189,83 +188,26 @@ td.pf{font-family:monospace;color:var(--cy)}
   main{padding:8px}
   .fg{grid-template-columns:1fr 1fr}
   .group-assign{grid-template-columns:1fr}
-  
-  /* 🌟 Tên đội vòng bảng & KO: hiển thị đầy đủ, xuống dòng khi dài */
-  .m-team{
-    font-size:10px;
-    white-space:normal;
-    word-break:break-word;
-    overflow:visible;
-    text-overflow:clip;
-    line-height:1.25;
-    max-width:none;
-  }
-  td.team-name{
-    white-space:normal;
-    word-break:break-word;
-    overflow:visible;
-    text-overflow:clip;
-    line-height:1.25;
-    font-size:10px;
-    max-width:none;
-  }
-  
-  /* 🌟 Ô điểm thu gọn nhưng đủ 3 ký tự */
+  .m-team{font-size:10px;white-space:normal;word-break:break-word;overflow:visible;text-overflow:clip;line-height:1.25;max-width:none}
+  td.team-name{white-space:normal;word-break:break-word;overflow:visible;text-overflow:clip;line-height:1.25;font-size:10px;max-width:none}
   .m-score-input{width:46px;font-size:14px}
   .m-score-box{padding:2px 3px;gap:1px}
   .m-sep{font-size:13px}
-  
   .m-reset-btn{padding:4px 6px;font-size:10px}
   .m-serving-info{max-width:60px;font-size:8px}
   .ref-score-center{min-width:100px;padding:6px 4px}
   .score-btn{width:34px;height:34px;font-size:20px}
   .score-val{font-size:24px;min-width:36px}
   .ref-serve-row{grid-template-columns:1fr;gap:8px}
-  
-  /* 🌟 Match row KO trên mobile: cho phép xuống dòng */
-  .match-row{
-    flex-wrap:wrap;
-    align-items:flex-start;
-    gap:4px;
-    padding:6px;
-  }
-  .match-row .m-code{
-    flex:0 0 100%;
-    text-align:left;
-    margin-bottom:2px;
-    font-size:10px;
-  }
-  .match-row .ko-side{
-    flex:1 1 30%;
-    min-width:0;
-  }
-  .match-row .ko-team-select{
-    font-size:10px;
-    padding:4px 3px;
-    max-width:none;
-  }
-  .match-row .ko-manual-toggle{
-    font-size:9px;
-    padding:2px 4px;
-  }
-  .match-row .m-score-box{
-    flex:0 0 auto;
-    order:2;
-  }
-  .match-row .m-reset-btn{
-    flex:0 0 auto;
-    order:3;
-  }
-  .match-row .m-status-badge{
-    flex:0 0 auto;
-    order:4;
-  }
-  .match-row .m-serving-info{
-    flex:0 0 100%;
-    order:5;
-    margin-top:2px;
-  }
-  
+  .match-row{flex-wrap:wrap;align-items:flex-start;gap:4px;padding:6px}
+  .match-row .m-code{flex:0 0 100%;text-align:left;margin-bottom:2px;font-size:10px}
+  .match-row .ko-side{flex:1 1 30%;min-width:0}
+  .match-row .ko-team-select{font-size:10px;padding:4px 3px;max-width:none}
+  .match-row .ko-manual-toggle{font-size:9px;padding:2px 4px}
+  .match-row .m-score-box{flex:0 0 auto;order:2}
+  .match-row .m-reset-btn{flex:0 0 auto;order:3}
+  .match-row .m-status-badge{flex:0 0 auto;order:4}
+  .match-row .m-serving-info{flex:0 0 100%;order:5;margin-top:2px}
   .modal{width:calc(100% - 32px);padding:12px}
   .ko-rule-option{padding:8px;margin-bottom:6px}
   .ko-rule-title{font-size:11px}
@@ -438,8 +380,6 @@ var DATA = {
   _creatingKO: false,
   _savedGroups: new Set(),
   koRule: 1,
-  // 🌟 Lưu trạng thái thiết lập thủ công cho từng side của từng trận KO
-  // Format: { matchId: { home: true/false, away: true/false } }
   _manualKoOverrides: {}
 };
 var currentRefMatchId = null;
@@ -447,6 +387,10 @@ var realtimeInterval = null;
 var timeoutElapsed = 0;
 var timeoutInterval = null;
 var timeoutRunning = false;
+
+// 🌟 Debounce cho toast sync KO - tránh spam toast
+var _lastKoSyncToastTime = 0;
+var KO_SYNC_TOAST_DEBOUNCE = 5000; // Chỉ hiện toast tối đa 1 lần mỗi 5 giây
 
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -468,7 +412,6 @@ function generateUniqueCode() {
   return 'G' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🌟 Helpers cho manual override
 function isManualOverride(matchId, side) {
   return DATA._manualKoOverrides[matchId] && DATA._manualKoOverrides[matchId][side] === true;
 }
@@ -517,8 +460,6 @@ function resolveKnockoutBracketPositions() {
   koMatches.forEach(function(m) {
     var round = Number(m.round);
     var slot = Number(m.bracket_slot);
-    
-    // 🌟 Bỏ qua nếu side đang ở chế độ thủ công
     var homeManual = isManualOverride(m.id, 'home');
     var awayManual = isManualOverride(m.id, 'away');
 
@@ -617,8 +558,6 @@ async function selE(eid) {
   try {
     var savedRule = localStorage.getItem('ko_rule_' + eid);
     DATA.koRule = savedRule ? parseInt(savedRule) : 1;
-    
-    // 🌟 Load manual overrides cho nội dung này
     loadManualOverrides();
 
     var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name,skill_rating))").eq("event_id", eid);
@@ -706,7 +645,6 @@ function updateMatchRowsDOM() {
     if (scoreH && document.activeElement !== scoreH) scoreH.value = m.home_score === 0 ? "" : m.home_score;
     if (scoreA && document.activeElement !== scoreA) scoreA.value = m.away_score === 0 ? "" : m.away_score;
     
-    // 🌟 Cập nhật dropdown KO nếu có
     var koHomeSel = row.querySelector('.ko-team-select[data-side="home"]');
     var koAwaySel = row.querySelector('.ko-team-select[data-side="away"]');
     if (koHomeSel && document.activeElement !== koHomeSel) koHomeSel.value = m.home_team_id || "";
@@ -1262,14 +1200,23 @@ async function createKO() {
   }
 }
 
-// 🌟 ĐÃ NÂNG CẤP: tryAutoSyncKO bỏ qua các side đang ở chế độ thủ công
+// 🌟 ĐÃ SỬA LỖI: tryAutoSyncKO chỉ sync các trận mà logic đã xác định được đội cụ thể
+// Bỏ qua các trận BK/CK/V16->TK mà computeKOTeams() trả về h:null, a:null
+// (vì những trận này được fill bởi resolveKnockoutBracketPositions(), không phải bởi computeKOTeams)
 async function tryAutoSyncKO() {
   if (!DATA.kStage) return false;
   var koData = computeKOTeams(); 
   if (!koData) return false;
   var updated = false;
+  var updatedMatches = [];
+  
   for (var i = 0; i < koData.matches.length; i++) {
     var km = koData.matches[i];
+    
+    // 🌟 FIX: Bỏ qua trận mà computeKOTeams() chưa xác định được đội nào
+    // (các trận này sẽ được fill bởi resolveKnockoutBracketPositions() từ kết quả trận trước)
+    if (km.h === null && km.a === null) continue;
+    
     var m = DATA.matches.find(x => x.stage_id === DATA.kStage.id && Number(x.bracket_slot) === Number(km.slot));
     if (!m) continue;
     
@@ -1279,26 +1226,39 @@ async function tryAutoSyncKO() {
     var needUpdate = {};
     var hasUpdate = false;
     
-    if (!homeManual && m.home_team_id !== km.h) {
+    // Chỉ update nếu: side KHÔNG manual VÀ logic đã xác định đội (km.h !== null) VÀ khác DB hiện tại
+    if (!homeManual && km.h !== null && m.home_team_id !== km.h) {
       needUpdate.home_team_id = km.h;
       m.home_team_id = km.h;
       hasUpdate = true;
     }
-    if (!awayManual && m.away_team_id !== km.a) {
+    if (!awayManual && km.a !== null && m.away_team_id !== km.a) {
       needUpdate.away_team_id = km.a;
       m.away_team_id = km.a;
       hasUpdate = true;
     }
     
     if (hasUpdate) {
-      await sb.from("matches").update(needUpdate).eq("id", m.id);
-      updated = true;
+      try {
+        await sb.from("matches").update(needUpdate).eq("id", m.id);
+        updated = true;
+        updatedMatches.push(displayCode(m));
+      } catch(e) {
+        console.error("Sync KO error:", e);
+      }
     }
   }
+  
   if (updated) {
-    toast("✅ Đã tự động cập nhật đội vào vòng KO");
+    // 🌟 Debounce toast: chỉ hiện tối đa 1 lần mỗi 5 giây để tránh spam
+    var now = Date.now();
+    if (now - _lastKoSyncToastTime > KO_SYNC_TOAST_DEBOUNCE) {
+      toast("✅ Đã cập nhật: " + updatedMatches.join(", "));
+      _lastKoSyncToastTime = now;
+    }
     resolveKnockoutBracketPositions();
-    render();
+    // Không gọi render() ở đây để tránh vòng lặp - updateMatchRowsDOM() sẽ cập nhật UI
+    updateMatchRowsDOM();
   }
   return updated;
 }
@@ -1849,7 +1809,6 @@ function renderStandingsTable(gid, st) {
   return H;
 }
 
-// 🌟 ĐÃ NÂNG CẤP: Render trận KO với checkbox thủ công và dropdown auto-save
 function renderMatchRow(m, isKO) {
   var hn = m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD");
   var an = m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD");
@@ -1866,7 +1825,6 @@ function renderMatchRow(m, isKO) {
   H += '<div class="m-code">'+esc(displayCode(m))+'</div>';
   
   if (isKO) {
-    // ===== HOME SIDE =====
     var isHomeManual = isManualOverride(m.id, 'home');
     var homeOptions = '<option value="">-- Chọn đội --</option>';
     DATA.teams.forEach(function(t) {
@@ -1891,7 +1849,6 @@ function renderMatchRow(m, isKO) {
   H += '<button class="m-reset-btn" onclick="resetMatchScore(\''+m.id+'\', event)" title="Xóa tỷ số">🗑</button>';
 
   if (isKO) {
-    // ===== AWAY SIDE =====
     var isAwayManual = isManualOverride(m.id, 'away');
     var awayOptions = '<option value="">-- Chọn đội --</option>';
     DATA.teams.forEach(function(t) {
@@ -1920,7 +1877,6 @@ function renderMatchRow(m, isKO) {
   return H;
 }
 
-// 🌟 Bật/tắt chế độ thủ công cho 1 side của trận KO
 async function toggleManualKo(matchId, side, checked) {
   if (!DATA._manualKoOverrides[matchId]) {
     DATA._manualKoOverrides[matchId] = { home: false, away: false };
@@ -1931,12 +1887,10 @@ async function toggleManualKo(matchId, side, checked) {
   var sel = el('ko-' + side + '-' + matchId);
   
   if (checked) {
-    // Bật chế độ thủ công: mở dropdown, giữ nguyên giá trị hiện tại
     if (sel) {
       sel.disabled = false;
       sel.classList.add('manual-on');
     }
-    // Cập nhật UI cho label
     var row = document.querySelector('[data-match-id="' + matchId + '"]');
     if (row) {
       var labels = row.querySelectorAll('.ko-manual-toggle');
@@ -1949,18 +1903,15 @@ async function toggleManualKo(matchId, side, checked) {
     }
     toast("🔒 Đã khóa đội này ở chế độ thủ công");
   } else {
-    // Tắt chế độ thủ công: khóa dropdown, trả về giá trị logic
     if (sel) {
       sel.disabled = true;
       sel.classList.remove('manual-on');
     }
     
-    // Tính lại giá trị logic
     resolveKnockoutBracketPositions();
     var m = DATA.matches.find(x => x.id === matchId);
     if (m) {
       var logicTeamId = side === 'home' ? m.home_team_id : m.away_team_id;
-      // Cập nhật DB với giá trị logic
       try {
         await sb.from("matches").update({ [side + '_team_id']: logicTeamId || null }).eq("id", matchId);
         m[side + '_team_id'] = logicTeamId || null;
@@ -1981,12 +1932,10 @@ async function toggleManualKo(matchId, side, checked) {
     }
     toast("🔓 Đã trả về chế độ tự động");
     
-    // Trigger auto sync cho các trận sau
     await tryAutoSyncKO();
   }
 }
 
-// 🌟 Tự động lưu ngay khi chọn đội từ dropdown (không cần nút 💾)
 async function onKoTeamChange(matchId, side, teamId) {
   var update = {};
   update[side + '_team_id'] = teamId || null;
@@ -1997,7 +1946,6 @@ async function onKoTeamChange(matchId, side, teamId) {
       m[side + '_team_id'] = teamId || null;
     }
     
-    // Cập nhật nhánh đấu các trận sau (BK, CK) dựa trên giá trị mới
     resolveKnockoutBracketPositions();
     await tryAutoSyncKO();
     
