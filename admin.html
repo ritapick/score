@@ -42,7 +42,7 @@ input[type="number"]{color-scheme:dark}
 table{width:100%;border-collapse:collapse;font-size:11px;min-width:400px}
 th,td{padding:6px 4px;border-bottom:1px solid var(--ln);text-align:center}
 th{color:var(--mu);font-size:9px;text-transform:uppercase;font-weight:800;background:rgba(26,37,64,.5)}
-td.team-name{text-align:left;font-weight:700;color:var(--tx);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.team-name{text-align:left;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 tr.qualify{background:rgba(163,230,53,.08)}
 tr.qualify td.rank{color:var(--li)}
 tr.qualify td.rank::before{content:"✓ ";color:var(--li);font-weight:900}
@@ -61,18 +61,18 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-row.ck{border-left:3px solid var(--li);background:rgba(163,230,53,.05)}
 .match-row.bye{border-left:3px solid var(--cy);background:rgba(34,211,238,.05)}
 @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 4px rgba(248,113,113,0)}}
-.m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:11px;min-width:30px;text-align:center}
+.m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:11px;min-width:30px;text-align:center;flex-shrink:0}
 .match-row.ko .m-code{color:var(--or)}
 .match-row.ck .m-code{color:var(--li);font-size:12px}
 .match-row.bye .m-code{color:var(--cy)}
-.m-team{flex:1;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-team{flex:1;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .m-team.home{color:var(--li);text-align:right}
 .m-team.away{color:var(--cy);text-align:left}
 .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
 .m-team.tbd-placeholder{color:var(--mu);font-style:italic;font-weight:600}
 
 .m-score-box{display:flex;align-items:center;gap:2px;background:#0d1626;padding:3px 5px;border-radius:6px;border:1px solid var(--ln);flex-shrink:0}
-.m-score-input{width:48px;text-align:center;background:transparent;border:none;color:var(--tx);font-weight:800;font-size:16px;font-family:monospace}
+.m-score-input{width:64px;text-align:center;background:transparent;border:none;color:var(--tx);font-weight:800;font-size:16px;font-family:monospace}
 .m-score-input:focus{outline:none;border-bottom:1px solid var(--cy)}
 .m-sep{color:var(--mu);font-weight:800;font-size:14px}
 
@@ -80,8 +80,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .m-reset-btn:active{transform:scale(.95)}
 .m-reset-btn:hover{background:rgba(248,113,113,.3)}
 
-.m-ref-btn{background:var(--cy);color:#0b1220;border:none;border-radius:6px;padding:5px 7px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.m-ref-btn:active{transform:scale(.95)}
 .m-status-badge{font-size:9px;font-weight:800;padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0}
 .m-status-badge.live{background:var(--rd);color:#fff;animation:blink 1s infinite}
 .m-status-badge.finished{background:var(--li);color:#0b1220}
@@ -89,6 +87,18 @@ td.pf{font-family:monospace;color:var(--cy)}
 .m-status-badge.bye{background:var(--cy);color:#0b1220}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
 .m-serving-info{font-size:9px;color:var(--or);white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+
+.ko-side{display:flex;align-items:center;gap:3px;flex:1;min-width:0}
+.ko-side.home{justify-content:flex-end}
+.ko-side.away{justify-content:flex-start}
+.ko-team-select{flex:1;min-width:0;background:#0d1626;border:1px solid var(--ln);border-radius:6px;padding:5px 4px;color:var(--tx);font-size:11px;font-weight:700;text-align:center;max-width:180px}
+.ko-team-select:focus{outline:none;border-color:var(--or)}
+.ko-team-select:disabled{opacity:.75;cursor:not-allowed;background:rgba(13,22,38,.6);color:var(--mu)}
+.ko-team-select.manual-on{border-color:var(--or);background:rgba(251,146,60,.08);color:var(--or)}
+.ko-manual-toggle{display:inline-flex;align-items:center;gap:2px;cursor:pointer;flex-shrink:0;padding:3px 5px;border-radius:5px;background:rgba(148,163,184,.1);border:1px solid var(--ln);transition:.15s;font-size:10px;color:var(--mu);user-select:none}
+.ko-manual-toggle:hover{background:rgba(251,146,60,.15);border-color:var(--or);color:var(--or)}
+.ko-manual-toggle.active{background:rgba(251,146,60,.2);border-color:var(--or);color:var(--or)}
+.ko-manual-toggle input{width:12px;height:12px;margin:0;accent-color:var(--or);cursor:pointer}
 
 .reset-bar{background:rgba(248,113,113,.08);border:1px dashed rgba(248,113,113,.4);border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .reset-bar .info-text{font-size:11px;color:var(--mu);flex:1}
@@ -178,16 +188,26 @@ td.pf{font-family:monospace;color:var(--cy)}
   main{padding:8px}
   .fg{grid-template-columns:1fr 1fr}
   .group-assign{grid-template-columns:1fr}
-  .m-team{font-size:9px; white-space: normal; word-break: break-word; max-width: none; overflow: visible; text-overflow: clip; line-height: 1.2;}
-  .m-score-input{width:42px;font-size:14px}
+  .m-team{font-size:10px;white-space:normal;word-break:break-word;overflow:visible;text-overflow:clip;line-height:1.25;max-width:none}
+  td.team-name{white-space:normal;word-break:break-word;overflow:visible;text-overflow:clip;line-height:1.25;font-size:10px;max-width:none}
+  .m-score-input{width:46px;font-size:14px}
+  .m-score-box{padding:2px 3px;gap:1px}
+  .m-sep{font-size:13px}
   .m-reset-btn{padding:4px 6px;font-size:10px}
-  .m-ref-btn{padding:5px 6px;font-size:9px}
   .m-serving-info{max-width:60px;font-size:8px}
   .ref-score-center{min-width:100px;padding:6px 4px}
   .score-btn{width:34px;height:34px;font-size:20px}
   .score-val{font-size:24px;min-width:36px}
   .ref-serve-row{grid-template-columns:1fr;gap:8px}
-  .match-row { align-items: flex-start; }
+  .match-row{flex-wrap:wrap;align-items:flex-start;gap:4px;padding:6px}
+  .match-row .m-code{flex:0 0 100%;text-align:left;margin-bottom:2px;font-size:10px}
+  .match-row .ko-side{flex:1 1 30%;min-width:0}
+  .match-row .ko-team-select{font-size:10px;padding:4px 3px;max-width:none}
+  .match-row .ko-manual-toggle{font-size:9px;padding:2px 4px}
+  .match-row .m-score-box{flex:0 0 auto;order:2}
+  .match-row .m-reset-btn{flex:0 0 auto;order:3}
+  .match-row .m-status-badge{flex:0 0 auto;order:4}
+  .match-row .m-serving-info{flex:0 0 100%;order:5;margin-top:2px}
   .modal{width:calc(100% - 32px);padding:12px}
   .ko-rule-option{padding:8px;margin-bottom:6px}
   .ko-rule-title{font-size:11px}
@@ -359,13 +379,18 @@ var DATA = {
   acc: {s1:false, s2:true, s3:false, s4:false},
   _creatingKO: false,
   _savedGroups: new Set(),
-  koRule: 1
+  koRule: 1,
+  _manualKoOverrides: {}
 };
 var currentRefMatchId = null;
 var realtimeInterval = null;
 var timeoutElapsed = 0;
 var timeoutInterval = null;
 var timeoutRunning = false;
+
+// 🌟 Debounce cho toast sync KO - tránh spam toast
+var _lastKoSyncToastTime = 0;
+var KO_SYNC_TOAST_DEBOUNCE = 5000; // Chỉ hiện toast tối đa 1 lần mỗi 5 giây
 
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -387,6 +412,24 @@ function generateUniqueCode() {
   return 'G' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
+function isManualOverride(matchId, side) {
+  return DATA._manualKoOverrides[matchId] && DATA._manualKoOverrides[matchId][side] === true;
+}
+function saveManualOverrides() {
+  if (DATA.eid) {
+    localStorage.setItem('ko_manual_' + DATA.eid, JSON.stringify(DATA._manualKoOverrides));
+  }
+}
+function loadManualOverrides() {
+  if (DATA.eid) {
+    var saved = localStorage.getItem('ko_manual_' + DATA.eid);
+    try { DATA._manualKoOverrides = saved ? JSON.parse(saved) : {}; } 
+    catch(e) { DATA._manualKoOverrides = {}; }
+  } else {
+    DATA._manualKoOverrides = {};
+  }
+}
+
 function resolveKnockoutBracketPositions() {
   var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
   var positionToTeamId = {};
@@ -401,91 +444,55 @@ function resolveKnockoutBracketPositions() {
       });
     });
   }
-  
-  var v16Matches = koMatches.filter(function(m) { return Number(m.round) === 1; });
-  v16Matches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
-    }
-  });
-  
-  var tkMatches = koMatches.filter(function(m) { return Number(m.round) === 2; });
-  tkMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromTK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromTK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
-    }
-  });
-  
-  var bkMatches = koMatches.filter(function(m) { return Number(m.round) === 3; });
-  bkMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromBK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromBK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
-    }
-  });
-  
-  var ckMatches = koMatches.filter(function(m) { return Number(m.round) === 4; });
-  ckMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromBK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromBK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
-    }
-  });
-}
 
-function findWinnerFromV16(positionRef) {
-  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
-  var v16Match = DATA.matches.find(function(m) { 
-    return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum; 
-  });
-  if (!v16Match) return null;
-  var h = Number(v16Match.home_score) || 0;
-  var a = Number(v16Match.away_score) || 0;
-  if (h > a) return v16Match.home_team_id;
-  if (a > h) return v16Match.away_team_id;
-  return null;
-}
+  function getWinnerBySlot(slot) {
+    var match = DATA.matches.find(function(m) { return Number(m.bracket_slot) === Number(slot); });
+    if (!match) return null;
+    var h = Number(match.home_score) || 0;
+    var a = Number(match.away_score) || 0;
+    if (match.match_status === 'finished' || match.match_status === 'completed' || h > 0 || a > 0) {
+      if (h > a) return match.home_team_id;
+      if (a > h) return match.away_team_id;
+    }
+    return null;
+  }
 
-function findWinnerFromTK(positionRef) {
-  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
-  var tkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 2 && String(displayCode(m)).includes('TK' + matchNum); 
-  });
-  if (!tkMatch) return null;
-  var h = Number(tkMatch.home_score) || 0;
-  var a = Number(tkMatch.away_score) || 0;
-  if (h > a) return tkMatch.home_team_id;
-  if (a > h) return tkMatch.away_team_id;
-  return null;
-}
+  koMatches.forEach(function(m) {
+    var round = Number(m.round);
+    var slot = Number(m.bracket_slot);
+    var homeManual = isManualOverride(m.id, 'home');
+    var awayManual = isManualOverride(m.id, 'away');
 
-function findWinnerFromBK(positionRef) {
-  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
-  var bkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 3 && String(displayCode(m)).includes('BK' + matchNum); 
+    if (round === 1) {
+      if (!homeManual && !m.home_team_id && m.home_bracket_position) m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
+      if (!awayManual && !m.away_team_id && m.away_bracket_position) m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
+    } else if (round === 2) {
+      var sourceSlots = [];
+      if (slot === 9) sourceSlots = [1, 8];
+      else if (slot === 10) sourceSlots = [4, 5];
+      else if (slot === 11) sourceSlots = [3, 6];
+      else if (slot === 12) sourceSlots = [2, 7];
+
+      if (sourceSlots.length === 2) {
+        if (!homeManual && !m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
+        if (!awayManual && !m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
+      }
+    } else if (round === 3) {
+      var sourceSlots = [];
+      if (slot === 13) sourceSlots = [9, 11];
+      else if (slot === 14) sourceSlots = [10, 12];
+
+      if (sourceSlots.length === 2) {
+        if (!homeManual && !m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
+        if (!awayManual && !m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
+      }
+    } else if (round === 4) {
+      if (slot === 15) {
+        if (!homeManual && !m.home_team_id) m.home_team_id = getWinnerBySlot(13);
+        if (!awayManual && !m.away_team_id) m.away_team_id = getWinnerBySlot(14);
+      }
+    }
   });
-  if (!bkMatch) return null;
-  var h = Number(bkMatch.home_score) || 0;
-  var a = Number(bkMatch.away_score) || 0;
-  if (h > a) return bkMatch.home_team_id;
-  if (a > h) return bkMatch.away_team_id;
-  return null;
 }
 
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
@@ -551,6 +558,7 @@ async function selE(eid) {
   try {
     var savedRule = localStorage.getItem('ko_rule_' + eid);
     DATA.koRule = savedRule ? parseInt(savedRule) : 1;
+    loadManualOverrides();
 
     var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name,skill_rating))").eq("event_id", eid);
     DATA.teams = (t.data || []).map(function(x) {
@@ -577,7 +585,6 @@ async function selE(eid) {
     });
     
     resolveKnockoutBracketPositions();
-    
     render();
     startRealtime();
   } catch(e) { console.error(e); }
@@ -595,7 +602,8 @@ function startRealtime() {
           var old = DATA.matches.find(x => x.id === m.data[i].id);
           if (!old || old.home_score !== m.data[i].home_score || old.away_score !== m.data[i].away_score || 
               old.match_status !== m.data[i].match_status || old.serving_team !== m.data[i].serving_team || 
-              old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id) {
+              old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id ||
+              old.home_team_id !== m.data[i].home_team_id || old.away_team_id !== m.data[i].away_team_id) {
             changed = true; break;
           }
         }
@@ -634,19 +642,26 @@ function updateMatchRowsDOM() {
     var servingInfo = row.querySelector('.m-serving-info');
     var scoreH = row.querySelector('.m-score-input[data-field="home_score"]');
     var scoreA = row.querySelector('.m-score-input[data-field="away_score"]');
-    if (scoreH && document.activeElement !== scoreH) scoreH.value = m.home_score || 0;
-    if (scoreA && document.activeElement !== scoreA) scoreA.value = m.away_score || 0;
+    if (scoreH && document.activeElement !== scoreH) scoreH.value = m.home_score === 0 ? "" : m.home_score;
+    if (scoreA && document.activeElement !== scoreA) scoreA.value = m.away_score === 0 ? "" : m.away_score;
+    
+    var koHomeSel = row.querySelector('.ko-team-select[data-side="home"]');
+    var koAwaySel = row.querySelector('.ko-team-select[data-side="away"]');
+    if (koHomeSel && document.activeElement !== koHomeSel) koHomeSel.value = m.home_team_id || "";
+    if (koAwaySel && document.activeElement !== koAwaySel) koAwaySel.value = m.away_team_id || "";
+    
     var status = m.match_status || 'scheduled';
     row.classList.remove('live', 'finished', 'bye');
     if (status === 'live') row.classList.add('live');
     else if (status === 'finished') row.classList.add('finished');
     else if (status === 'bye') row.classList.add('bye');
+    
     if (statusBadge) {
       statusBadge.className = 'm-status-badge ' + status;
       if (status === 'live') statusBadge.textContent = '🔴 LIVE';
       else if (status === 'finished') statusBadge.textContent = '✅ FIN';
       else if (status === 'bye') statusBadge.textContent = '🎟 BYE';
-      else statusBadge.textContent = '';
+      else statusBadge.textContent = '⏳';
     }
     if (servingInfo) {
       if (status === 'live' && m.serving_player_id) {
@@ -1185,24 +1200,65 @@ async function createKO() {
   }
 }
 
+// 🌟 ĐÃ SỬA LỖI: tryAutoSyncKO chỉ sync các trận mà logic đã xác định được đội cụ thể
+// Bỏ qua các trận BK/CK/V16->TK mà computeKOTeams() trả về h:null, a:null
+// (vì những trận này được fill bởi resolveKnockoutBracketPositions(), không phải bởi computeKOTeams)
 async function tryAutoSyncKO() {
   if (!DATA.kStage) return false;
   var koData = computeKOTeams(); 
   if (!koData) return false;
   var updated = false;
+  var updatedMatches = [];
+  
   for (var i = 0; i < koData.matches.length; i++) {
     var km = koData.matches[i];
+    
+    // 🌟 FIX: Bỏ qua trận mà computeKOTeams() chưa xác định được đội nào
+    // (các trận này sẽ được fill bởi resolveKnockoutBracketPositions() từ kết quả trận trước)
+    if (km.h === null && km.a === null) continue;
+    
     var m = DATA.matches.find(x => x.stage_id === DATA.kStage.id && Number(x.bracket_slot) === Number(km.slot));
     if (!m) continue;
-    if (m.home_team_id !== km.h || m.away_team_id !== km.a) {
-      await sb.from("matches").update({ home_team_id: km.h, away_team_id: km.a }).eq("id", m.id);
-      m.home_team_id = km.h; m.away_team_id = km.a; updated = true;
+    
+    var homeManual = isManualOverride(m.id, 'home');
+    var awayManual = isManualOverride(m.id, 'away');
+    
+    var needUpdate = {};
+    var hasUpdate = false;
+    
+    // Chỉ update nếu: side KHÔNG manual VÀ logic đã xác định đội (km.h !== null) VÀ khác DB hiện tại
+    if (!homeManual && km.h !== null && m.home_team_id !== km.h) {
+      needUpdate.home_team_id = km.h;
+      m.home_team_id = km.h;
+      hasUpdate = true;
+    }
+    if (!awayManual && km.a !== null && m.away_team_id !== km.a) {
+      needUpdate.away_team_id = km.a;
+      m.away_team_id = km.a;
+      hasUpdate = true;
+    }
+    
+    if (hasUpdate) {
+      try {
+        await sb.from("matches").update(needUpdate).eq("id", m.id);
+        updated = true;
+        updatedMatches.push(displayCode(m));
+      } catch(e) {
+        console.error("Sync KO error:", e);
+      }
     }
   }
+  
   if (updated) {
-    toast("✅ Đã tự động cập nhật đội vào vòng KO");
+    // 🌟 Debounce toast: chỉ hiện tối đa 1 lần mỗi 5 giây để tránh spam
+    var now = Date.now();
+    if (now - _lastKoSyncToastTime > KO_SYNC_TOAST_DEBOUNCE) {
+      toast("✅ Đã cập nhật: " + updatedMatches.join(", "));
+      _lastKoSyncToastTime = now;
+    }
     resolveKnockoutBracketPositions();
-    render();
+    // Không gọi render() ở đây để tránh vòng lặp - updateMatchRowsDOM() sẽ cập nhật UI
+    updateMatchRowsDOM();
   }
   return updated;
 }
@@ -1391,20 +1447,41 @@ async function finishMatch() {
 
 async function resetMatchScore(matchId, event) {
   if (event) event.stopPropagation();
-  if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
+  if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTrạng thái sẽ chuyển về 'Chưa đấu' và tỷ số sẽ bị xóa.")) return;
   try {
-    await sb.from("matches").update({ home_score: 0, away_score: 0 }).eq("id", matchId);
+    await sb.from("matches").update({ 
+      home_score: 0, away_score: 0, match_status: 'scheduled',
+      serving_player_id: null, serving_team: null, serving_turn: null
+    }).eq("id", matchId);
+    
     var m = DATA.matches.find(x => x.id === matchId);
-    if (m) { m.home_score = 0; m.away_score = 0; }
+    if (m) { 
+      m.home_score = 0; m.away_score = 0; m.match_status = 'scheduled';
+      m.serving_player_id = null; m.serving_team = null; m.serving_turn = null;
+    }
+    
     updateAllStandingsDOM();
+    resolveKnockoutBracketPositions();
+    await tryAutoSyncKO();
+    
     var row = document.querySelector('[data-match-id="' + matchId + '"]');
     if (row) {
       var scoreH = row.querySelector('.m-score-input[data-field="home_score"]');
       var scoreA = row.querySelector('.m-score-input[data-field="away_score"]');
-      if (scoreH) scoreH.value = 0;
-      if (scoreA) scoreA.value = 0;
+      if (scoreH) scoreH.value = "";
+      if (scoreA) scoreA.value = "";
+      
+      var statusBadge = row.querySelector('.m-status-badge');
+      if (statusBadge) {
+        statusBadge.className = 'm-status-badge scheduled';
+        statusBadge.textContent = '⏳';
+      }
+      row.classList.remove('live', 'finished', 'bye');
+      
+      var servingInfo = row.querySelector('.m-serving-info');
+      if (servingInfo) servingInfo.textContent = '';
     }
-    toast("✅ Đã xóa tỷ số");
+    toast("✅ Đã xóa tỷ số và chuyển về chưa đấu");
   } catch(e) {
     alert("❌ " + e.message);
   }
@@ -1682,14 +1759,13 @@ function render() {
     var km = DATA.matches.filter(m => !m.group_id).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
     if (km.length) {
       H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
+      H += '<div class="hint" style="margin-bottom:10px">💡 Nhấn <b style="color:var(--or)">✏️</b> bên cạnh mỗi đội để thiết lập thủ công. Khi đã khóa, giá trị sẽ KHÔNG bị thay đổi dù bảng xếp hạng có cập nhật.</div>';
       if (totalGroups === 4 && DATA.kStage) {
         var ruleNames = { 1: "Cross bảng liền kề", 2: "Cross A-C và B-D", 3: "Cross A-D và B-C" };
         H += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">';
         H += '<div class="hint" style="margin:0">💡 Đang dùng: <b style="color:var(--or)">' + ruleNames[DATA.koRule] + '</b> · Tự động điền khi đủ điều kiện</div>';
         H += '<button class="btn btn-w btn-s" onclick="openKoConfigModal()">⚙️ Đổi quy tắc Tứ kết</button>';
         H += '</div>';
-      } else {
-        H += '<div class="hint" style="margin-bottom:8px">🤖 Đội sẽ tự động điền khi hoàn thành đủ số trận vòng bảng theo logic xếp hạng.</div>';
       }
       var r16 = km.filter(m => Number(m.round)===1), tk = km.filter(m => Number(m.round)===2), bk = km.filter(m => Number(m.round)===3), ck = km.filter(m => Number(m.round)===4);
       if (r16.length) H += renderKOGroup("🎾 VÒNG 1/16", "r16", r16);
@@ -1749,13 +1825,16 @@ function renderMatchRow(m, isKO) {
   H += '<div class="m-code">'+esc(displayCode(m))+'</div>';
   
   if (isKO) {
+    var isHomeManual = isManualOverride(m.id, 'home');
     var homeOptions = '<option value="">-- Chọn đội --</option>';
     DATA.teams.forEach(function(t) {
       homeOptions += '<option value="'+t.id+'" '+(m.home_team_id === t.id ? 'selected' : '')+'>'+esc(sn(t.name))+'</option>';
     });
-    H += '<div style="display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-end">';
-    H += '<select id="ko-home-'+m.id+'" style="flex:1;background:#0d1626;border:1px solid var(--ln);border-radius:6px;padding:4px;color:var(--tx);font-size:11px;font-weight:700;text-align:right;max-width:150px;">'+homeOptions+'</select>';
-    H += '<button class="btn btn-p btn-xs" onclick="saveKoTeam(\''+m.id+'\', \'home\', document.getElementById(\'ko-home-'+m.id+'\').value)" title="Lưu">💾</button>';
+    H += '<div class="ko-side home">';
+    H += '<label class="ko-manual-toggle '+(isHomeManual?'active':'')+'" title="Thiết lập thủ công - khóa đội này khỏi logic tự động">';
+    H += '<input type="checkbox" '+(isHomeManual?'checked':'')+' onchange="toggleManualKo(\''+m.id+'\',\'home\',this.checked)">';
+    H += '<span>✏️</span></label>';
+    H += '<select id="ko-home-'+m.id+'" class="ko-team-select '+(isHomeManual?'manual-on':'')+'" data-side="home" '+(isHomeManual?'':'disabled')+' onchange="onKoTeamChange(\''+m.id+'\',\'home\',this.value)">'+homeOptions+'</select>';
     H += '</div>';
   } else {
     var homeClass = m.home_team_id ? "home" : "home tbd-placeholder";
@@ -1763,20 +1842,23 @@ function renderMatchRow(m, isKO) {
   }
 
   H += '<div class="m-score-box">';
-  H += '<input class="m-score-input" type="number" min="0" max="99" data-field="home_score" value="'+(m.home_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'home_score\',this.value)"/>';
+  H += '<input class="m-score-input" type="number" min="0" max="999" data-field="home_score" value="'+(m.home_score === 0 ? "" : m.home_score)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'home_score\',this.value)"/>';
   H += '<span class="m-sep">:</span>';
-  H += '<input class="m-score-input" type="number" min="0" max="99" data-field="away_score" value="'+(m.away_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'away_score\',this.value)"/>';
+  H += '<input class="m-score-input" type="number" min="0" max="999" data-field="away_score" value="'+(m.away_score === 0 ? "" : m.away_score)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'away_score\',this.value)"/>';
   H += '</div>';
   H += '<button class="m-reset-btn" onclick="resetMatchScore(\''+m.id+'\', event)" title="Xóa tỷ số">🗑</button>';
 
   if (isKO) {
+    var isAwayManual = isManualOverride(m.id, 'away');
     var awayOptions = '<option value="">-- Chọn đội --</option>';
     DATA.teams.forEach(function(t) {
       awayOptions += '<option value="'+t.id+'" '+(m.away_team_id === t.id ? 'selected' : '')+'>'+esc(sn(t.name))+'</option>';
     });
-    H += '<div style="display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-start">';
-    H += '<button class="btn btn-p btn-xs" onclick="saveKoTeam(\''+m.id+'\', \'away\', document.getElementById(\'ko-away-'+m.id+'\').value)" title="Lưu">💾</button>';
-    H += '<select id="ko-away-'+m.id+'" style="flex:1;background:#0d1626;border:1px solid var(--ln);border-radius:6px;padding:4px;color:var(--tx);font-size:11px;font-weight:700;text-align:left;max-width:150px;">'+awayOptions+'</select>';
+    H += '<div class="ko-side away">';
+    H += '<select id="ko-away-'+m.id+'" class="ko-team-select '+(isAwayManual?'manual-on':'')+'" data-side="away" '+(isAwayManual?'':'disabled')+' onchange="onKoTeamChange(\''+m.id+'\',\'away\',this.value)">'+awayOptions+'</select>';
+    H += '<label class="ko-manual-toggle '+(isAwayManual?'active':'')+'" title="Thiết lập thủ công - khóa đội này khỏi logic tự động">';
+    H += '<input type="checkbox" '+(isAwayManual?'checked':'')+' onchange="toggleManualKo(\''+m.id+'\',\'away\',this.checked)">';
+    H += '<span>✏️</span></label>';
     H += '</div>';
   } else {
     var awayClass = m.away_team_id ? "away" : "away tbd-placeholder";
@@ -1791,13 +1873,70 @@ function renderMatchRow(m, isKO) {
   H += '<div class="m-serving-info" title="'+esc(servingText)+'">'+esc(servingText)+'</div>';
   var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : '⏳'));
   H += '<span class="m-status-badge '+status+'">'+statusText+'</span>';
-  var btnTitle = status === 'finished' ? 'Chỉnh sửa kết quả' : (status === 'live' ? 'Tiếp tục ghi điểm' : (status === 'bye' ? 'Trận miễn' : 'Bắt đầu ghi điểm'));
-  H += '<button class="m-ref-btn" onclick="openRefModal(\''+m.id+'\')" title="'+btnTitle+'">🎯</button>';
   H += '</div>';
   return H;
 }
 
-async function saveKoTeam(matchId, side, teamId) {
+async function toggleManualKo(matchId, side, checked) {
+  if (!DATA._manualKoOverrides[matchId]) {
+    DATA._manualKoOverrides[matchId] = { home: false, away: false };
+  }
+  DATA._manualKoOverrides[matchId][side] = checked;
+  saveManualOverrides();
+  
+  var sel = el('ko-' + side + '-' + matchId);
+  
+  if (checked) {
+    if (sel) {
+      sel.disabled = false;
+      sel.classList.add('manual-on');
+    }
+    var row = document.querySelector('[data-match-id="' + matchId + '"]');
+    if (row) {
+      var labels = row.querySelectorAll('.ko-manual-toggle');
+      labels.forEach(function(lbl) {
+        var cb = lbl.querySelector('input');
+        if (cb && cb.getAttribute('onchange').includes("'"+side+"'")) {
+          lbl.classList.add('active');
+        }
+      });
+    }
+    toast("🔒 Đã khóa đội này ở chế độ thủ công");
+  } else {
+    if (sel) {
+      sel.disabled = true;
+      sel.classList.remove('manual-on');
+    }
+    
+    resolveKnockoutBracketPositions();
+    var m = DATA.matches.find(x => x.id === matchId);
+    if (m) {
+      var logicTeamId = side === 'home' ? m.home_team_id : m.away_team_id;
+      try {
+        await sb.from("matches").update({ [side + '_team_id']: logicTeamId || null }).eq("id", matchId);
+        m[side + '_team_id'] = logicTeamId || null;
+      } catch(e) { console.error(e); }
+      
+      if (sel) sel.value = logicTeamId || "";
+    }
+    
+    var row = document.querySelector('[data-match-id="' + matchId + '"]');
+    if (row) {
+      var labels = row.querySelectorAll('.ko-manual-toggle');
+      labels.forEach(function(lbl) {
+        var cb = lbl.querySelector('input');
+        if (cb && cb.getAttribute('onchange').includes("'"+side+"'")) {
+          lbl.classList.remove('active');
+        }
+      });
+    }
+    toast("🔓 Đã trả về chế độ tự động");
+    
+    await tryAutoSyncKO();
+  }
+}
+
+async function onKoTeamChange(matchId, side, teamId) {
   var update = {};
   update[side + '_team_id'] = teamId || null;
   try {
@@ -1806,8 +1945,11 @@ async function saveKoTeam(matchId, side, teamId) {
     if (m) {
       m[side + '_team_id'] = teamId || null;
     }
-    toast("✅ Đã cập nhật đội cho trận đấu");
-    render();
+    
+    resolveKnockoutBracketPositions();
+    await tryAutoSyncKO();
+    
+    toast("✅ Đã lưu đội (thủ công)");
   } catch(e) {
     alert("❌ Lỗi: " + e.message);
   }
@@ -1822,11 +1964,37 @@ function renderKOGroup(title, cls, matches) {
 
 async function upMatchScoreDirect(id, field, val) {
   var num = parseInt(val) || 0;
-  await sb.from("matches").update({[field]: num}).eq("id", id);
   var m = DATA.matches.find(x => x.id === id);
-  if (m) { m[field] = num; }
-  updateAllStandingsDOM();
-  toast("✅ Đã cập nhật tỷ số");
+  if (!m) return;
+
+  var updateData = { [field]: num };
+  
+  if (m.match_status !== 'finished' && m.match_status !== 'bye') {
+    updateData.match_status = 'finished';
+    updateData.serving_player_id = null;
+    updateData.serving_team = null;
+    updateData.serving_turn = null;
+  }
+
+  try {
+    await sb.from("matches").update(updateData).eq("id", id);
+    
+    m[field] = num;
+    if (updateData.match_status) {
+      m.match_status = 'finished';
+      m.serving_player_id = null;
+      m.serving_team = null;
+      m.serving_turn = null;
+    }
+    
+    updateAllStandingsDOM();
+    resolveKnockoutBracketPositions();
+    await tryAutoSyncKO();
+    updateMatchRowsDOM();
+    toast("✅ Đã cập nhật tỷ số và kết thúc trận");
+  } catch(e) {
+    alert("❌ Lỗi: " + e.message);
+  }
 }
 
 window.addEventListener('storage', function(event) {
