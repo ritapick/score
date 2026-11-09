@@ -88,7 +88,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
 .m-serving-info{font-size:9px;color:var(--or);white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis}
 
-/* 🌟 Global manual toggle */
 .ko-global-manual-bar{margin-bottom:12px;padding:10px;background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.3);border-radius:10px}
 .ko-global-manual-label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-weight:800;font-size:12px;color:var(--or);padding:4px 8px;border-radius:6px;transition:.15s}
 .ko-global-manual-label:hover{background:rgba(251,146,60,.15)}
@@ -386,7 +385,6 @@ var DATA = {
   _creatingKO: false,
   _savedGroups: new Set(),
   koRule: 1,
-  // 🌟 CHECKBOX GLOBAL - thay thế cho cơ chế manual riêng lẻ cũ
   _globalManualKo: false
 };
 var currentRefMatchId = null;
@@ -415,7 +413,6 @@ function generateUniqueCode() {
   return 'G' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🌟 Helpers cho Global Manual KO
 function loadGlobalManualKo() {
   if (DATA.eid) {
     DATA._globalManualKo = localStorage.getItem('ko_global_manual_' + DATA.eid) === 'true';
@@ -430,12 +427,9 @@ function saveGlobalManualKo() {
 }
 
 function resolveKnockoutBracketPositions() {
-  var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
-  
-  // 🌟 FIX: Nếu đang ở chế độ thủ công global, KHÔNG fill gì cả
-  // Giữ nguyên giá trị user đã chọn
   if (DATA._globalManualKo) return;
   
+  var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
   var positionToTeamId = {};
   
   if (DATA.gStage) {
@@ -560,8 +554,6 @@ async function selE(eid) {
   try {
     var savedRule = localStorage.getItem('ko_rule_' + eid);
     DATA.koRule = savedRule ? parseInt(savedRule) : 1;
-    
-    // 🌟 Load trạng thái global manual
     loadGlobalManualKo();
 
     var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name,skill_rating))").eq("event_id", eid);
@@ -606,13 +598,38 @@ function startRealtime() {
           var old = DATA.matches.find(x => x.id === m.data[i].id);
           if (!old || old.home_score !== m.data[i].home_score || old.away_score !== m.data[i].away_score || 
               old.match_status !== m.data[i].match_status || old.serving_team !== m.data[i].serving_team || 
-              old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id ||
-              old.home_team_id !== m.data[i].home_team_id || old.away_team_id !== m.data[i].away_team_id) {
+              old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id) {
             changed = true; break;
           }
         }
         if (changed) {
+          // 🌟 FIX 1: Bảo vệ KO team IDs khi đang ở chế độ thủ công
+          // Lưu lại giá trị KO team của local trước khi ghi đè bởi dữ liệu từ DB
+          var savedKoTeams = {};
+          if (DATA._globalManualKo) {
+            DATA.matches.forEach(function(match) {
+              if (!match.group_id) {
+                savedKoTeams[match.id] = {
+                  home_team_id: match.home_team_id,
+                  away_team_id: match.away_team_id
+                };
+              }
+            });
+          }
+          
           DATA.matches = m.data;
+          
+          // 🌟 FIX 2: Khôi phục lại KO team IDs từ local nếu đang manual mode
+          // Tránh việc dữ liệu cũ từ DB (do race condition) ghi đè lựa chọn của user
+          if (DATA._globalManualKo) {
+            DATA.matches.forEach(function(match) {
+              if (!match.group_id && savedKoTeams[match.id]) {
+                match.home_team_id = savedKoTeams[match.id].home_team_id;
+                match.away_team_id = savedKoTeams[match.id].away_team_id;
+              }
+            });
+          }
+          
           resolveKnockoutBracketPositions();
           updateMatchRowsDOM();
           updateAllStandingsDOM();
@@ -649,10 +666,14 @@ function updateMatchRowsDOM() {
     if (scoreH && document.activeElement !== scoreH) scoreH.value = m.home_score === 0 ? "" : m.home_score;
     if (scoreA && document.activeElement !== scoreA) scoreA.value = m.away_score === 0 ? "" : m.away_score;
     
-    var koHomeSel = row.querySelector('.ko-team-select[data-side="home"]');
-    var koAwaySel = row.querySelector('.ko-team-select[data-side="away"]');
-    if (koHomeSel && document.activeElement !== koHomeSel) koHomeSel.value = m.home_team_id || "";
-    if (koAwaySel && document.activeElement !== koAwaySel) koAwaySel.value = m.away_team_id || "";
+    // 🌟 FIX 3: KHÔNG cập nhật dropdown KO khi đang ở chế độ thủ công
+    // Tránh việc dữ liệu cũ từ local/DB ghi đè lựa chọn của user
+    if (!DATA._globalManualKo) {
+      var koHomeSel = row.querySelector('.ko-team-select[data-side="home"]');
+      var koAwaySel = row.querySelector('.ko-team-select[data-side="away"]');
+      if (koHomeSel && document.activeElement !== koHomeSel) koHomeSel.value = m.home_team_id || "";
+      if (koAwaySel && document.activeElement !== koAwaySel) koAwaySel.value = m.away_team_id || "";
+    }
     
     var status = m.match_status || 'scheduled';
     row.classList.remove('live', 'finished', 'bye');
@@ -1204,10 +1225,9 @@ async function createKO() {
   }
 }
 
-// 🌟 ĐÃ ĐƠN GIẢN HÓA: Skip toàn bộ nếu global manual đang bật
 async function tryAutoSyncKO() {
   if (!DATA.kStage) return false;
-  if (DATA._globalManualKo) return false; // 🌟 FIX: Không sync khi đang thủ công
+  if (DATA._globalManualKo) return false;
   
   var koData = computeKOTeams(); 
   if (!koData) return false;
@@ -1607,16 +1627,12 @@ async function clearAllSchedules() {
   }
 }
 
-// 🌟 HÀM MỚI: Bật/tắt chế độ thủ công GLOBAL cho tất cả trận KO
 async function toggleGlobalManualKo(checked) {
   DATA._globalManualKo = checked;
   saveGlobalManualKo();
   
   if (!checked) {
-    // Khi TẮT: Reset tất cả home_team_id/away_team_id của trận KO về null
-    // để logic tự động fill lại
     if (!confirm("🔄 Chuyển về chế độ TỰ ĐỘNG?\n\nTất cả đội đã chọn thủ công ở vòng KO sẽ bị reset và điền lại theo logic.")) {
-      // User hủy → trả lại checkbox về trạng thái cũ
       DATA._globalManualKo = true;
       saveGlobalManualKo();
       var cb = document.getElementById('ko-global-manual-cb');
@@ -1647,18 +1663,20 @@ async function toggleGlobalManualKo(checked) {
   render();
 }
 
-// 🌟 HÀM MỚI: Tự động lưu ngay khi chọn đội từ dropdown (chỉ hoạt động khi global manual bật)
 async function onKoTeamChange(matchId, side, teamId) {
-  if (!DATA._globalManualKo) return; // Chỉ hoạt động khi global manual bật
+  if (!DATA._globalManualKo) return;
+  
+  // 🌟 FIX 4: Cập nhật local NGAY LẬP TỨC trước khi gọi DB
+  // Đảm bảo nếu realtime fetch về trước khi DB commit, local vẫn có giá trị mới
+  var m = DATA.matches.find(x => x.id === matchId);
+  if (m) {
+    m[side + '_team_id'] = teamId || null;
+  }
   
   var update = {};
   update[side + '_team_id'] = teamId || null;
   try {
     await sb.from("matches").update(update).eq("id", matchId);
-    var m = DATA.matches.find(x => x.id === matchId);
-    if (m) {
-      m[side + '_team_id'] = teamId || null;
-    }
     toast("✅ Đã lưu đội");
   } catch(e) {
     alert("❌ Lỗi: " + e.message);
@@ -1804,7 +1822,6 @@ function render() {
     if (km.length) {
       H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
       
-      // 🌟 CHECKBOX GLOBAL - đặt ở đầu phần KO
       H += '<div class="ko-global-manual-bar">';
       H += '<label class="ko-global-manual-label '+(DATA._globalManualKo?'active':'')+'">';
       H += '<input type="checkbox" id="ko-global-manual-cb" '+(DATA._globalManualKo?'checked':'')+' onchange="toggleGlobalManualKo(this.checked)">';
@@ -1866,7 +1883,6 @@ function renderStandingsTable(gid, st) {
   return H;
 }
 
-// 🌟 ĐÃ ĐƠN GIẢN HÓA: Dùng DATA._globalManualKo thay vì per-match per-side
 function renderMatchRow(m, isKO) {
   var hn = m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD");
   var an = m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD");
@@ -1883,7 +1899,6 @@ function renderMatchRow(m, isKO) {
   H += '<div class="m-code">'+esc(displayCode(m))+'</div>';
   
   if (isKO) {
-    // 🌟 Dùng global flag thay vì per-match
     var isManual = DATA._globalManualKo;
     var homeOptions = '<option value="">-- Chọn đội --</option>';
     DATA.teams.forEach(function(t) {
