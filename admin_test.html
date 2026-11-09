@@ -80,8 +80,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .m-reset-btn:active{transform:scale(.95)}
 .m-reset-btn:hover{background:rgba(248,113,113,.3)}
 
-.m-ref-btn{background:var(--cy);color:#0b1220;border:none;border-radius:6px;padding:5px 7px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.m-ref-btn:active{transform:scale(.95)}
 .m-status-badge{font-size:9px;font-weight:800;padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0}
 .m-status-badge.live{background:var(--rd);color:#fff;animation:blink 1s infinite}
 .m-status-badge.finished{background:var(--li);color:#0b1220}
@@ -181,7 +179,6 @@ td.pf{font-family:monospace;color:var(--cy)}
   .m-team{font-size:9px; white-space: normal; word-break: break-word; max-width: none; overflow: visible; text-overflow: clip; line-height: 1.2;}
   .m-score-input{width:42px;font-size:14px}
   .m-reset-btn{padding:4px 6px;font-size:10px}
-  .m-ref-btn{padding:5px 6px;font-size:9px}
   .m-serving-info{max-width:60px;font-size:8px}
   .ref-score-center{min-width:100px;padding:6px 4px}
   .score-btn{width:34px;height:34px;font-size:20px}
@@ -387,7 +384,6 @@ function generateUniqueCode() {
   return 'G' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🌟 LOGIC MỚI: Giải quyết vị trí nhánh KO dựa trên bracket_slot (ổn định 100%)
 function resolveKnockoutBracketPositions() {
   var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
   var positionToTeamId = {};
@@ -403,13 +399,11 @@ function resolveKnockoutBracketPositions() {
     });
   }
 
-  // Hàm phụ trợ lấy đội thắng dựa trên slot nhánh (thay thế cho việc so sánh chuỗi tên dễ lỗi)
   function getWinnerBySlot(slot) {
     var match = DATA.matches.find(function(m) { return Number(m.bracket_slot) === Number(slot); });
     if (!match) return null;
     var h = Number(match.home_score) || 0;
     var a = Number(match.away_score) || 0;
-    // Chỉ coi là có người thắng khi trận đã kết thúc hoặc có tỷ số rõ ràng
     if (match.match_status === 'finished' || match.match_status === 'completed' || h > 0 || a > 0) {
       if (h > a) return match.home_team_id;
       if (a > h) return match.away_team_id;
@@ -421,33 +415,33 @@ function resolveKnockoutBracketPositions() {
     var round = Number(m.round);
     var slot = Number(m.bracket_slot);
 
-    if (round === 1) { // Vòng 1/16
+    if (round === 1) {
       if (!m.home_team_id && m.home_bracket_position) m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
       if (!m.away_team_id && m.away_bracket_position) m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
-    } else if (round === 2) { // Tứ kết
+    } else if (round === 2) {
       var sourceSlots = [];
-      if (slot === 9) sourceSlots = [1, 8];       // TK1: Thắng V16-1 vs Thắng V16-8
-      else if (slot === 10) sourceSlots = [4, 5];  // TK2: Thắng V16-4 vs Thắng V16-5
-      else if (slot === 11) sourceSlots = [3, 6];  // TK3: Thắng V16-3 vs Thắng V16-6
-      else if (slot === 12) sourceSlots = [2, 7];  // TK4: Thắng V16-2 vs Thắng V16-7
+      if (slot === 9) sourceSlots = [1, 8];
+      else if (slot === 10) sourceSlots = [4, 5];
+      else if (slot === 11) sourceSlots = [3, 6];
+      else if (slot === 12) sourceSlots = [2, 7];
 
       if (sourceSlots.length === 2) {
         if (!m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
         if (!m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
       }
-    } else if (round === 3) { // Bán kết
+    } else if (round === 3) {
       var sourceSlots = [];
-      if (slot === 13) sourceSlots = [9, 11];      // BK1: Thắng TK1 (slot 9) vs Thắng TK3 (slot 11)
-      else if (slot === 14) sourceSlots = [10, 12]; // BK2: Thắng TK2 (slot 10) vs Thắng TK4 (slot 12)
+      if (slot === 13) sourceSlots = [9, 11];
+      else if (slot === 14) sourceSlots = [10, 12];
 
       if (sourceSlots.length === 2) {
         if (!m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
         if (!m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
       }
-    } else if (round === 4) { // Chung kết
+    } else if (round === 4) {
       if (slot === 15) {
-        if (!m.home_team_id) m.home_team_id = getWinnerBySlot(13); // Thắng BK1
-        if (!m.away_team_id) m.away_team_id = getWinnerBySlot(14); // Thắng BK2
+        if (!m.home_team_id) m.home_team_id = getWinnerBySlot(13);
+        if (!m.away_team_id) m.away_team_id = getWinnerBySlot(14);
       }
     }
   });
@@ -542,7 +536,6 @@ async function selE(eid) {
     });
     
     resolveKnockoutBracketPositions();
-    
     render();
     startRealtime();
   } catch(e) { console.error(e); }
@@ -599,19 +592,21 @@ function updateMatchRowsDOM() {
     var servingInfo = row.querySelector('.m-serving-info');
     var scoreH = row.querySelector('.m-score-input[data-field="home_score"]');
     var scoreA = row.querySelector('.m-score-input[data-field="away_score"]');
-    if (scoreH && document.activeElement !== scoreH) scoreH.value = m.home_score || 0;
-    if (scoreA && document.activeElement !== scoreA) scoreA.value = m.away_score || 0;
+    if (scoreH && document.activeElement !== scoreH) scoreH.value = m.home_score === 0 ? "" : m.home_score;
+    if (scoreA && document.activeElement !== scoreA) scoreA.value = m.away_score === 0 ? "" : m.away_score;
+    
     var status = m.match_status || 'scheduled';
     row.classList.remove('live', 'finished', 'bye');
     if (status === 'live') row.classList.add('live');
     else if (status === 'finished') row.classList.add('finished');
     else if (status === 'bye') row.classList.add('bye');
+    
     if (statusBadge) {
       statusBadge.className = 'm-status-badge ' + status;
       if (status === 'live') statusBadge.textContent = '🔴 LIVE';
       else if (status === 'finished') statusBadge.textContent = '✅ FIN';
       else if (status === 'bye') statusBadge.textContent = '🎟 BYE';
-      else statusBadge.textContent = '';
+      else statusBadge.textContent = '⏳';
     }
     if (servingInfo) {
       if (status === 'live' && m.serving_player_id) {
@@ -1002,7 +997,6 @@ function computeKOTeams() {
         code: rule.code, h_pos: homeTeam ? homeTeam.pos : rule.home, a_pos: awayTeam ? awayTeam.pos : rule.away
       });
     });
-    // ✅ ĐÃ SỬA LOGIC BÁN KẾT (BK) THEO YÊU CẦU: BK1 = TK1 vs TK3, BK2 = TK2 vs TK4
     matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK3"});
     matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK2", a_pos: "Thắng TK4"});
     matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
@@ -1355,22 +1349,52 @@ async function finishMatch() {
   }
 }
 
+// 🌟 NÂNG CẤP: Xóa tỷ số, hiển thị rỗng và chuyển về chưa đấu
 async function resetMatchScore(matchId, event) {
   if (event) event.stopPropagation();
-  if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTỷ số sẽ được đặt lại về 0-0.")) return;
+  if (!confirm("🗑 Xóa tỷ số trận đấu này?\n\nTrạng thái sẽ chuyển về 'Chưa đấu' và tỷ số sẽ bị xóa.")) return;
   try {
-    await sb.from("matches").update({ home_score: 0, away_score: 0 }).eq("id", matchId);
+    await sb.from("matches").update({ 
+      home_score: 0, 
+      away_score: 0, 
+      match_status: 'scheduled',
+      serving_player_id: null,
+      serving_team: null,
+      serving_turn: null
+    }).eq("id", matchId);
+    
     var m = DATA.matches.find(x => x.id === matchId);
-    if (m) { m.home_score = 0; m.away_score = 0; }
+    if (m) { 
+      m.home_score = 0; 
+      m.away_score = 0; 
+      m.match_status = 'scheduled';
+      m.serving_player_id = null;
+      m.serving_team = null;
+      m.serving_turn = null;
+    }
+    
     updateAllStandingsDOM();
+    resolveKnockoutBracketPositions();
+    await tryAutoSyncKO();
+    
     var row = document.querySelector('[data-match-id="' + matchId + '"]');
     if (row) {
       var scoreH = row.querySelector('.m-score-input[data-field="home_score"]');
       var scoreA = row.querySelector('.m-score-input[data-field="away_score"]');
-      if (scoreH) scoreH.value = 0;
-      if (scoreA) scoreA.value = 0;
+      if (scoreH) scoreH.value = ""; // Hiển thị rỗng theo yêu cầu
+      if (scoreA) scoreA.value = ""; // Hiển thị rỗng theo yêu cầu
+      
+      var statusBadge = row.querySelector('.m-status-badge');
+      if (statusBadge) {
+        statusBadge.className = 'm-status-badge scheduled';
+        statusBadge.textContent = '⏳';
+      }
+      row.classList.remove('live', 'finished', 'bye');
+      
+      var servingInfo = row.querySelector('.m-serving-info');
+      if (servingInfo) servingInfo.textContent = '';
     }
-    toast("✅ Đã xóa tỷ số");
+    toast("✅ Đã xóa tỷ số và chuyển về chưa đấu");
   } catch(e) {
     alert("❌ " + e.message);
   }
@@ -1729,9 +1753,9 @@ function renderMatchRow(m, isKO) {
   }
 
   H += '<div class="m-score-box">';
-  H += '<input class="m-score-input" type="number" min="0" max="99" data-field="home_score" value="'+(m.home_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'home_score\',this.value)"/>';
+  H += '<input class="m-score-input" type="number" min="0" max="99" data-field="home_score" value="'+(m.home_score === 0 ? "" : m.home_score)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'home_score\',this.value)"/>';
   H += '<span class="m-sep">:</span>';
-  H += '<input class="m-score-input" type="number" min="0" max="99" data-field="away_score" value="'+(m.away_score||0)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'away_score\',this.value)"/>';
+  H += '<input class="m-score-input" type="number" min="0" max="99" data-field="away_score" value="'+(m.away_score === 0 ? "" : m.away_score)+'" onchange="upMatchScoreDirect(\''+m.id+'\',\'away_score\',this.value)"/>';
   H += '</div>';
   H += '<button class="m-reset-btn" onclick="resetMatchScore(\''+m.id+'\', event)" title="Xóa tỷ số">🗑</button>';
 
@@ -1757,8 +1781,8 @@ function renderMatchRow(m, isKO) {
   H += '<div class="m-serving-info" title="'+esc(servingText)+'">'+esc(servingText)+'</div>';
   var statusText = status === 'live' ? '🔴 LIVE' : (status === 'finished' ? '✅ FIN' : (status === 'bye' ? '🎟 BYE' : '⏳'));
   H += '<span class="m-status-badge '+status+'">'+statusText+'</span>';
-  var btnTitle = status === 'finished' ? 'Chỉnh sửa kết quả' : (status === 'live' ? 'Tiếp tục ghi điểm' : (status === 'bye' ? 'Trận miễn' : 'Bắt đầu ghi điểm'));
-  H += '<button class="m-ref-btn" onclick="openRefModal(\''+m.id+'\')" title="'+btnTitle+'">🎯</button>';
+  
+  // 🌟 ĐÃ BỎ NÚT 🎯 (Bắt đầu ghi điểm) theo yêu cầu
   H += '</div>';
   return H;
 }
@@ -1786,7 +1810,6 @@ function renderKOGroup(title, cls, matches) {
   return H;
 }
 
-// 🌟 NÂNG CẤP: Tự động chuyển trạng thái sang FIN khi nhập điểm từ Admin
 async function upMatchScoreDirect(id, field, val) {
   var num = parseInt(val) || 0;
   var m = DATA.matches.find(x => x.id === id);
@@ -1794,7 +1817,6 @@ async function upMatchScoreDirect(id, field, val) {
 
   var updateData = { [field]: num };
   
-  // Theo yêu cầu: nhập điểm từ admin sẽ tự động chuyển trạng thái sang FIN
   if (m.match_status !== 'finished' && m.match_status !== 'bye') {
     updateData.match_status = 'finished';
     updateData.serving_player_id = null;
@@ -1805,7 +1827,6 @@ async function upMatchScoreDirect(id, field, val) {
   try {
     await sb.from("matches").update(updateData).eq("id", id);
     
-    // Cập nhật local state
     m[field] = num;
     if (updateData.match_status) {
       m.match_status = 'finished';
@@ -1815,10 +1836,8 @@ async function upMatchScoreDirect(id, field, val) {
     }
     
     updateAllStandingsDOM();
-    resolveKnockoutBracketPositions(); // Cập nhật logic nhánh thắng thua ngay lập tức
+    resolveKnockoutBracketPositions();
     await tryAutoSyncKO();
-    
-    // Cập nhật UI
     updateMatchRowsDOM();
     toast("✅ Đã cập nhật tỷ số và kết thúc trận");
   } catch(e) {
