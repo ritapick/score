@@ -1,0 +1,121 @@
+const SPREADSHEET_ID = '12bKSkT6Qb2BXPZuf6X_RN6wiAO9SANi8CKdzVBLtVAo';
+
+/**
+ * Hàm GET: trả về giao diện HTML khi mở Web App
+ */
+function doGet(e) {
+  return HtmlService.createTemplateFromFile('Index_ykien')
+    .evaluate()
+    .setTitle('Góp ý giải PICKLEBALL 100+ CHAMPIONSHIP')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Hàm POST: xử lý mọi yêu cầu từ frontend
+ */
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonResult(false, 'Không có dữ liệu gửi lên.');
+    }
+    const data = JSON.parse(e.postData.contents);
+
+    // Xử lý yêu cầu gửi ý kiến
+    if (data.action === 'feedback') {
+      return handleFeedback(data);
+    }
+
+    return jsonResult(false, 'Action không hợp lệ.');
+  } catch (error) {
+    console.error('Lỗi doPost: ' + error.toString());
+    return jsonResult(false, 'Lỗi hệ thống: ' + error.message);
+  }
+}
+
+/**
+ * Xử lý ghi ý kiến vào sheet "ykien"
+ */
+function handleFeedback(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const feedback = String(data.feedback || '').trim();
+    const courtScore = Number(data.courtScore);
+    const orgScore = Number(data.orgScore);
+
+    // Validate dữ liệu
+    if (!feedback) {
+      return { success: false, message: 'Vui lòng nhập ý kiến đóng góp.' };
+    }
+    if (!courtScore || courtScore < 1 || courtScore > 10) {
+      return { success: false, message: 'Điểm sân phải từ 1 đến 10.' };
+    }
+    if (!orgScore || orgScore < 1 || orgScore > 10) {
+      return { success: false, message: 'Điểm tổ chức phải từ 1 đến 10.' };
+    }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    let sheet = ss.getSheetByName('ykien');
+    
+    // Tự động tạo sheet "ykien" nếu chưa có
+    if (!sheet) {
+      sheet = ss.insertSheet('ykien');
+      // Tạo tiêu đề ở dòng 1-3 (để trống dòng 1-3 theo yêu cầu)
+      sheet.getRange(1, 1).setValue('NGÀY');
+      sheet.getRange(1, 2).setValue('Ý KIẾN');
+      sheet.getRange(1, 3).setValue('ĐIỂM SÂN');
+      sheet.getRange(1, 4).setValue('ĐIỂM TỔ CHỨC');
+    }
+
+    // Lấy ngày giờ hiện tại
+    const now = new Date();
+    const formattedDate = Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+
+    // Tìm dòng trống bắt đầu từ dòng 4
+    const lastRow = sheet.getLastRow();
+    let targetRow = 4; // Mặc định bắt đầu từ dòng 4
+    
+    if (lastRow >= 4) {
+      const colA = sheet.getRange(4, 1, lastRow - 3, 1).getValues();
+      let foundEmpty = false;
+      for (let i = 0; i < colA.length; i++) {
+        if (String(colA[i][0]).trim() === '') {
+          targetRow = i + 4;
+          foundEmpty = true;
+          break;
+        }
+      }
+      if (!foundEmpty) targetRow = lastRow + 1;
+    }
+
+    // Ghi dữ liệu vào 4 cột: NGÀY | Ý KIẾN | ĐIỂM SÂN | ĐIỂM TỔ CHỨC
+    const rowData = [formattedDate, feedback, courtScore, orgScore];
+    sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
+
+    console.log('✅ Ghi ý kiến thành công tại dòng ' + targetRow);
+
+    return { 
+      success: true, 
+      message: 'Cảm ơn bạn đã đóng góp ý kiến!', 
+      row: targetRow 
+    };
+
+  } catch (error) {
+    console.error('Lỗi handleFeedback: ' + error.toString());
+    return { success: false, message: 'Lỗi ghi dữ liệu: ' + error.message };
+  } finally {
+    try { lock.releaseLock(); } catch (ignore) {}
+  }
+}
+
+/**
+ * Helper: trả về JSON
+ */
+function jsonResult(success, message, dataPayload) {
+  return ContentService.createTextOutput(JSON.stringify({
+    success: success,
+    message: message,
+    data: dataPayload
+  })).setMimeType(ContentService.MimeType.JSON);
+}
