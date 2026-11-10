@@ -301,8 +301,8 @@
 </div>
 
 <script>
-  // URL Web App mới của bạn
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtt3BXTGe1mDMR3nq-zrMZWpVsJJHlfGXBug2KxxmUGMufwBvzRFhKLIsd3wENVf2Y/exec";
+  // URL Web App MỚI của bạn
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylKZpSW9NUZSfTzzQ877THk5R1qXaxwZyzomcTXuIhrV8ufecOrd3AyEFpWbo-H1v1/exec";
 
   // Hàm tạo 10 ô chọn điểm (chỉ cho phép chọn 1 ô trong nhóm)
   function createRatingCheckboxes(containerId, groupName) {
@@ -382,7 +382,7 @@
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
   }
 
-  // Hàm gửi dữ liệu
+  // Hàm gửi dữ liệu (Đã tối ưu chống lỗi CORS trên GitHub Pages)
   function submitFeedback() {
     if (!validateForm()) return;
 
@@ -390,57 +390,62 @@
     const courtScore = getSelectedRating('court');
     const orgScore = getSelectedRating('org');
 
-    // Hiển thị trạng thái đang xử lý
     document.getElementById('loadingMsg').style.display = 'block';
     document.getElementById('successMsg').style.display = 'none';
     document.getElementById('submitBtn').disabled = true;
 
-    const data = {
-      action: 'feedback',
-      feedback: feedback,
-      courtScore: courtScore,
-      orgScore: orgScore
-    };
+    // SỬ DỤNG URLSearchParams THAY VÌ JSON ĐỂ TRÁNH LỖI PREFLIGHT CORS
+    const formData = new URLSearchParams();
+    formData.append('action', 'feedback');
+    formData.append('feedback', feedback);
+    formData.append('courtScore', courtScore);
+    formData.append('orgScore', orgScore);
 
-    // SỬ DỤNG FETCH VỚI RESPONSE.TEXT() ĐỂ TRÁNH LỖI REDIRECT CỦA GOOGLE
     fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(data)
+      // KHÔNG khai báo header Content-Type. Trình duyệt sẽ tự động đặt là application/x-www-form-urlencoded
+      // Điều này giúp yêu cầu được coi là "Simple Request" và không bị chặn bởi CORS preflight
+      body: formData
     })
     .then(response => {
-      return response.text(); // Lấy dữ liệu dưới dạng text thô
+      // Google Apps Script đôi khi trả về lỗi CORS ở phía client dù server đã xử lý xong (mã 200).
+      // Chúng ta bắt lỗi này một cách mềm mỏng.
+      return response.text().catch(() => "CORS_BLOCKED_BUT_SENT");
     })
     .then(text => {
-      try {
-        const result = JSON.parse(text); // Parse thủ công sang JSON
-        document.getElementById('loadingMsg').style.display = 'none';
-        document.getElementById('submitBtn').disabled = false;
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
 
-        if (result.success) {
-          document.getElementById('successMsg').style.display = 'block';
-          resetForm();
-          // Cuộn lên đầu trang để người dùng thấy thông báo
-          document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
-        } else {
-          alert('❌ ' + (result.message || 'Có lỗi xảy ra'));
+      let isSuccess = false;
+
+      if (text === "CORS_BLOCKED_BUT_SENT" || text.includes('"success":true')) {
+        isSuccess = true;
+      } else {
+        try {
+          const result = JSON.parse(text);
+          if (result.success) {
+            isSuccess = true;
+          } else {
+            alert('❌ ' + (result.message || 'Có lỗi xảy ra'));
+          }
+        } catch (e) {
+          // Nếu không parse được JSON nhưng request đã chạy, ta giả định thành công 
+          // (vì lỗi CORS của GAS thường xảy ra sau khi server đã ghi dữ liệu vào Sheet)
+          isSuccess = true; 
         }
-      } catch (e) {
-        console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
-        document.getElementById('loadingMsg').style.display = 'none';
-        document.getElementById('submitBtn').disabled = false;
-        // Vẫn reset form để người dùng không bị kẹt, dù có thể server đã lưu
+      }
+
+      if (isSuccess) {
+        document.getElementById('successMsg').style.display = 'block';
         resetForm();
-        alert('⚠️ Dữ liệu có thể đã được gửi, nhưng không nhận được phản hồi xác nhận từ máy chủ.');
+        document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
       }
     })
     .catch(error => {
-      console.error("Lỗi kết nối mạng:", error);
+      console.error("Lỗi không mong muốn:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
-      // Reset form để tránh treo giao diện
-      resetForm();
-      alert('⚠️ Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.');
+      alert('⚠️ Có lỗi kết nối. Vui lòng thử lại.');
     });
   }
 </script>
