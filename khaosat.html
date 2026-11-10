@@ -10,11 +10,9 @@
       --primary-blue: #0056b3;
       --light-blue: #e3f2fd;
       --accent-green: #28a745;
-      --zalo-blue: #0068FF;
       --error-red: #dc3545;
       --white: #ffffff;
       --gray-bg: #f4f7f6;
-      --star-gold: #ffc107;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; overflow-x: hidden; }
@@ -100,7 +98,7 @@
       border-color: var(--primary-blue);
     }
 
-    /* Checkbox rating 1-10 */
+    /* Styling cho ô chọn điểm 1-10 */
     .rating-group {
       display: flex;
       flex-wrap: wrap;
@@ -254,7 +252,7 @@
         <h3>💬 Ý kiến đóng góp</h3>
         <div class="form-group">
           <label>Nhập ý kiến của bạn để cải thiện giải đấu *</label>
-          <textarea id="feedback" placeholder="Ví dụ: Sân thi đấu rất tốt, nhưng cần bổ sung thêm nước uống cho VĐV..."></textarea>
+          <textarea id="feedback" placeholder="Ví dụ: Sân thi đấu rất tốt, nhưng cần bổ sung thêm nước uống..."></textarea>
           <div class="error-text" id="err-feedback">Vui lòng nhập ý kiến đóng góp</div>
         </div>
       </div>
@@ -265,7 +263,7 @@
         <div class="form-group">
           <label>Chọn điểm từ 1 đến 10 *</label>
           <div class="rating-group" id="ratingCourt">
-            <!-- Checkbox 1-10 sẽ được tạo bằng JS -->
+            <!-- Checkbox 1-10 sẽ được tạo tự động bằng JS -->
           </div>
           <div class="error-text" id="err-court">Vui lòng chọn điểm cho sân thi đấu</div>
         </div>
@@ -277,7 +275,7 @@
         <div class="form-group">
           <label>Chọn điểm từ 1 đến 10 *</label>
           <div class="rating-group" id="ratingOrg">
-            <!-- Checkbox 1-10 sẽ được tạo bằng JS -->
+            <!-- Checkbox 1-10 sẽ được tạo tự động bằng JS -->
           </div>
           <div class="error-text" id="err-org">Vui lòng chọn điểm cho khâu tổ chức</div>
         </div>
@@ -303,9 +301,10 @@
 </div>
 
 <script>
+  // URL Web App mới của bạn
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtt3BXTGe1mDMR3nq-zrMZWpVsJJHlfGXBug2KxxmUGMufwBvzRFhKLIsd3wENVf2Y/exec";
 
-  // Tạo 10 checkbox rating cho mỗi nhóm
+  // Hàm tạo 10 ô chọn điểm (chỉ cho phép chọn 1 ô trong nhóm)
   function createRatingCheckboxes(containerId, groupName) {
     const container = document.getElementById(containerId);
     for (let i = 1; i <= 10; i++) {
@@ -322,16 +321,15 @@
       label.htmlFor = `${groupName}_${i}`;
       label.textContent = i;
       
-      // Logic: chỉ cho phép chọn 1 checkbox trong nhóm
+      // Logic: Khi chọn 1 ô, tự động bỏ chọn các ô khác trong cùng nhóm
       checkbox.addEventListener('change', function() {
         if (this.checked) {
-          // Bỏ chọn tất cả checkbox khác trong cùng nhóm
           const siblings = container.querySelectorAll('input[type="checkbox"]');
           siblings.forEach(cb => {
             if (cb !== checkbox) cb.checked = false;
           });
         }
-        // Ẩn lỗi khi đã chọn
+        // Ẩn thông báo lỗi khi đã chọn
         const errId = groupName === 'court' ? 'err-court' : 'err-org';
         document.getElementById(errId).style.display = 'none';
       });
@@ -342,22 +340,23 @@
     }
   }
 
-  // Khởi tạo 2 nhóm rating
+  // Khởi tạo 2 nhóm đánh giá
   createRatingCheckboxes('ratingCourt', 'court');
   createRatingCheckboxes('ratingOrg', 'org');
 
+  // Lấy giá trị đã chọn
   function getSelectedRating(groupName) {
     const checked = document.querySelector(`input[name="${groupName}"]:checked`);
     return checked ? parseInt(checked.value) : null;
   }
 
+  // Kiểm tra dữ liệu trước khi gửi
   function validateForm() {
     const feedback = document.getElementById('feedback').value.trim();
     const courtScore = getSelectedRating('court');
     const orgScore = getSelectedRating('org');
 
     let isValid = true;
-
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
 
     if (!feedback) {
@@ -376,13 +375,14 @@
     return isValid;
   }
 
+  // Xóa trắng form sau khi gửi thành công
   function resetForm() {
     document.getElementById('feedback').value = '';
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
-    document.getElementById('successMsg').style.display = 'none';
   }
 
+  // Hàm gửi dữ liệu
   function submitFeedback() {
     if (!validateForm()) return;
 
@@ -390,6 +390,7 @@
     const courtScore = getSelectedRating('court');
     const orgScore = getSelectedRating('org');
 
+    // Hiển thị trạng thái đang xử lý
     document.getElementById('loadingMsg').style.display = 'block';
     document.getElementById('successMsg').style.display = 'none';
     document.getElementById('submitBtn').disabled = true;
@@ -401,38 +402,45 @@
       orgScore: orgScore
     };
 
+    // SỬ DỤNG FETCH VỚI RESPONSE.TEXT() ĐỂ TRÁNH LỖI REDIRECT CỦA GOOGLE
     fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(response => response.text())
+    .then(response => {
+      return response.text(); // Lấy dữ liệu dưới dạng text thô
+    })
     .then(text => {
       try {
-        const result = JSON.parse(text);
+        const result = JSON.parse(text); // Parse thủ công sang JSON
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('submitBtn').disabled = false;
 
         if (result.success) {
           document.getElementById('successMsg').style.display = 'block';
           resetForm();
-          // Cuộn lên đầu để xem thông báo thành công
+          // Cuộn lên đầu trang để người dùng thấy thông báo
           document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
         } else {
-          alert('❌ ' + result.message);
+          alert('❌ ' + (result.message || 'Có lỗi xảy ra'));
         }
       } catch (e) {
-        console.error("Dữ liệu trả về không phải JSON:", text);
+        console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('submitBtn').disabled = false;
-        alert('⚠️ Không nhận được phản hồi từ máy chủ. Vui lòng thử lại.');
+        // Vẫn reset form để người dùng không bị kẹt, dù có thể server đã lưu
+        resetForm();
+        alert('⚠️ Dữ liệu có thể đã được gửi, nhưng không nhận được phản hồi xác nhận từ máy chủ.');
       }
     })
     .catch(error => {
-      console.error("Lỗi kết nối:", error);
+      console.error("Lỗi kết nối mạng:", error);
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;
-      alert('⚠️ Lỗi kết nối mạng. Vui lòng thử lại sau.');
+      // Reset form để tránh treo giao diện
+      resetForm();
+      alert('⚠️ Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.');
     });
   }
 </script>
