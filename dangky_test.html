@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Đăng ký giải PICKLEBALL 100+ CHAMPIONSHIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #0056b3;
+      --light-blue: #e3f2fd;
+      --accent-green: #28a745;
+      --zalo-blue: #0068FF;
+      --error-red: #dc3545;
+      --white: #ffffff;
+      --gray-bg: #f4f7f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; overflow-x: hidden; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--gray-bg);
+      color: #333;
+      line-height: 1.6;
+      padding: 10px;
+      padding-bottom: 0;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 86, 179, 0.1);
+      overflow: hidden;
+      border-top: 6px solid var(--primary-blue);
+    }
+    .header {
+      background: linear-gradient(135deg, var(--primary-blue), #007bff);
+      color: var(--white);
+      padding: 24px 16px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .header p {
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--accent-green);
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-top: 5px;
+    }
+    .header-image {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin-top: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .form-body { padding: 20px 16px; }
+    
+    .btn-lookup {
+      width: 100%;
+      padding: 14px;
+      background: var(--white);
+      color: var(--primary-blue);
+      border: 2px solid var(--primary-blue);
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-lookup:hover { background: var(--light-blue); }
+
+    .visitor-status {
+      text-align: center;
+      color: #888;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      background-color: #f8f9fa;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .player-section {
+      background: var(--light-blue);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--primary-blue);
+    }
+    .player-section h3 {
+      color: var(--primary-blue);
+      margin-bottom: 12px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #444;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 2px solid #d1d9e6;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Montserrat', sans-serif;
+      transition: border-color 0.3s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    #name1, #name2 {
+      text-transform: uppercase;
+    }
+    .form-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230056b3' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+    }
+    
+    /* Radio button group for gender */
+    .gender-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+    }
+    .gender-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .gender-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--primary-blue);
+    }
+    .gender-option label {
+      font-weight: 600;
+      font-size: 13px;
+      color: #444;
+      cursor: pointer;
+      margin-bottom: 0;
+    }
+    
+    .error-text {
+      color: var(--error-red);
+      font-size: 11px;
+      margin-top: 4px;
+      display: none;
+      font-weight: 600;
+    }
+    .summary-box {
+      background: #f8f9fa;
+      border: 2px dashed var(--primary-blue);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .summary-box .age-display {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary-blue);
+    }
+    .summary-box .age-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .global-error {
+      background: #f8d7da;
+      color: var(--error-red);
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 12px;
+      display: none;
+      border: 1px solid #f5c6cb;
+      font-size: 13px;
+    }
+    .commitment-box {
+      background: #fff8e1;
+      border: 2px solid #ffc107;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .commitment-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      line-height: 1.5;
+    }
+    .commitment-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      margin-top: 2px;
+      cursor: pointer;
+      accent-color: var(--accent-green);
+    }
+    .commitment-label span { flex: 1; }
+    
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent-green);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: transform 0.2s, background 0.3s;
+      display: none;
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    .btn-submit:hover { background: #218838; transform: translateY(-2px); }
+    .btn-submit:disabled { 
+      background: #ccc; 
+      color: #666;
+      cursor: not-allowed; 
+      transform: none; 
+      box-shadow: none;
+    }
+    
+    .update-badge {
+      display: none;
+      background: var(--zalo-blue);
+      color: white;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: 700;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .contact-section {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 2px dashed #d1d9e6;
+    }
+    .contact-section p { font-weight: 700; color: #555; margin-bottom: 12px; font-size: 14px; }
+    .contact-buttons { display: flex; flex-direction: column; gap: 10px; }
+    .contact-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      gap: 8px;
+    }
+    .contact-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .contact-btn.phone { background: var(--primary-blue); color: white; }
+    .contact-btn.zalo { background: var(--zalo-blue); color: white; }
+    
+    .footer {
+      text-align: center;
+      padding: 20px 16px;
+      background: #e9ecef;
+      color: #6c757d;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 16px;
+    }
+    .footer a { color: var(--primary-blue); text-decoration: none; transition: color 0.3s; }
+    .footer a:hover { color: var(--accent-green); text-decoration: underline; }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      background: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 460px;
+      padding: 24px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      text-align: center;
+      margin-bottom: 16px;
+      color: var(--primary-blue);
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .modal-body { margin-bottom: 20px; font-size: 13px; }
+    .modal-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      gap: 10px;
+    }
+    .modal-row strong { color: #555; flex-shrink: 0; }
+    .modal-row span { text-align: right; word-break: break-word; }
+    .modal-actions { display: flex; gap: 10px; }
+    .btn-modal {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+    .btn-modal:hover { opacity: 0.9; }
+    .btn-confirm { background: var(--accent-green); color: white; }
+    .btn-cancel { background: #e9ecef; color: #495057; }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 16px;
+      color: var(--primary-blue);
+      font-weight: 700;
+      background: var(--light-blue);
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 360px) {
+      .header h1 { font-size: 18px; }
+      .header p { font-size: 13px; }
+      .form-body { padding: 16px 12px; }
+      .player-section { padding: 14px 12px; }
+      .player-section h3 { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Đăng ký giải<br>PICKLEBALL 100+ CHAMPIONSHIP</h1>
+    <p>📅 Thời gian thi đấu: Tháng 1/2027</p>
+    <img src="image90.jpeg" alt="Pickleball 100+ Championship" class="header-image" onerror="this.style.display='none'">
+  </div>
+
+  <div class="form-body">
+    <button type="button" class="btn-lookup" onclick="openLookupModal()">
+      🔍 Tra cứu & Cập nhật thông tin<BR> đã đăng ký
+    </button>
+
+    <div class="visitor-status" id="visitorStatus">Hiện đang có: 0 người truy cập</div>
+
+    <form id="registrationForm">
+      <div class="update-badge" id="updateBadge">🔄 CẬP NHẬT THÔNG TIN ĐÃ ĐĂNG KÝ</div>
+
+      <div class="player-section">
+        <h3>🎾 Vận động viên 1</h3>
+        <div class="form-group">
+          <label>Họ và tên *</label>
+          <input type="text" id="name1" required placeholder="Nhập họ và tên">
+          <div class="error-text" id="err-name1">Vui lòng nhập họ tên</div>
+        </div>
+        <div class="form-group">
+          <label>Giới tính *</label>
+          <div class="gender-group">
+            <div class="gender-option">
+              <input type="radio" id="gender1_male" name="gender1" value="Nam">
+              <label for="gender1_male">Nam</label>
+            </div>
+            <div class="gender-option">
+              <input type="radio" id="gender1_female" name="gender1" value="Nữ">
+              <label for="gender1_female">Nữ</label>
+            </div>
+          </div>
+          <div class="error-text" id="err-gender1">Vui lòng chọn giới tính</div>
+        </div>
+        <div class="form-group">
+          <label>Năm sinh *</label>
+          <select id="yob1" required>
+            <option value="">-- Chọn năm sinh --</option>
+          </select>
+          <div class="error-text" id="err-yob1">Vui lòng chọn năm sinh</div>
+        </div>
+        <div class="form-group">
+          <label>Số điện thoại *</label>
+          <input type="tel" id="phone1" required placeholder="Ví dụ: 0912345678" maxlength="10">
+          <div class="error-text" id="err-phone1">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
+        </div>
+      </div>
+
+      <div class="player-section">
+        <h3>🎾 Vận động viên 2</h3>
+        <div class="form-group">
+          <label>Họ và tên *</label>
+          <input type="text" id="name2" required placeholder="Nhập họ và tên">
+          <div class="error-text" id="err-name2">Vui lòng nhập họ tên</div>
+        </div>
+        <div class="form-group">
+          <label>Giới tính *</label>
+          <div class="gender-group">
+            <div class="gender-option">
+              <input type="radio" id="gender2_male" name="gender2" value="Nam">
+              <label for="gender2_male">Nam</label>
+            </div>
+            <div class="gender-option">
+              <input type="radio" id="gender2_female" name="gender2" value="Nữ">
+              <label for="gender2_female">Nữ</label>
+            </div>
+          </div>
+          <div class="error-text" id="err-gender2">Vui lòng chọn giới tính</div>
+        </div>
+        <div class="form-group">
+          <label>Năm sinh *</label>
+          <select id="yob2" required>
+            <option value="">-- Chọn năm sinh --</option>
+          </select>
+          <div class="error-text" id="err-yob2">Vui lòng chọn năm sinh</div>
+        </div>
+        <div class="form-group">
+          <label>Số điện thoại *</label>
+          <input type="tel" id="phone2" required placeholder="Ví dụ: 0912345678" maxlength="10">
+          <div class="error-text" id="err-phone2">Số điện thoại phải đủ 10 số và bắt đầu bằng số 0</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="age-label">TỔNG TUỔI HAI VẬN ĐỘNG VIÊN <BR>(Tính đến năm 2027)</div>
+        <div class="age-display" id="totalAgeDisplay">0</div>
+      </div>
+
+      <div class="global-error" id="globalError">
+        ️ Yêu cầu tổng tuổi 2 vận động viên từ 90 tuổi trở lên
+      </div>
+
+      <div class="commitment-box" id="commitmentBox">
+        <label class="commitment-label">
+          <input type="checkbox" id="commitmentCheck">
+          <span>Xác nhận thông tin trên đúng với CCCD hoặc VNeid.</span>
+        </label>
+      </div>
+
+      <button type="button" class="btn-submit" id="submitBtn" onclick="openModal()">
+        Đăng ký tham gia
+      </button>
+    </form>
+    
+    <div class="loading" id="loadingMsg">⏳ Đang xử lý, vui lòng chờ...</div>
+
+    <div class="contact-section">
+      <p>LỆ PHÍ 300K/VĐV <BR>Liên hệ Ban tổ chức:</p>
+      <div class="contact-buttons">
+        <a href="tel:0911100989" class="contact-btn phone">
+           Gọi ngay: TEPPY 0911.10.09.89
+        </a>
+        <a href="https://zalo.me/0911100989" target="_blank" class="contact-btn zalo">
+          💬 Chat Zalo: TEPPY 0911.10.09.89
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://www.facebook.com/RITA.LamDong" target="_blank">LY DUNG RITA</a>
+  </div>
+</div>
+
+<!-- Modal Xác nhận Đăng ký / Cập nhật -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-content">
+    <div class="modal-header" id="confirmModalHeader">XÁC NHẬN THÔNG TIN ĐĂNG KÝ</div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal()">Hủy bỏ</button>
+      <button class="btn-modal btn-confirm" onclick="submitToGoogleSheet()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tra cứu thông tin -->
+<div class="modal-overlay" id="lookupModal">
+  <div class="modal-content">
+    <div class="modal-header">TRA CỨU THÔNG TIN ĐÃ ĐĂNG KÝ</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nhập số điện thoại đã đăng ký *</label>
+        <input type="tel" id="lookupPhone" placeholder="Ví dụ: 0912345678" maxlength="10">
+      </div>
+      <button type="button" class="btn-modal btn-confirm" onclick="searchRegistration()" style="width:100%;">Tìm kiếm</button>
+      
+      <div id="verifyStep" style="display:none; margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px;">
+        <p style="font-size: 13px; color: #555; margin-bottom: 10px; font-weight: 600;">
+          🔒 Để bảo mật, vui lòng chọn năm sinh của VĐV có số điện thoại này để xác thực:
+        </p>
+        <div class="form-group">
+          <select id="verifyYob">
+            <option value="">-- Chọn năm sinh --</option>
+          </select>
+        </div>
+        <button type="button" class="btn-modal btn-confirm" onclick="verifyAndLoad()" style="width:100%;">Xác nhận</button>
+      </div>
+      <div id="lookupError" class="error-text" style="display:none; text-align:center; margin-top:10px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeLookupModal()" style="width:100%">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw79fkE4Yj8vcw4x2pLbs4tlJxpc6VBHF7VvOUvxK3u4rMvis8ZfQk4NTneSjJhpXZj/exec";
+  const CURRENT_YEAR = 2027;
+  const MIN_TOTAL_AGE = 90;
+
+  let tempSearchData = null;
+  let currentEditRow = null; 
+
+  // Khởi tạo dropdown năm sinh động theo giới tính
+  function initYearDropdowns() {
+    // Xử lý cho VĐV 1
+    const gender1Radios = document.querySelectorAll('input[name="gender1"]');
+    gender1Radios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        updateYearDropdown('yob1', this.value);
+      });
+    });
+    
+    // Xử lý cho VĐV 2
+    const gender2Radios = document.querySelectorAll('input[name="gender2"]');
+    gender2Radios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        updateYearDropdown('yob2', this.value);
+      });
+    });
+  }
+
+  // Cập nhật danh sách năm sinh dựa trên giới tính
+  function updateYearDropdown(selectId, gender) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
+    
+    let startYear, endYear;
+    if (gender === 'Nam') {
+      startYear = 1987;
+      endYear = 1955;
+    } else {
+      startYear = 1988;
+      endYear = 1955;
+    }
+    
+    for (let year = startYear; year >= endYear; year--) {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      select.appendChild(option);
+    }
+    
+    // Reset lại validation
+    document.getElementById('err-' + selectId).style.display = 'none';
+  }
+
+  function isValidPhone(phone) {
+    return /^0\d{9}$/.test(phone);
+  }
+
+  function validateForm() {
+    const name1 = document.getElementById('name1').value.trim();
+    const gender1 = document.querySelector('input[name="gender1"]:checked');
+    const yob1 = document.getElementById('yob1').value;
+    const phone1 = document.getElementById('phone1').value.trim();
+    
+    const name2 = document.getElementById('name2').value.trim();
+    const gender2 = document.querySelector('input[name="gender2"]:checked');
+    const yob2 = document.getElementById('yob2').value;
+    const phone2 = document.getElementById('phone2').value.trim();
+
+    let isValid = true;
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    document.getElementById('globalError').style.display = 'none';
+
+    if (!name1) { document.getElementById('err-name1').style.display = 'block'; isValid = false; }
+    if (!gender1) { document.getElementById('err-gender1').style.display = 'block'; isValid = false; }
+    if (!yob1) { document.getElementById('err-yob1').style.display = 'block'; isValid = false; }
+    if (!isValidPhone(phone1)) { document.getElementById('err-phone1').style.display = 'block'; isValid = false; }
+
+    if (!name2) { document.getElementById('err-name2').style.display = 'block'; isValid = false; }
+    if (!gender2) { document.getElementById('err-gender2').style.display = 'block'; isValid = false; }
+    if (!yob2) { document.getElementById('err-yob2').style.display = 'block'; isValid = false; }
+    if (!isValidPhone(phone2)) { document.getElementById('err-phone2').style.display = 'block'; isValid = false; }
+
+    let totalAge = 0;
+    if (yob1 && yob2) {
+      const age1 = CURRENT_YEAR - parseInt(yob1);
+      const age2 = CURRENT_YEAR - parseInt(yob2);
+      totalAge = age1 + age2;
+    }
+    
+    document.getElementById('totalAgeDisplay').textContent = totalAge;
+
+    const commitmentBox = document.getElementById('commitmentBox');
+    const submitBtn = document.getElementById('submitBtn');
+    const commitmentCheck = document.getElementById('commitmentCheck');
+
+    if (isValid && totalAge >= MIN_TOTAL_AGE) {
+      commitmentBox.style.display = 'block';
+      if (commitmentCheck.checked) {
+        submitBtn.style.display = 'block';
+      } else {
+        submitBtn.style.display = 'none';
+      }
+      document.getElementById('globalError').style.display = 'none';
+    } else {
+      commitmentBox.style.display = 'none';
+      submitBtn.style.display = 'none';
+      commitmentCheck.checked = false;
+      if (isValid && totalAge > 0 && totalAge < MIN_TOTAL_AGE) {
+        document.getElementById('globalError').style.display = 'block';
+      }
+    }
+
+    return isValid && totalAge >= MIN_TOTAL_AGE && commitmentCheck.checked;
+  }
+
+  document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(input => {
+    input.addEventListener('input', validateForm);
+    input.addEventListener('change', validateForm);
+  });
+  document.getElementById('commitmentCheck').addEventListener('change', validateForm);
+
+  document.getElementById('name1').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+  });
+  document.getElementById('name2').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+  });
+
+  function updateVisitorCount() {
+    const statusElement = document.getElementById('visitorStatus');
+    if (!statusElement) return;
+    const currentHour = new Date().getHours();
+    if (currentHour >= 8 && currentHour < 18) {
+      const randomVisitors = Math.floor(Math.random() * 7) + 1;
+      statusElement.textContent = `Hiện đang có: ${randomVisitors} người truy cập`;
+    } else {
+      statusElement.textContent = "Hiện đang có: 1 người truy cập";
+    }
+  }
+  updateVisitorCount();
+  setInterval(updateVisitorCount, 10000);
+
+  function openLookupModal() {
+    document.getElementById('lookupModal').style.display = 'flex';
+    document.getElementById('verifyStep').style.display = 'none';
+    document.getElementById('lookupPhone').value = '';
+    document.getElementById('verifyYob').value = '';
+    document.getElementById('lookupError').style.display = 'none';
+    tempSearchData = null;
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    document.getElementById('globalError').style.display = 'none';
+  }
+
+  function closeLookupModal() {
+    document.getElementById('lookupModal').style.display = 'none';
+  }
+
+  function searchRegistration() {
+    const phone = document.getElementById('lookupPhone').value.trim();
+    if (!isValidPhone(phone)) {
+      showLookupError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
+      return;
+    }
+    showLookupError('Đang tìm kiếm...', 'var(--primary-blue)');
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'search', phone: phone })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success && result.data) {
+        tempSearchData = result.data;
+        currentEditRow = result.data.rowIndex;
+        
+        const verifySelect = document.getElementById('verifyYob');
+        verifySelect.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
+        for (let year = 1955; year <= 1988; year++) {
+          const opt = document.createElement('option');
+          opt.value = year;
+          opt.textContent = year;
+          verifySelect.appendChild(opt);
+        }
+        document.getElementById('verifyStep').style.display = 'block';
+        document.getElementById('lookupError').style.display = 'none';
+      } else {
+        showLookupError(result.message || 'Không tìm thấy thông tin.');
+      }
+    })
+    .catch(err => {
+      console.error("Lỗi kết nối khi tra cứu:", err);
+      showLookupError('Không thể kết nối máy chủ. Vui lòng thử lại sau.');
+    });
+  }
+
+  function verifyAndLoad() {
+    const selectedYob = document.getElementById('verifyYob').value;
+    if (!selectedYob) {
+      showLookupError('Vui lòng chọn năm sinh.');
+      return;
+    }
+    
+    const targetYob = tempSearchData.matchedPlayer === 1 ? tempSearchData.yob1 : tempSearchData.yob2;
+    
+    if (selectedYob === String(targetYob)) {
+      document.getElementById('name1').value = String(tempSearchData.name1).toUpperCase();
+      document.getElementById('yob1').value = tempSearchData.yob1;
+      document.getElementById('phone1').value = tempSearchData.phone1;
+      document.getElementById('name2').value = String(tempSearchData.name2).toUpperCase();
+      document.getElementById('yob2').value = tempSearchData.yob2;
+      document.getElementById('phone2').value = tempSearchData.phone2;
+      
+      // Set gender if available in data
+      if (tempSearchData.gender1) {
+        const gender1Radio = document.querySelector(`input[name="gender1"][value="${tempSearchData.gender1}"]`);
+        if (gender1Radio) {
+          gender1Radio.checked = true;
+          updateYearDropdown('yob1', tempSearchData.gender1);
+        }
+      }
+      if (tempSearchData.gender2) {
+        const gender2Radio = document.querySelector(`input[name="gender2"][value="${tempSearchData.gender2}"]`);
+        if (gender2Radio) {
+          gender2Radio.checked = true;
+          updateYearDropdown('yob2', tempSearchData.gender2);
+        }
+      }
+      
+      validateForm();
+      
+      document.getElementById('updateBadge').style.display = 'block';
+      closeLookupModal();
+      alert('✅ Đã tải thông tin. Bạn có thể chỉnh sửa và nhấn "Đăng ký tham gia" để cập nhật bản ghi.');
+      document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+    } else {
+      showLookupError('Năm sinh không khớp. Vui lòng thử lại.');
+    }
+  }
+
+  function showLookupError(msg, color = 'var(--error-red)') {
+    const errEl = document.getElementById('lookupError');
+    errEl.textContent = msg;
+    errEl.style.color = color;
+    errEl.style.display = 'block';
+  }
+
+  function openModal() {
+    if (!validateForm()) return;
+
+    const isUpdate = currentEditRow !== null;
+    document.getElementById('confirmModalHeader').textContent = isUpdate ? 'XÁC NHẬN CẬP NHẬT THÔNG TIN' : 'XÁC NHẬN THÔNG TIN ĐĂNG KÝ';
+
+    const gender1 = document.querySelector('input[name="gender1"]:checked');
+    const gender2 = document.querySelector('input[name="gender2"]:checked');
+
+    const data = {
+      name1: document.getElementById('name1').value.trim().toUpperCase(),
+      gender1: gender1 ? gender1.value : '',
+      yob1: document.getElementById('yob1').value,
+      phone1: document.getElementById('phone1').value.trim(),
+      name2: document.getElementById('name2').value.trim().toUpperCase(),
+      gender2: gender2 ? gender2.value : '',
+      yob2: document.getElementById('yob2').value,
+      phone2: document.getElementById('phone2').value.trim(),
+      totalAge: document.getElementById('totalAgeDisplay').textContent
+    };
+
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+      <div class="modal-row"><strong>VĐV 1:</strong> <span>${data.name1} (${data.gender1}, SN: ${data.yob1})</span></div>
+      <div class="modal-row"><strong>SĐT 1:</strong> <span>${data.phone1}</span></div>
+      <div style="margin: 8px 0; border-top: 1px dashed #ccc;"></div>
+      <div class="modal-row"><strong>VĐV 2:</strong> <span>${data.name2} (${data.gender2}, SN: ${data.yob2})</span></div>
+      <div class="modal-row"><strong>SĐT 2:</strong> <span>${data.phone2}</span></div>
+      <div style="margin: 8px 0; border-top: 1px dashed #ccc;"></div>
+      <div class="modal-row" style="color: var(--primary-blue); font-weight: 700; font-size: 15px;">
+        <strong>Tổng tuổi:</strong> <span>${data.totalAge} tuổi</span>
+      </div>
+    `;
+
+    document.getElementById('confirmModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+  }
+
+  function resetFormCompletely() {
+    document.getElementById('registrationForm').reset();
+    document.getElementById('totalAgeDisplay').textContent = '0';
+    document.getElementById('commitmentBox').style.display = 'none';
+    document.getElementById('commitmentCheck').checked = false;
+    document.getElementById('updateBadge').style.display = 'none';
+    document.getElementById('globalError').style.display = 'none';
+    document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+    
+    // Reset year dropdowns to default state
+    document.getElementById('yob1').innerHTML = '<option value="">-- Chọn năm sinh --</option>';
+    document.getElementById('yob2').innerHTML = '<option value="">-- Chọn năm sinh --</option>';
+    
+    currentEditRow = null;
+    tempSearchData = null;
+    
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').style.display = 'none';
+  }
+
+  function submitToGoogleSheet() {
+    closeModal();
+    
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+
+    const gender1 = document.querySelector('input[name="gender1"]:checked');
+    const gender2 = document.querySelector('input[name="gender2"]:checked');
+
+    const data = {
+      action: 'save',
+      rowIndex: currentEditRow,
+      name1: document.getElementById('name1').value.trim().toUpperCase(),
+      gender1: gender1 ? gender1.value : '',
+      yob1: document.getElementById('yob1').value,
+      phone1: document.getElementById('phone1').value.trim(),
+      name2: document.getElementById('name2').value.trim().toUpperCase(),
+      gender2: gender2 ? gender2.value : '',
+      yob2: document.getElementById('yob2').value,
+      phone2: document.getElementById('phone2').value.trim(),
+      totalAge: document.getElementById('totalAgeDisplay').textContent
+    };
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.text())
+    .then(text => {
+      try {
+        const result = JSON.parse(text);
+        
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        
+        if (result.success) {
+          alert(' ' + result.message);
+          resetFormCompletely();
+        } else {
+          alert(' ' + result.message);
+        }
+      } catch (e) {
+        console.error("Dữ liệu trả về không phải JSON hợp lệ:", text);
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        resetFormCompletely(); 
+      }
+    })
+    .catch(error => {
+      console.error("Lỗi kết nối mạng:", error);
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
+      resetFormCompletely();
+    });
+  }
+
+  initYearDropdowns();
+</script>
+
+</body>
+</html>
