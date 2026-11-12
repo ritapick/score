@@ -148,26 +148,54 @@
       border-color: var(--primary-blue);
     }
     
-    /* Style cho radio button giới tính */
+    /* NÂNG CẤP: Style cho nút chọn Giới tính */
     .gender-group {
       display: flex;
-      gap: 20px;
+      gap: 12px;
       margin-top: 5px;
     }
     .gender-option {
+      position: relative;
+      flex: 1;
+    }
+    /* Ẩn radio button mặc định */
+    .gender-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    /* Style cho label đóng vai trò như nút bấm */
+    .gender-option label {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
-      cursor: pointer;
-      font-weight: 600;
+      padding: 10px;
+      background: var(--white);
+      border: 2px solid #d1d9e6;
+      border-radius: 8px;
       font-size: 14px;
-      color: #444;
-    }
-    .gender-option input[type="radio"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary-blue);
+      font-weight: 700;
+      color: #555;
       cursor: pointer;
+      transition: all 0.2s;
+    }
+    /* Khi được chọn: đổi màu và hiện dấu check */
+    .gender-option input[type="radio"]:checked + label {
+      background: var(--primary-blue);
+      color: var(--white);
+      border-color: var(--primary-blue);
+    }
+    .gender-option input[type="radio"]:checked + label::after {
+      content: '✓';
+      font-weight: 900;
+      font-size: 16px;
+      margin-left: 4px;
+    }
+    .gender-option label:hover {
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
     }
 
     .error-text {
@@ -398,7 +426,7 @@
 <div class="container">
   <div class="header">
     <h1>Đăng ký giải<br>PICKLEBALL 100+ CHAMPIONSHIP</h1>
-    <p>📅 Thời gian thi đấu: Tháng 1/2027</p>
+    <p>📅 Thời gian thi đấu: Tháng 12/2026</p>
     <img src="image90.jpeg" alt="Pickleball 100+ Championship" class="header-image" onerror="this.style.display='none'">
   </div>
 
@@ -421,16 +449,17 @@
           <div class="error-text" id="err-name1">Vui lòng nhập họ tên</div>
         </div>
         
-        <!-- THÊM: Chọn giới tính -->
         <div class="form-group">
           <label>Giới tính *</label>
           <div class="gender-group">
-            <label class="gender-option">
-              <input type="radio" name="gender1" value="Nam" onchange="updateYearDropdown(1)"> Nam
-            </label>
-            <label class="gender-option">
-              <input type="radio" name="gender1" value="Nữ" onchange="updateYearDropdown(1)"> Nữ
-            </label>
+            <div class="gender-option">
+              <input type="radio" id="gender1_nam" name="gender1" value="Nam" onchange="updateYearDropdown(1)">
+              <label for="gender1_nam">Nam</label>
+            </div>
+            <div class="gender-option">
+              <input type="radio" id="gender1_nu" name="gender1" value="Nữ" onchange="updateYearDropdown(1)">
+              <label for="gender1_nu">Nữ</label>
+            </div>
           </div>
           <div class="error-text" id="err-gender1">Vui lòng chọn giới tính</div>
         </div>
@@ -458,16 +487,17 @@
           <div class="error-text" id="err-name2">Vui lòng nhập họ tên</div>
         </div>
 
-        <!-- THÊM: Chọn giới tính -->
         <div class="form-group">
           <label>Giới tính *</label>
           <div class="gender-group">
-            <label class="gender-option">
-              <input type="radio" name="gender2" value="Nam" onchange="updateYearDropdown(2)"> Nam
-            </label>
-            <label class="gender-option">
-              <input type="radio" name="gender2" value="Nữ" onchange="updateYearDropdown(2)"> Nữ
-            </label>
+            <div class="gender-option">
+              <input type="radio" id="gender2_nam" name="gender2" value="Nam" onchange="updateYearDropdown(2)">
+              <label for="gender2_nam">Nam</label>
+            </div>
+            <div class="gender-option">
+              <input type="radio" id="gender2_nu" name="gender2" value="Nữ" onchange="updateYearDropdown(2)">
+              <label for="gender2_nu">Nữ</label>
+            </div>
           </div>
           <div class="error-text" id="err-gender2">Vui lòng chọn giới tính</div>
         </div>
@@ -487,7 +517,7 @@
       </div>
 
       <div class="summary-box">
-        <div class="age-label">TỔNG TUỔI HAI VẬN ĐỘNG VIÊN <BR>(Tính đến năm 2027)</div>
+        <div class="age-label">TỔNG TUỔI HAI VẬN ĐỘNG VIÊN <BR>(Tính đến năm 2026)</div>
         <div class="age-display" id="totalAgeDisplay">0</div>
       </div>
 
@@ -571,7 +601,9 @@
 
 <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw79fkE4Yj8vcw4x2pLbs4tlJxpc6VBHF7VvOUvxK3u4rMvis8ZfQk4NTneSjJhpXZj/exec";
-  const CURRENT_YEAR = 2027;
+  
+  // NÂNG CẤP: Tính tuổi từ năm 2026, yêu cầu tối thiểu 90 tuổi
+  const CURRENT_YEAR = 2026;
   const MIN_TOTAL_AGE = 90;
 
   let tempSearchData = null;
@@ -583,7 +615,7 @@
   function updateYearDropdown(playerNum) {
     const gender = document.querySelector(`input[name="gender${playerNum}"]:checked`)?.value;
     const select = document.getElementById(`yob${playerNum}`);
-    const currentVal = select.value; // Lưu giá trị cũ nếu có
+    const currentVal = select.value; 
 
     select.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
 
@@ -603,14 +635,13 @@
       }
     }
 
-    // Khôi phục giá trị cũ nếu nó vẫn hợp lệ trong danh sách mới
     if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
       select.value = currentVal;
     } else {
       select.value = "";
     }
     
-    validateForm(); // Cập nhật lại trạng thái form
+    validateForm(); 
   }
 
   function isValidPhone(phone) {
@@ -738,7 +769,6 @@
         
         const verifySelect = document.getElementById('verifyYob');
         verifySelect.innerHTML = '<option value="">-- Chọn năm sinh --</option>';
-        // Dropdown xác thực hiển thị toàn bộ khoảng năm có thể
         for (let year = 1988; year >= 1955; year--) {
           const opt = document.createElement('option');
           opt.value = year;
@@ -771,11 +801,12 @@
       // Xử lý VĐV 1
       document.getElementById('name1').value = String(tempSearchData.name1).toUpperCase();
       document.getElementById('phone1').value = tempSearchData.phone1;
-      // Tự động suy luận giới tính dựa trên năm sinh (1988 chắc chắn là Nữ, <=1987 mặc định chọn Nam để người dùng tự sửa nếu cần)
+      
+      // Tự động suy luận và check giới tính dựa trên năm sinh
       if (targetYob1 == 1988) {
-        document.querySelector('input[name="gender1"][value="Nữ"]').checked = true;
+        document.getElementById('gender1_nu').checked = true;
       } else {
-        document.querySelector('input[name="gender1"][value="Nam"]').checked = true;
+        document.getElementById('gender1_nam').checked = true;
       }
       updateYearDropdown(1);
       document.getElementById('yob1').value = targetYob1;
@@ -783,10 +814,11 @@
       // Xử lý VĐV 2
       document.getElementById('name2').value = String(tempSearchData.name2).toUpperCase();
       document.getElementById('phone2').value = tempSearchData.phone2;
+      
       if (targetYob2 == 1988) {
-        document.querySelector('input[name="gender2"][value="Nữ"]').checked = true;
+        document.getElementById('gender2_nu').checked = true;
       } else {
-        document.querySelector('input[name="gender2"][value="Nam"]').checked = true;
+        document.getElementById('gender2_nam').checked = true;
       }
       updateYearDropdown(2);
       document.getElementById('yob2').value = targetYob2;
@@ -856,7 +888,6 @@
     document.getElementById('globalError').style.display = 'none';
     document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
     
-    // Reset dropdown năm sinh về trạng thái ban đầu
     document.getElementById('yob1').innerHTML = '<option value="">-- Chọn giới tính trước --</option>';
     document.getElementById('yob2').innerHTML = '<option value="">-- Chọn giới tính trước --</option>';
     
