@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Pickleball Scoreboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: transparent; /* Trong suốt cho OBS */
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 900px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 3px solid #ffd700;
+        }
+        /* Tên giải đấu */
+        .tournament-name {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .match-info {
+            text-align: center;
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        /* Khu vực 2 đội */
+        .teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 15px;
+        }
+        .team {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .team.serving {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            background: rgba(255, 215, 0, 0.1);
+        }
+        .team-label {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .player-name {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            min-height: 40px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .player-name[contenteditable="true"]:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .player-name.is-serving {
+            background: #ffd700;
+            color: #000;
+            position: relative;
+        }
+        .player-name.is-serving::before {
+            content: "🏓 ";
+        }
+        .score-box {
+            margin-top: 15px;
+        }
+        .score {
+            font-size: 80px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+        .score-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-score {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn-score:active { transform: scale(0.9); }
+        .btn-plus { background: #28a745; color: white; }
+        .btn-minus { background: #dc3545; color: white; }
+
+        /* Khu vực điều khiển lượt giao */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-width: 180px;
+            gap: 10px;
+        }
+        .serve-indicator {
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        .serve-indicator .label {
+            font-size: 12px;
+            color: #ffd700;
+            text-transform: uppercase;
+        }
+        .serve-indicator .value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 3px;
+        }
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-serve { background: #ffc107; color: #000; }
+        .btn-sideout { background: #6c757d; color: white; }
+        .btn-reset { background: #dc3545; color: white; margin-top: 5px; }
+        .btn-action:hover { opacity: 0.85; }
+
+        /* Khu vực điều khiển ẩn (dùng crop trong OBS) */
+        .admin-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            color: #000;
+        }
+        .admin-panel h3 {
+            margin-bottom: 10px;
+            color: #1e3c72;
+        }
+        .admin-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        .admin-row label {
+            min-width: 120px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .admin-row input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        .admin-note {
+            font-size: 11px;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Tên giải đấu -->
+    <div class="tournament-name" id="tournamentName" contenteditable="true">GIẢI PICKLEBALL MỞ RỘNG 2026</div>
+    <div class="match-info" id="matchInfo" contenteditable="true">Nội dung: Đôi Nam - Vòng Bán Kết</div>
+
+    <!-- 2 đội và khu giữa -->
+    <div class="teams">
+        <!-- ĐỘI A -->
+        <div class="team serving" id="teamA">
+            <div class="team-label">Đội A</div>
+            <div class="player-name is-serving" id="playerA1" contenteditable="true">Nguyễn Văn A</div>
+            <div class="player-name" id="playerA2" contenteditable="true">Trần Thị B</div>
+            <div class="score-box">
+                <div class="score" id="scoreA">0</div>
+                <div class="score-controls">
+                    <button class="btn-score btn-minus" onclick="changeScore('A', -1)">−</button>
+                    <button class="btn-score btn-plus" onclick="changeScore('A', 1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khu điều khiển lượt giao -->
+        <div class="center-panel">
+            <div class="serve-indicator">
+                <div class="label">Đang giao bóng</div>
+                <div class="value" id="servingTeam">ĐỘI A</div>
+            </div>
+            <div class="serve-indicator">
+                <div class="label">Lượt giao</div>
+                <div class="value" id="serverNumber">Server 1</div>
+            </div>
+            <button class="btn-action btn-serve" onclick="nextServer()">🏓 Lượt giao tiếp</button>
+            <button class="btn-action btn-sideout" onclick="sideOut()">🔄 Side Out</button>
+            <button class="btn-action btn-reset" onclick="resetAll()">⚠️ Reset trận</button>
+        </div>
+
+        <!-- ĐỘI B -->
+        <div class="team" id="teamB">
+            <div class="team-label">Đội B</div>
+            <div class="player-name" id="playerB1" contenteditable="true">Lê Văn C</div>
+            <div class="player-name" id="playerB2" contenteditable="true">Phạm Thị D</div>
+            <div class="score-box">
+                <div class="score" id="scoreB">0</div>
+                <div class="score-controls">
+                    <button class="btn-score btn-minus" onclick="changeScore('B', -1)">−</button>
+                    <button class="btn-score btn-plus" onclick="changeScore('B', 1)">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel admin (sẽ crop trong OBS) -->
+    <div class="admin-panel">
+        <h3>⚙️ Cài đặt (Ẩn khỏi livestream)</h3>
+        <div class="admin-row">
+            <label>Tên giải đấu:</label>
+            <input type="text" id="inputTournament" value="GIẢI PICKLEBALL MỞ RỘNG 2026">
+        </div>
+        <div class="admin-row">
+            <label>Thông tin trận:</label>
+            <input type="text" id="inputMatch" value="Nội dung: Đôi Nam - Vòng Bán Kết">
+        </div>
+        <div class="admin-row">
+            <label>VĐV A1:</label>
+            <input type="text" id="inputA1" value="Nguyễn Văn A">
+        </div>
+        <div class="admin-row">
+            <label>VĐV A2:</label>
+            <input type="text" id="inputA2" value="Trần Thị B">
+        </div>
+        <div class="admin-row">
+            <label>VĐV B1:</label>
+            <input type="text" id="inputB1" value="Lê Văn C">
+        </div>
+        <div class="admin-row">
+            <label>VĐV B2:</label>
+            <input type="text" id="inputB2" value="Phạm Thị D">
+        </div>
+        <button class="btn-action btn-serve" onclick="applySettings()" style="margin-top:10px;">💾 Áp dụng</button>
+        <div class="admin-note">
+            💡 <b>Mẹo OBS:</b> Dùng Filter "Crop/Pad" cắt bỏ phần "Cài đặt" này khi livestream. 
+            Bạn có thể click trực tiếp vào tên VĐV/tên giải trên bảng để sửa nhanh.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Trạng thái trận đấu
+    let state = {
+        scoreA: 0,
+        scoreB: 0,
+        servingTeam: 'A',   // 'A' hoặc 'B'
+        serverNum: 1        // 1 hoặc 2 (lượt giao của đội)
+    };
+
+    // Cập nhật tỷ số
+    function changeScore(team, delta) {
+        if (team === 'A') {
+            state.scoreA = Math.max(0, state.scoreA + delta);
+            document.getElementById('scoreA').innerText = state.scoreA;
+        } else {
+            state.scoreB = Math.max(0, state.scoreB + delta);
+            document.getElementById('scoreB').innerText = state.scoreB;
+        }
+    }
+
+    // Chuyển sang lượt giao tiếp theo (Server 1 -> Server 2)
+    function nextServer() {
+        if (state.serverNum === 1) {
+            state.serverNum = 2;
+        } else {
+            // Hết 2 lượt -> Side Out
+            sideOut();
+            return;
+        }
+        updateServeDisplay();
+    }
+
+    // Side Out: đổi đội giao, reset về Server 1
+    function sideOut() {
+        state.servingTeam = (state.servingTeam === 'A') ? 'B' : 'A';
+        state.serverNum = 1;
+        updateServeDisplay();
+    }
+
+    // Cập nhật giao diện lượt giao
+    function updateServeDisplay() {
+        document.getElementById('servingTeam').innerText = 
+            state.servingTeam === 'A' ? 'ĐỘI A' : 'ĐỘI B';
+        document.getElementById('serverNumber').innerText = 'Server ' + state.serverNum;
+
+        // Highlight team đang giao
+        document.getElementById('teamA').classList.toggle('serving', state.servingTeam === 'A');
+        document.getElementById('teamB').classList.toggle('serving', state.servingTeam === 'B');
+
+        // Highlight VĐV đang giao bóng
+        document.getElementById('playerA1').classList.toggle('is-serving', 
+            state.servingTeam === 'A' && state.serverNum === 1);
+        document.getElementById('playerA2').classList.toggle('is-serving', 
+            state.servingTeam === 'A' && state.serverNum === 2);
+        document.getElementById('playerB1').classList.toggle('is-serving', 
+            state.servingTeam === 'B' && state.serverNum === 1);
+        document.getElementById('playerB2').classList.toggle('is-serving', 
+            state.servingTeam === 'B' && state.serverNum === 2);
+    }
+
+    // Reset toàn bộ trận
+    function resetAll() {
+        if (!confirm('Bạn có chắc muốn reset toàn bộ trận đấu?')) return;
+        state.scoreA = 0;
+        state.scoreB = 0;
+        state.servingTeam = 'A';
+        state.serverNum = 1;
+        document.getElementById('scoreA').innerText = 0;
+        document.getElementById('scoreB').innerText = 0;
+        updateServeDisplay();
+    }
+
+    // Áp dụng cài đặt từ admin panel
+    function applySettings() {
+        document.getElementById('tournamentName').innerText = document.getElementById('inputTournament').value;
+        document.getElementById('matchInfo').innerText = document.getElementById('inputMatch').value;
+        document.getElementById('playerA1').innerText = document.getElementById('inputA1').value;
+        document.getElementById('playerA2').innerText = document.getElementById('inputA2').value;
+        document.getElementById('playerB1').innerText = document.getElementById('inputB1').value;
+        document.getElementById('playerB2').innerText = document.getElementById('inputB2').value;
+    }
+
+    // Đồng bộ từ ô chỉnh sửa trực tiếp về input
+    function syncInputs() {
+        document.getElementById('inputTournament').value = document.getElementById('tournamentName').innerText;
+        document.getElementById('inputMatch').value = document.getElementById('matchInfo').innerText;
+        document.getElementById('inputA1').value = document.getElementById('playerA1').innerText;
+        document.getElementById('inputA2').value = document.getElementById('playerA2').innerText;
+        document.getElementById('inputB1').value = document.getElementById('playerB1').innerText;
+        document.getElementById('inputB2').value = document.getElementById('playerB2').innerText;
+    }
+
+    // Bắt sự kiện blur để đồng bộ
+    ['tournamentName','matchInfo','playerA1','playerA2','playerB1','playerB2'].forEach(id => {
+        document.getElementById(id).addEventListener('blur', syncInputs);
+    });
+
+    // Khởi tạo
+    updateServeDisplay();
+</script>
+
+</body>
+</html>
