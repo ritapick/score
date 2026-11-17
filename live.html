@@ -17,11 +17,11 @@
 
         /* ========== BẢNG TỶ SỐ CHÍNH ========== */
         .main-scoreboard {
-            width: 720px;
+            width: 680px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .team-row {
@@ -41,13 +41,8 @@
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
         }
 
-        .team-row.team-a {
-            border-left: 8px solid #3498db;
-        }
-
-        .team-row.team-b {
-            border-left: 8px solid #e74c3c;
-        }
+        .team-row.team-a { border-left: 8px solid #3498db; }
+        .team-row.team-b { border-left: 8px solid #e74c3c; }
 
         .team-info {
             flex: 1;
@@ -79,18 +74,19 @@
             margin: 0 2px;
         }
 
+        /* Tỷ số sát với tên đội - không có khoảng trống */
         .score-section {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-left: 8px;
+            gap: 6px;
+            margin-left: 4px;
         }
 
         .score-display {
-            font-size: 48px;
+            font-size: 44px;
             font-weight: 900;
             color: white;
-            min-width: 60px;
+            min-width: 45px;
             text-align: center;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             line-height: 1;
@@ -98,13 +94,12 @@
 
         .server-checkboxes {
             display: flex;
-            gap: 6px;
+            gap: 5px;
         }
 
-        /* Icon tròn màu vàng, có bóng sáng, không viền vuông */
         .server-checkbox {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             border: none;
             background: rgba(255, 215, 0, 0.15);
@@ -113,7 +108,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             opacity: 0.35;
             filter: grayscale(60%);
         }
@@ -137,20 +132,14 @@
 
         @keyframes glowPulse {
             0%, 100% { 
-                box-shadow: 
-                    0 0 10px rgba(255, 215, 0, 0.9),
-                    0 0 20px rgba(255, 215, 0, 0.6),
-                    inset 0 0 6px rgba(255, 255, 255, 0.5);
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.9), 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.5);
             }
             50% { 
-                box-shadow: 
-                    0 0 14px rgba(255, 215, 0, 1),
-                    0 0 28px rgba(255, 215, 0, 0.8),
-                    inset 0 0 8px rgba(255, 255, 255, 0.7);
+                box-shadow: 0 0 14px rgba(255, 215, 0, 1), 0 0 28px rgba(255, 215, 0, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.7);
             }
         }
 
-        /* ========== THANH DƯỚI - TÊN GIẢI ĐẤU ========== */
+        /* ========== THANH DƯỚI ========== */
         .lower-third {
             width: 100%;
             background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -181,9 +170,7 @@
             transition: background 0.2s;
         }
 
-        .tournament-name:hover {
-            background: rgba(255, 215, 0, 0.1);
-        }
+        .tournament-name:hover { background: rgba(255, 215, 0, 0.1); }
 
         .match-info {
             font-size: 15px;
@@ -191,10 +178,6 @@
             padding-left: 15px;
             border-left: 2px solid #ffd700;
             outline: none;
-        }
-
-        .match-info:hover {
-            background: rgba(255,255,255,0.05);
         }
 
         .live-badge {
@@ -219,7 +202,7 @@
             padding: 20px;
             margin-top: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 720px;
+            max-width: 680px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -232,9 +215,7 @@
             padding-bottom: 8px;
         }
 
-        .control-section {
-            margin-bottom: 20px;
-        }
+        .control-section { margin-bottom: 20px; }
 
         .control-section h4 {
             color: #34495e;
@@ -286,9 +267,15 @@
             justify-content: center;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(80%);
         }
 
         .btn-plus {
@@ -324,6 +311,15 @@
             border-radius: 6px;
             font-size: 15px;
             margin-top: 12px;
+        }
+
+        .btn-sideout {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            width: auto;
         }
 
         .server-control {
@@ -363,6 +359,65 @@
                 inset 0 0 6px rgba(255, 255, 255, 0.5);
         }
 
+        /* Ô tỷ số ngang */
+        .score-horizontal-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #ffd700;
+        }
+
+        .score-h-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .score-h-label {
+            font-size: 11px;
+            color: #95a5a6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-h-value {
+            font-size: 36px;
+            font-weight: 900;
+            color: white;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .score-h-value.serving-score {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .score-h-divider {
+            font-size: 28px;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        .server-indicator {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid #ffd700;
+        }
+
+        .server-indicator .value {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffd700;
+        }
+
         .control-note {
             background: #fff3cd;
             border-left: 4px solid #ffc107;
@@ -379,15 +434,14 @@
 
 <!-- ========== BẢNG TỶ SỐ CHÍNH ========== -->
 <div class="main-scoreboard">
-    <!-- Đội A -->
     <div class="team-row team-a serving" id="teamARow">
         <div class="team-info">
             <div class="players-names">
-                <span class="player-name" id="playerA1" contenteditable="true">Nguyễn Văn A</span><span class="separator">/</span><span class="player-name" id="playerA2" contenteditable="true">Trần Thị B</span>
+                <span class="player-name" id="playerA1" contenteditable="true">Trần A1</span><span class="separator">/</span><span class="player-name" id="playerA2" contenteditable="true">Nguyễn A2</span>
             </div>
         </div>
         <div class="score-section">
-            <div class="score-display" id="scoreA">0</div>
+            <div class="score-display" id="scoreA">5</div>
             <div class="server-checkboxes">
                 <div class="server-checkbox active" id="serverA1" onclick="toggleServer('A', 1)">🏓</div>
                 <div class="server-checkbox" id="serverA2" onclick="toggleServer('A', 2)">🏓</div>
@@ -395,15 +449,14 @@
         </div>
     </div>
 
-    <!-- Đội B -->
     <div class="team-row team-b" id="teamBRow">
         <div class="team-info">
             <div class="players-names">
-                <span class="player-name" id="playerB1" contenteditable="true">Lê Văn C</span><span class="separator">/</span><span class="player-name" id="playerB2" contenteditable="true">Phạm Thị D</span>
+                <span class="player-name" id="playerB1" contenteditable="true">Lý B1</span><span class="separator">/</span><span class="player-name" id="playerB2" contenteditable="true">Huỳnh B2</span>
             </div>
         </div>
         <div class="score-section">
-            <div class="score-display" id="scoreB">0</div>
+            <div class="score-display" id="scoreB">3</div>
             <div class="server-checkboxes">
                 <div class="server-checkbox" id="serverB1" onclick="toggleServer('B', 1)">🏓</div>
                 <div class="server-checkbox" id="serverB2" onclick="toggleServer('B', 2)">🏓</div>
@@ -425,13 +478,32 @@
 <div class="control-panel">
     <h3>⚙️ Bảng Điều Khiển (Ẩn khỏi Livestream)</h3>
 
+    <!-- Ô tỷ số ngang -->
+    <div class="score-horizontal-display">
+        <div class="score-h-item">
+            <div class="score-h-label" id="labelServing">Đội giao</div>
+            <div class="score-h-value serving-score" id="scoreServing">5</div>
+        </div>
+        <div class="score-h-divider">-</div>
+        <div class="score-h-item">
+            <div class="score-h-label" id="labelReceiving">Đội nhận</div>
+            <div class="score-h-value" id="scoreReceiving">3</div>
+        </div>
+        <div class="score-h-divider">-</div>
+        <div class="score-h-item server-indicator">
+            <div class="score-h-label">Lượt giao</div>
+            <div class="value" id="serverNumDisplay">1</div>
+        </div>
+    </div>
+
+    <!-- Điều khiển tỷ số và lượt giao -->
     <div class="control-section">
         <h4>📊 Tỷ số & Lượt giao</h4>
         <div class="control-row">
-            <label id="labelTeamA">Nguyễn Văn A / Trần Thị B:</label>
+            <label id="labelTeamA">Trần A1 / Nguyễn A2:</label>
             <div class="score-buttons">
-                <button class="btn btn-minus" onclick="changeScore('A', -1)">−</button>
-                <button class="btn btn-plus" onclick="changeScore('A', 1)">+</button>
+                <button class="btn btn-minus" id="btnMinusA" onclick="changeScore('A', -1)">−</button>
+                <button class="btn btn-plus" id="btnPlusA" onclick="changeScore('A', 1)">+</button>
             </div>
             <div class="server-control">
                 <div class="server-checkbox-control active" id="ctrlServerA1" onclick="toggleServer('A', 1)">🏓</div>
@@ -439,18 +511,22 @@
             </div>
         </div>
         <div class="control-row">
-            <label id="labelTeamB">Lê Văn C / Phạm Thị D:</label>
+            <label id="labelTeamB">Lý B1 / Huỳnh B2:</label>
             <div class="score-buttons">
-                <button class="btn btn-minus" onclick="changeScore('B', -1)">−</button>
-                <button class="btn btn-plus" onclick="changeScore('B', 1)">+</button>
+                <button class="btn btn-minus" id="btnMinusB" onclick="changeScore('B', -1)">−</button>
+                <button class="btn btn-plus" id="btnPlusB" onclick="changeScore('B', 1)">+</button>
             </div>
             <div class="server-control">
                 <div class="server-checkbox-control" id="ctrlServerB1" onclick="toggleServer('B', 1)">🏓</div>
                 <div class="server-checkbox-control" id="ctrlServerB2" onclick="toggleServer('B', 2)">🏓</div>
             </div>
         </div>
+        <div class="control-row" style="justify-content: center; margin-top: 10px;">
+            <button class="btn btn-sideout" onclick="sideOut()">🔄 Side Out (Đổi đội giao)</button>
+        </div>
     </div>
 
+    <!-- Cài đặt thông tin -->
     <div class="control-section">
         <h4>📝 Thông tin Trận đấu</h4>
         <div class="control-row">
@@ -463,106 +539,145 @@
         </div>
         <div class="control-row">
             <label>VĐV A1:</label>
-            <input type="text" id="inputA1" value="Nguyễn Văn A">
+            <input type="text" id="inputA1" value="Trần A1">
         </div>
         <div class="control-row">
             <label>VĐV A2:</label>
-            <input type="text" id="inputA2" value="Trần Thị B">
+            <input type="text" id="inputA2" value="Nguyễn A2">
         </div>
         <div class="control-row">
             <label>VĐV B1:</label>
-            <input type="text" id="inputB1" value="Lê Văn C">
+            <input type="text" id="inputB1" value="Lý B1">
         </div>
         <div class="control-row">
             <label>VĐV B2:</label>
-            <input type="text" id="inputB2" value="Phạm Thị D">
+            <input type="text" id="inputB2" value="Huỳnh B2">
         </div>
         <button class="btn btn-apply" onclick="applySettings()">💾 Áp dụng Cài đặt</button>
     </div>
 
+    <!-- Nút Reset -->
     <div class="control-section">
         <button class="btn btn-reset" onclick="resetAll()">⚠️ Reset Toàn bộ Trận đấu</button>
     </div>
 
     <div class="control-note">
         💡 <b>Hướng dẫn sử dụng:</b><br>
-        • <b>Logic lượt giao:</b> Click lần 1 → sáng 1 lượt (🏓). Click tiếp → sáng đồng thời 2 lượt (🏓🏓). Click vào icon đang sáng → tắt bớt 1 lượt.<br>
-        • Click vào đội đối phương sẽ tự động tắt toàn bộ lượt giao của đội hiện tại (side out).<br>
-        • Dùng Filter "Crop/Pad" trong OBS để cắt bỏ phần "Bảng Điều Khiển" này khi livestream.
+        • <b>Logic tỷ số:</b> Chỉ đội đang giao banh mới được cộng/trừ điểm (nút của đội nhận bị khóa).<br>
+        • <b>Ô tỷ số ngang:</b> Luôn hiển thị "Tỷ số đội giao - Tỷ số đội nhận - Lượt giao (1 hoặc 2)".<br>
+        • <b>Side Out:</b> Bấm nút "🔄 Side Out" để đổi đội giao, tỷ số tự động đảo vị trí.<br>
+        • <b>Lượt giao:</b> Click 🏓 để bật/tắt lượt giao. Click vào đội khác sẽ tự động side out.<br>
+        • Dùng Filter "Crop/Pad" trong OBS để cắt bỏ phần "Bảng Điều Khiển" khi livestream.
     </div>
 </div>
 
 <script>
     // Trạng thái trận đấu
     let state = {
-        scoreA: 0,
-        scoreB: 0,
-        // Lưu trạng thái bật/tắt của từng checkbox
-        servers: {
-            A1: false, A2: false,
-            B1: false, B2: false
-        }
+        scoreA: 5,
+        scoreB: 3,
+        servingTeam: 'A',
+        servers: { A1: true, A2: false, B1: false, B2: false }
     };
 
-    // Khởi tạo: đội A có 1 lượt giao
-    state.servers.A1 = true;
-
-    // Cập nhật tỷ số
+    // Cập nhật tỷ số - chỉ đội giao mới được thay đổi
     function changeScore(team, delta) {
+        // Kiểm tra: chỉ đội đang giao mới được thay đổi tỷ số
+        if (team !== state.servingTeam) {
+            alert('⚠️ Chỉ đội đang giao banh mới được thay đổi tỷ số!');
+            return;
+        }
+
         if (team === 'A') {
             state.scoreA = Math.max(0, state.scoreA + delta);
-            document.getElementById('scoreA').innerText = state.scoreA;
         } else {
             state.scoreB = Math.max(0, state.scoreB + delta);
-            document.getElementById('scoreB').innerText = state.scoreB;
         }
+        updateDisplay();
     }
 
-    /**
-     * Logic toggle lượt giao:
-     * - Click vào 1 ô: nếu đang tắt → bật lên (thêm 1 lượt)
-     *                  nếu đang bật → tắt đi (bớt 1 lượt)
-     * - Click vào đội khác: tự động tắt hết lượt của đội cũ (side out)
-     * - Có thể có 0, 1, hoặc 2 lượt sáng cùng lúc trên 1 đội
-     */
+    // Toggle lượt giao
     function toggleServer(team, serverNum) {
         const key = team + serverNum;
         const otherTeam = team === 'A' ? 'B' : 'A';
 
-        // Nếu click vào đội khác đội đang có lượt → side out (tắt hết đội cũ)
+        // Nếu click vào đội khác đội đang có lượt → side out
         const otherTeamHasServer = state.servers[otherTeam + '1'] || state.servers[otherTeam + '2'];
-        const currentTeamHasServer = state.servers['A1'] || state.servers['A2'] || state.servers['B1'] || state.servers['B2'];
-
         if (otherTeamHasServer && !state.servers[key]) {
-            // Side out: tắt hết đội kia
             state.servers[otherTeam + '1'] = false;
             state.servers[otherTeam + '2'] = false;
         }
 
-        // Toggle ô hiện tại
         state.servers[key] = !state.servers[key];
 
-        updateServerDisplay();
+        // Cập nhật servingTeam dựa trên đội nào có server
+        if (state.servers.A1 || state.servers.A2) {
+            state.servingTeam = 'A';
+        } else if (state.servers.B1 || state.servers.B2) {
+            state.servingTeam = 'B';
+        }
+
+        updateDisplay();
     }
 
-    // Cập nhật hiển thị
-    function updateServerDisplay() {
-        // Cập nhật checkbox trên bảng tỷ số
-        ['A1', 'A2', 'B1', 'B2'].forEach(key => {
-            const team = key[0];
-            const num = key[1];
-            const isActive = state.servers[key];
+    // Side Out - đổi đội giao
+    function sideOut() {
+        const otherTeam = state.servingTeam === 'A' ? 'B' : 'A';
+        
+        // Tắt hết server đội hiện tại
+        state.servers[state.servingTeam + '1'] = false;
+        state.servers[state.servingTeam + '2'] = false;
+        
+        // Bật server 1 cho đội mới
+        state.servers[otherTeam + '1'] = true;
+        state.servingTeam = otherTeam;
 
+        updateDisplay();
+    }
+
+    // Cập nhật toàn bộ giao diện
+    function updateDisplay() {
+        // Cập nhật tỷ số trên bảng chính
+        document.getElementById('scoreA').innerText = state.scoreA;
+        document.getElementById('scoreB').innerText = state.scoreB;
+
+        // Cập nhật checkbox server
+        ['A1', 'A2', 'B1', 'B2'].forEach(key => {
+            const isActive = state.servers[key];
             document.getElementById('server' + key).classList.toggle('active', isActive);
             document.getElementById('ctrlServer' + key).classList.toggle('active', isActive);
         });
 
-        // Xác định đội nào đang giao (có ít nhất 1 lượt sáng)
-        const aServing = state.servers.A1 || state.servers.A2;
-        const bServing = state.servers.B1 || state.servers.B2;
+        // Highlight đội đang giao
+        document.getElementById('teamARow').classList.toggle('serving', state.servingTeam === 'A');
+        document.getElementById('teamBRow').classList.toggle('serving', state.servingTeam === 'B');
 
-        document.getElementById('teamARow').classList.toggle('serving', aServing);
-        document.getElementById('teamBRow').classList.toggle('serving', bServing);
+        // Khóa/mở nút tỷ số theo đội giao
+        const isAServing = state.servingTeam === 'A';
+        document.getElementById('btnPlusA').disabled = !isAServing;
+        document.getElementById('btnMinusA').disabled = !isAServing;
+        document.getElementById('btnPlusB').disabled = isAServing;
+        document.getElementById('btnMinusB').disabled = isAServing;
+
+        // Cập nhật ô tỷ số ngang - đội giao luôn bên trái
+        if (state.servingTeam === 'A') {
+            document.getElementById('scoreServing').innerText = state.scoreA;
+            document.getElementById('scoreReceiving').innerText = state.scoreB;
+            document.getElementById('labelServing').innerText = document.getElementById('labelTeamA').innerText.replace(':', '');
+            document.getElementById('labelReceiving').innerText = document.getElementById('labelTeamB').innerText.replace(':', '');
+        } else {
+            document.getElementById('scoreServing').innerText = state.scoreB;
+            document.getElementById('scoreReceiving').innerText = state.scoreA;
+            document.getElementById('labelServing').innerText = document.getElementById('labelTeamB').innerText.replace(':', '');
+            document.getElementById('labelReceiving').innerText = document.getElementById('labelTeamA').innerText.replace(':', '');
+        }
+
+        // Cập nhật lượt giao (1 hoặc 2)
+        let serverNum = 0;
+        if (state.servers[state.servingTeam + '1']) serverNum = 1;
+        if (state.servers[state.servingTeam + '2']) serverNum = 2;
+        if (serverNum === 0) serverNum = 1; // Default
+        document.getElementById('serverNumDisplay').innerText = serverNum;
     }
 
     // Reset toàn bộ
@@ -570,10 +685,9 @@
         if (!confirm('Bạn có chắc muốn reset toàn bộ trận đấu?')) return;
         state.scoreA = 0;
         state.scoreB = 0;
+        state.servingTeam = 'A';
         state.servers = { A1: true, A2: false, B1: false, B2: false };
-        document.getElementById('scoreA').innerText = 0;
-        document.getElementById('scoreB').innerText = 0;
-        updateServerDisplay();
+        updateDisplay();
     }
 
     // Áp dụng cài đặt
@@ -592,6 +706,8 @@
 
         document.getElementById('labelTeamA').innerText = a1 + ' / ' + a2 + ':';
         document.getElementById('labelTeamB').innerText = b1 + ' / ' + b2 + ':';
+
+        updateDisplay();
     }
 
     // Đồng bộ từ ô chỉnh sửa trực tiếp về input
@@ -610,6 +726,8 @@
 
         document.getElementById('labelTeamA').innerText = a1 + ' / ' + a2 + ':';
         document.getElementById('labelTeamB').innerText = b1 + ' / ' + b2 + ':';
+
+        updateDisplay();
     }
 
     ['tournamentName','matchInfo','playerA1','playerA2','playerB1','playerB2'].forEach(id => {
@@ -617,7 +735,7 @@
     });
 
     // Khởi tạo
-    updateServerDisplay();
+    updateDisplay();
 </script>
 
 </body>
