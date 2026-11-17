@@ -17,11 +17,11 @@
 
         /* ========== BẢNG TỶ SỐ CHÍNH ========== */
         .main-scoreboard {
-            width: 800px;
+            width: 720px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .team-row {
@@ -29,7 +29,7 @@
             align-items: center;
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             border-radius: 10px;
-            padding: 12px 15px;
+            padding: 10px 14px;
             border: 3px solid transparent;
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -53,19 +53,17 @@
             flex: 1;
             display: flex;
             align-items: center;
-            gap: 10px;
         }
 
         .players-names {
             font-size: 20px;
             font-weight: 600;
             color: white;
-            flex: 1;
         }
 
         .players-names .player-name {
             display: inline-block;
-            padding: 4px 8px;
+            padding: 3px 6px;
             background: rgba(255,255,255,0.1);
             border-radius: 5px;
             outline: none;
@@ -78,22 +76,24 @@
 
         .players-names .separator {
             color: #7f8c8d;
-            margin: 0 3px;
+            margin: 0 2px;
         }
 
         .score-section {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            margin-left: 8px;
         }
 
         .score-display {
-            font-size: 56px;
+            font-size: 48px;
             font-weight: 900;
             color: white;
-            min-width: 80px;
+            min-width: 60px;
             text-align: center;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            line-height: 1;
         }
 
         .server-checkboxes {
@@ -101,32 +101,53 @@
             gap: 6px;
         }
 
+        /* Icon tròn màu vàng, có bóng sáng, không viền vuông */
         .server-checkbox {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #7f8c8d;
-            border-radius: 8px;
-            background: rgba(0,0,0,0.3);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 215, 0, 0.15);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            opacity: 0.4;
+            font-size: 16px;
+            opacity: 0.35;
+            filter: grayscale(60%);
         }
 
         .server-checkbox:hover {
-            border-color: #ffd700;
-            transform: scale(1.05);
             opacity: 0.7;
+            filter: grayscale(20%);
+            transform: scale(1.08);
         }
 
         .server-checkbox.active {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #ffd700;
+            background: radial-gradient(circle at 30% 30%, #fff59d, #ffd700 60%, #f9a825);
             opacity: 1;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            filter: grayscale(0%) drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 14px rgba(255, 215, 0, 0.8));
+            box-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.9),
+                0 0 20px rgba(255, 215, 0, 0.6),
+                inset 0 0 6px rgba(255, 255, 255, 0.5);
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 10px rgba(255, 215, 0, 0.9),
+                    0 0 20px rgba(255, 215, 0, 0.6),
+                    inset 0 0 6px rgba(255, 255, 255, 0.5);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 14px rgba(255, 215, 0, 1),
+                    0 0 28px rgba(255, 215, 0, 0.8),
+                    inset 0 0 8px rgba(255, 255, 255, 0.7);
+            }
         }
 
         /* ========== THANH DƯỚI - TÊN GIẢI ĐẤU ========== */
@@ -191,14 +212,14 @@
             50% { opacity: 0.7; }
         }
 
-        /* ========== PANEL ĐIỀU KHIỂN (ẨN KHI LIVE) ========== */
+        /* ========== PANEL ĐIỀU KHIỂN ========== */
         .control-panel {
             background: rgba(255,255,255,0.98);
             border-radius: 15px;
             padding: 20px;
             margin-top: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 800px;
+            max-width: 720px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -229,7 +250,7 @@
         }
 
         .control-row label {
-            min-width: 180px;
+            min-width: 200px;
             font-weight: 600;
             color: #555;
             font-size: 13px;
@@ -251,18 +272,18 @@
 
         .score-buttons {
             display: flex;
-            gap: 8px;
-            justify-content: center;
+            gap: 6px;
         }
 
         .btn {
-            padding: 10px 20px;
             border: none;
-            border-radius: 6px;
+            border-radius: 50%;
             font-weight: bold;
             cursor: pointer;
-            font-size: 14px;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn:hover {
@@ -270,28 +291,20 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        .btn:active {
-            transform: translateY(0);
-        }
-
         .btn-plus {
             background: #27ae60;
             color: white;
             font-size: 18px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            padding: 0;
+            width: 40px;
+            height: 40px;
         }
 
         .btn-minus {
             background: #e74c3c;
             color: white;
             font-size: 18px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            padding: 0;
+            width: 40px;
+            height: 40px;
         }
 
         .btn-reset {
@@ -299,6 +312,8 @@
             color: white;
             width: 100%;
             padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
         }
 
         .btn-apply {
@@ -306,40 +321,46 @@
             color: white;
             width: 100%;
             padding: 12px;
+            border-radius: 6px;
             font-size: 15px;
             margin-top: 12px;
         }
 
         .server-control {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
         }
 
         .server-checkbox-control {
-            width: 45px;
-            height: 45px;
-            border: 3px solid #bdc3c7;
-            border-radius: 8px;
-            background: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 215, 0, 0.15);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            opacity: 0.4;
+            font-size: 16px;
+            opacity: 0.35;
+            filter: grayscale(60%);
         }
 
         .server-checkbox-control:hover {
-            border-color: #3498db;
             opacity: 0.7;
+            filter: grayscale(20%);
         }
 
         .server-checkbox-control.active {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #ffd700;
+            background: radial-gradient(circle at 30% 30%, #fff59d, #ffd700 60%, #f9a825);
             opacity: 1;
+            filter: grayscale(0%);
+            box-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.9),
+                0 0 20px rgba(255, 215, 0, 0.6),
+                inset 0 0 6px rgba(255, 255, 255, 0.5);
         }
 
         .control-note {
@@ -350,6 +371,7 @@
             border-radius: 5px;
             font-size: 12px;
             color: #856404;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -361,16 +383,14 @@
     <div class="team-row team-a serving" id="teamARow">
         <div class="team-info">
             <div class="players-names">
-                <span class="player-name" id="playerA1" contenteditable="true">Nguyễn Văn A</span>
-                <span class="separator">/</span>
-                <span class="player-name" id="playerA2" contenteditable="true">Trần Thị B</span>
+                <span class="player-name" id="playerA1" contenteditable="true">Nguyễn Văn A</span><span class="separator">/</span><span class="player-name" id="playerA2" contenteditable="true">Trần Thị B</span>
             </div>
         </div>
         <div class="score-section">
             <div class="score-display" id="scoreA">0</div>
             <div class="server-checkboxes">
-                <div class="server-checkbox active" id="serverA1" onclick="setServer('A', 1)">🏓</div>
-                <div class="server-checkbox" id="serverA2" onclick="setServer('A', 2)">🏓</div>
+                <div class="server-checkbox active" id="serverA1" onclick="toggleServer('A', 1)">🏓</div>
+                <div class="server-checkbox" id="serverA2" onclick="toggleServer('A', 2)">🏓</div>
             </div>
         </div>
     </div>
@@ -379,22 +399,20 @@
     <div class="team-row team-b" id="teamBRow">
         <div class="team-info">
             <div class="players-names">
-                <span class="player-name" id="playerB1" contenteditable="true">Lê Văn C</span>
-                <span class="separator">/</span>
-                <span class="player-name" id="playerB2" contenteditable="true">Phạm Thị D</span>
+                <span class="player-name" id="playerB1" contenteditable="true">Lê Văn C</span><span class="separator">/</span><span class="player-name" id="playerB2" contenteditable="true">Phạm Thị D</span>
             </div>
         </div>
         <div class="score-section">
             <div class="score-display" id="scoreB">0</div>
             <div class="server-checkboxes">
-                <div class="server-checkbox" id="serverB1" onclick="setServer('B', 1)">🏓</div>
-                <div class="server-checkbox" id="serverB2" onclick="setServer('B', 2)">🏓</div>
+                <div class="server-checkbox" id="serverB1" onclick="toggleServer('B', 1)">🏓</div>
+                <div class="server-checkbox" id="serverB2" onclick="toggleServer('B', 2)">🏓</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ========== THANH DƯỚI - TÊN GIẢI ĐẤU ========== -->
+<!-- ========== THANH DƯỚI ========== -->
 <div class="lower-third">
     <div class="tournament-info">
         <div class="tournament-name" id="tournamentName" contenteditable="true">GIẢI PICKLEBALL MỞ RỘNG 2026</div>
@@ -407,7 +425,6 @@
 <div class="control-panel">
     <h3>⚙️ Bảng Điều Khiển (Ẩn khỏi Livestream)</h3>
 
-    <!-- Điều khiển tỷ số và lượt giao -->
     <div class="control-section">
         <h4>📊 Tỷ số & Lượt giao</h4>
         <div class="control-row">
@@ -417,8 +434,8 @@
                 <button class="btn btn-plus" onclick="changeScore('A', 1)">+</button>
             </div>
             <div class="server-control">
-                <div class="server-checkbox-control active" id="ctrlServerA1" onclick="setServer('A', 1)">🏓</div>
-                <div class="server-checkbox-control" id="ctrlServerA2" onclick="setServer('A', 2)">🏓</div>
+                <div class="server-checkbox-control active" id="ctrlServerA1" onclick="toggleServer('A', 1)">🏓</div>
+                <div class="server-checkbox-control" id="ctrlServerA2" onclick="toggleServer('A', 2)">🏓</div>
             </div>
         </div>
         <div class="control-row">
@@ -428,13 +445,12 @@
                 <button class="btn btn-plus" onclick="changeScore('B', 1)">+</button>
             </div>
             <div class="server-control">
-                <div class="server-checkbox-control" id="ctrlServerB1" onclick="setServer('B', 1)">🏓</div>
-                <div class="server-checkbox-control" id="ctrlServerB2" onclick="setServer('B', 2)">🏓</div>
+                <div class="server-checkbox-control" id="ctrlServerB1" onclick="toggleServer('B', 1)">🏓</div>
+                <div class="server-checkbox-control" id="ctrlServerB2" onclick="toggleServer('B', 2)">🏓</div>
             </div>
         </div>
     </div>
 
-    <!-- Cài đặt thông tin -->
     <div class="control-section">
         <h4>📝 Thông tin Trận đấu</h4>
         <div class="control-row">
@@ -464,16 +480,15 @@
         <button class="btn btn-apply" onclick="applySettings()">💾 Áp dụng Cài đặt</button>
     </div>
 
-    <!-- Nút Reset -->
     <div class="control-section">
         <button class="btn btn-reset" onclick="resetAll()">⚠️ Reset Toàn bộ Trận đấu</button>
     </div>
 
     <div class="control-note">
-        💡 <b>Hướng dẫn OBS:</b><br>
-        • Dùng Filter "Crop/Pad" để cắt bỏ phần "Bảng Điều Khiển" này khi livestream<br>
-        • Bạn có thể click trực tiếp vào tên VĐV, tên giải trên bảng để sửa nhanh<br>
-        • Click vào emoji 🏓 trên bảng tỷ số hoặc panel điều khiển để chọn lượt giao
+        💡 <b>Hướng dẫn sử dụng:</b><br>
+        • <b>Logic lượt giao:</b> Click lần 1 → sáng 1 lượt (🏓). Click tiếp → sáng đồng thời 2 lượt (🏓🏓). Click vào icon đang sáng → tắt bớt 1 lượt.<br>
+        • Click vào đội đối phương sẽ tự động tắt toàn bộ lượt giao của đội hiện tại (side out).<br>
+        • Dùng Filter "Crop/Pad" trong OBS để cắt bỏ phần "Bảng Điều Khiển" này khi livestream.
     </div>
 </div>
 
@@ -482,9 +497,15 @@
     let state = {
         scoreA: 0,
         scoreB: 0,
-        servingTeam: 'A',
-        serverNum: 1
+        // Lưu trạng thái bật/tắt của từng checkbox
+        servers: {
+            A1: false, A2: false,
+            B1: false, B2: false
+        }
     };
+
+    // Khởi tạo: đội A có 1 lượt giao
+    state.servers.A1 = true;
 
     // Cập nhật tỷ số
     function changeScore(team, delta) {
@@ -497,32 +518,51 @@
         }
     }
 
-    // Thiết lập lượt giao
-    function setServer(team, serverNum) {
-        state.servingTeam = team;
-        state.serverNum = serverNum;
+    /**
+     * Logic toggle lượt giao:
+     * - Click vào 1 ô: nếu đang tắt → bật lên (thêm 1 lượt)
+     *                  nếu đang bật → tắt đi (bớt 1 lượt)
+     * - Click vào đội khác: tự động tắt hết lượt của đội cũ (side out)
+     * - Có thể có 0, 1, hoặc 2 lượt sáng cùng lúc trên 1 đội
+     */
+    function toggleServer(team, serverNum) {
+        const key = team + serverNum;
+        const otherTeam = team === 'A' ? 'B' : 'A';
+
+        // Nếu click vào đội khác đội đang có lượt → side out (tắt hết đội cũ)
+        const otherTeamHasServer = state.servers[otherTeam + '1'] || state.servers[otherTeam + '2'];
+        const currentTeamHasServer = state.servers['A1'] || state.servers['A2'] || state.servers['B1'] || state.servers['B2'];
+
+        if (otherTeamHasServer && !state.servers[key]) {
+            // Side out: tắt hết đội kia
+            state.servers[otherTeam + '1'] = false;
+            state.servers[otherTeam + '2'] = false;
+        }
+
+        // Toggle ô hiện tại
+        state.servers[key] = !state.servers[key];
+
         updateServerDisplay();
     }
 
-    // Cập nhật hiển thị lượt giao
+    // Cập nhật hiển thị
     function updateServerDisplay() {
-        // Reset tất cả checkbox
-        document.querySelectorAll('.server-checkbox, .server-checkbox-control').forEach(cb => {
-            cb.classList.remove('active');
+        // Cập nhật checkbox trên bảng tỷ số
+        ['A1', 'A2', 'B1', 'B2'].forEach(key => {
+            const team = key[0];
+            const num = key[1];
+            const isActive = state.servers[key];
+
+            document.getElementById('server' + key).classList.toggle('active', isActive);
+            document.getElementById('ctrlServer' + key).classList.toggle('active', isActive);
         });
 
-        // Kích hoạt checkbox tương ứng
-        if (state.servingTeam === 'A') {
-            document.getElementById('serverA' + state.serverNum).classList.add('active');
-            document.getElementById('ctrlServerA' + state.serverNum).classList.add('active');
-            document.getElementById('teamARow').classList.add('serving');
-            document.getElementById('teamBRow').classList.remove('serving');
-        } else {
-            document.getElementById('serverB' + state.serverNum).classList.add('active');
-            document.getElementById('ctrlServerB' + state.serverNum).classList.add('active');
-            document.getElementById('teamBRow').classList.add('serving');
-            document.getElementById('teamARow').classList.remove('serving');
-        }
+        // Xác định đội nào đang giao (có ít nhất 1 lượt sáng)
+        const aServing = state.servers.A1 || state.servers.A2;
+        const bServing = state.servers.B1 || state.servers.B2;
+
+        document.getElementById('teamARow').classList.toggle('serving', aServing);
+        document.getElementById('teamBRow').classList.toggle('serving', bServing);
     }
 
     // Reset toàn bộ
@@ -530,8 +570,7 @@
         if (!confirm('Bạn có chắc muốn reset toàn bộ trận đấu?')) return;
         state.scoreA = 0;
         state.scoreB = 0;
-        state.servingTeam = 'A';
-        state.serverNum = 1;
+        state.servers = { A1: true, A2: false, B1: false, B2: false };
         document.getElementById('scoreA').innerText = 0;
         document.getElementById('scoreB').innerText = 0;
         updateServerDisplay();
@@ -551,7 +590,6 @@
         document.getElementById('playerB1').innerText = b1;
         document.getElementById('playerB2').innerText = b2;
 
-        // Cập nhật label trong panel điều khiển
         document.getElementById('labelTeamA').innerText = a1 + ' / ' + a2 + ':';
         document.getElementById('labelTeamB').innerText = b1 + ' / ' + b2 + ':';
     }
@@ -570,12 +608,10 @@
         document.getElementById('inputB1').value = b1;
         document.getElementById('inputB2').value = b2;
 
-        // Cập nhật label trong panel điều khiển
         document.getElementById('labelTeamA').innerText = a1 + ' / ' + a2 + ':';
         document.getElementById('labelTeamB').innerText = b1 + ' / ' + b2 + ':';
     }
 
-    // Bắt sự kiện blur để đồng bộ
     ['tournamentName','matchInfo','playerA1','playerA2','playerB1','playerB2'].forEach(id => {
         document.getElementById(id).addEventListener('blur', syncInputs);
     });
