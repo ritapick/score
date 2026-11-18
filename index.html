@@ -432,7 +432,6 @@ function getMatchTeamName(teamId, bracketPos) {
   return t ? (t.name || 'TBD') : 'TBD';
 }
 
-// ✅ HÀM KIỂM TRA TẤT CẢ CÁC TRẬN ĐƯỢC LỌC ĐÃ FINISH CHƯA
 function areMatchesFinished(filterFn) {
   var matches = DATA.matches.filter(filterFn);
   if (matches.length === 0) return true;
@@ -442,162 +441,175 @@ function areMatchesFinished(filterFn) {
   });
 }
 
-// ✅ HÀM KIỂM TRA MỘT TRẬN CỤ THỂ ĐÃ FINISH CHƯA
 function isMatchFinished(m) {
   if (!m) return false;
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   return status === 'finished' || status === 'completed' || status === 'bye';
 }
 
-// ✅ TÌM TRẬN ĐẤU CỤ THỂ Ở VÒNG TRƯỚC CUNG CẤP ĐỘI CHO VỊ TRÍ NÀY
 function findFeedingMatch(prevRound, positionRef) {
   if (!positionRef) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
-  
   var codePrefix = prevRound === 2 ? 'TK' : 'BK';
-  
   return DATA.matches.find(function(m) { 
-    return Number(m.round) === prevRound && String(displayCode(m)).includes(codePrefix + matchNum); 
+    return Number(m.round) === prevRound && String(displayCode(m)) === codePrefix + matchNum; 
   });
 }
 
-// ✅ NÂNG CẤP: Hiển thị tên đội theo đúng điều kiện hoàn thành của vòng trước
+// ✅ FIX: Tự động resolve tên đội từ bracketPos khi teamId chưa có
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
   
-  var round = Number(match.round);
+  // Nếu có teamId, ưu tiên dùng
+  if (teamId) {
+    return getMatchTeamName(teamId, bracketPos);
+  }
   
-  if (round === 2) {
-    // Tứ kết: chờ tất cả trận vòng bảng fin
-    if (!areMatchesFinished(function(m) { return m.group_id; })) {
-      return isHome ? "TEAM A" : "TEAM B";
-    }
-  } else if (round === 3) {
-    // Bán kết: chờ trận tứ kết tương ứng fin
-    var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
-    var tkMatch = findFeedingMatch(2, pos);
-    if (!tkMatch || !isMatchFinished(tkMatch)) {
-      return bracketPos ? bracketPos : 'TBD';
-    }
-  } else if (round === 4) {
-    // Chung kết: chờ trận bán kết tương ứng fin
-    var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
-    var bkMatch = findFeedingMatch(3, pos);
-    if (!bkMatch || !isMatchFinished(bkMatch)) {
-      return bracketPos ? bracketPos : 'TBD';
+  // Nếu không có teamId, thử resolve từ bracketPos
+  if (bracketPos) {
+    var round = Number(match.round);
+    
+    if (round === 2) {
+      // TK: chờ tất cả trận vòng bảng FIN
+      if (!areMatchesFinished(function(m) { return m.group_id; })) {
+        return isHome ? "TEAM A" : "TEAM B";
+      }
+      // bracketPos có dạng "1A", "2B"... → resolve từ standings
+      return resolveFromGroupPosition(bracketPos);
+    } else if (round === 3) {
+      // BK: bracketPos có dạng "Thắng TK1", "Thắng TK2"...
+      var tkMatch = findFeedingMatch(2, bracketPos);
+      if (!tkMatch || !isMatchFinished(tkMatch)) {
+        return bracketPos;
+      }
+      var winnerId = getWinnerOfMatch(tkMatch);
+      return getMatchTeamName(winnerId, bracketPos);
+    } else if (round === 4) {
+      // CK: bracketPos có dạng "Thắng BK1", "Thắng BK2"...
+      var bkMatch = findFeedingMatch(3, bracketPos);
+      if (!bkMatch || !isMatchFinished(bkMatch)) {
+        return bracketPos;
+      }
+      var winnerId = getWinnerOfMatch(bkMatch);
+      return getMatchTeamName(winnerId, bracketPos);
     }
   }
   
-  return getMatchTeamName(teamId, bracketPos);
+  return bracketPos ? bracketPos : 'TBD';
 }
 
-// ✅ FIX: Resolve bracket positions to team IDs before rendering
+// ✅ Resolve tên đội từ vị trí bảng (1A, 2B, 3C...)
+function resolveFromGroupPosition(pos) {
+  if (!pos || !DATA.gStage) return pos;
+  var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; });
+  for (var i = 0; i < groups.length; i++) {
+    var g = groups[i];
+    var st = standings(g.id);
+    for (var j = 0; j < st.length; j++) {
+      if ((j + 1) + g.code === pos) {
+        return getMatchTeamName(st[j].id, pos);
+      }
+    }
+  }
+  return pos;
+}
+
+function getWinnerOfMatch(m) {
+  if (!m) return null;
+  if (!isMatchFinished(m)) return null;
+  var h = Number(m.home_score) || 0;
+  var a = Number(m.away_score) || 0;
+  if (h > a) return m.home_team_id || null;
+  if (a > h) return m.away_team_id || null;
+  if (m.home_team_id && !m.away_team_id) return m.home_team_id;
+  if (m.away_team_id && !m.home_team_id) return m.away_team_id;
+  return null;
+}
+
+function getLoserOfMatch(m) {
+  if (!m) return null;
+  if (!isMatchFinished(m)) return null;
+  var h = Number(m.home_score) || 0;
+  var a = Number(m.away_score) || 0;
+  if (h > a) return m.away_team_id || null;
+  if (a > h) return m.home_team_id || null;
+  return null;
+}
+
+function resolveSlot(pos) {
+  if (!pos) return null;
+  if (/V16/i.test(pos)) return findWinnerFromV16(pos);
+  if (/TK/i.test(pos)) return findWinnerFromTK(pos);
+  if (/BK/i.test(pos)) return findWinnerFromBK(pos);
+  return null;
+}
+
 function resolveKnockoutBracketPositions() {
   var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
   var positionToTeamId = {};
-  
   if (DATA.gStage) {
-    var groups = DATA.groups.filter(function(g) { return g.stage_id === DATA.gStage.id; });
+    var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; });
     groups.forEach(function(g) {
       var st = standings(g.id);
       st.forEach(function(team, idx) {
-        var pos = (idx + 1) + g.code;
-        positionToTeamId[pos] = team.id;
+        positionToTeamId[(idx + 1) + g.code] = team.id;
       });
     });
   }
-  
-  var v16Matches = koMatches.filter(function(m) { return Number(m.round) === 1; });
-  v16Matches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
+
+  function resolveHomeAway(m, round) {
+    var homePos = m.home_bracket_position;
+    if (homePos && positionToTeamId[homePos]) {
+      if (!m.home_team_id) m.home_team_id = positionToTeamId[homePos];
+    } else if (homePos) {
+      var winner = resolveSlot(homePos);
+      if (winner !== null) m.home_team_id = winner;
     }
-    if (!m.away_team_id && m.away_bracket_position) {
-      m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
+    var awayPos = m.away_bracket_position;
+    if (awayPos && positionToTeamId[awayPos]) {
+      if (!m.away_team_id) m.away_team_id = positionToTeamId[awayPos];
+    } else if (awayPos) {
+      var winner = resolveSlot(awayPos);
+      if (winner !== null) m.away_team_id = winner;
     }
-  });
-  
-  var tkMatches = koMatches.filter(function(m) { return Number(m.round) === 2; });
-  tkMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromV16(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromV16(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
-    }
-  });
-  
-  var bkMatches = koMatches.filter(function(m) { return Number(m.round) === 3; });
-  bkMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromTK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromTK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
-    }
-  });
-  
-  var ckMatches = koMatches.filter(function(m) { return Number(m.round) === 4; });
-  ckMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromBK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
-    }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromBK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
-    }
+  }
+
+  [1,2,3,4].forEach(function(r){
+    koMatches.filter(function(m){ return Number(m.round) === r; }).forEach(function(m){
+      resolveHomeAway(m, r);
+    });
   });
 }
 
 function findWinnerFromV16(positionRef) {
+  if (!positionRef || !/V16/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
   var v16Match = DATA.matches.find(function(m) { 
     return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum; 
   });
-  
-  if (!v16Match) return null;
-  
-  var h = Number(v16Match.home_score) || 0;
-  var a = Number(v16Match.away_score) || 0;
-  if (h > a) return v16Match.home_team_id;
-  if (a > h) return v16Match.away_team_id;
-  return null;
+  return getWinnerOfMatch(v16Match);
 }
 
 function findWinnerFromTK(positionRef) {
+  if (!positionRef || !/TK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
   var tkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 2 && String(displayCode(m)).includes('TK' + matchNum); 
+    return Number(m.round) === 2 && String(displayCode(m)) === 'TK' + matchNum; 
   });
-  
-  if (!tkMatch) return null;
-  
-  var h = Number(tkMatch.home_score) || 0;
-  var a = Number(tkMatch.away_score) || 0;
-  if (h > a) return tkMatch.home_team_id;
-  if (a > h) return tkMatch.away_team_id;
-  return null;
+  return getWinnerOfMatch(tkMatch);
 }
 
 function findWinnerFromBK(positionRef) {
+  if (!positionRef || !/BK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
   var bkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 3 && String(displayCode(m)).includes('BK' + matchNum); 
+    return Number(m.round) === 3 && String(displayCode(m)) === 'BK' + matchNum; 
   });
-  
-  if (!bkMatch) return null;
-  
-  var h = Number(bkMatch.home_score) || 0;
-  var a = Number(bkMatch.away_score) || 0;
-  if (h > a) return bkMatch.home_team_id;
-  if (a > h) return bkMatch.away_team_id;
-  return null;
+  return getWinnerOfMatch(bkMatch);
 }
 
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
@@ -801,10 +813,8 @@ function startDurationTimer() {
   if (!currentTimelineMatchId) return;
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   if (!match || match.match_status !== 'live') return;
-  
   var startTime = getMatchStartTime();
   if (startTime === null) return;
-  
   durationInterval = setInterval(function() {
     var durationEl = document.getElementById("match-duration");
     if (durationEl) {
@@ -1076,9 +1086,7 @@ async function loadEventDetail(eid) {
     } else { DATA.groups = []; DATA.groupTeams = []; }
     var m = await sb.from("matches").select("*").eq("event_id", eid).order("match_seq");
     DATA.matches = m.data || [];
-    
     resolveKnockoutBracketPositions();
-    
     render();
     startRealtime();
   } catch(e) { console.error("Load event detail error:", e); }
@@ -1126,21 +1134,13 @@ function renderTimeline() {
   var H = '';
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   var isLive = match && match.match_status === 'live';
-
   var durationText = "00:00";
   var startTime = getMatchStartTime();
   if (startTime !== null) {
     var endTime;
-    if (isLive) {
-      endTime = Date.now();
-    } else {
-      endTime = getLastRallyTime();
-    }
-    if (endTime !== null && endTime >= startTime) {
-      durationText = formatDuration(endTime - startTime);
-    }
+    if (isLive) { endTime = Date.now(); } else { endTime = getLastRallyTime(); }
+    if (endTime !== null && endTime >= startTime) { durationText = formatDuration(endTime - startTime); }
   }
-
   DATA.rallies.forEach(function(r, index) {
     var badge = getEventTypeBadge(r.event_type);
     var homeTeamName = match ? getDisplayTeamName(match.home_team_id, match.home_bracket_position, match, true) : 'Đội A';
@@ -1151,7 +1151,6 @@ function renderTimeline() {
     var serverScore = isHomeServing ? r.home_score : r.away_score;
     var receiverScore = isHomeServing ? r.away_score : r.home_score;
     var desc = '<span class="team-name">' + esc(serverName) + '</span> đang giao banh lượt ' + r.serve_turn + ', <span class="team-name">' + esc(receiverName) + '</span> đang nhận giao banh';
-    
     H += '<div class="rally-card">';
     H += '<div class="rally-header">';
     H += '<div class="rally-title">Rally #' + r.rally_number + '</div>';
@@ -1166,7 +1165,6 @@ function renderTimeline() {
     H += '</div>';
     H += '<div class="rally-desc">' + desc + '</div>';
     H += '</div>';
-
     if (index === DATA.rallies.length - 1) {
       H += '<div style="text-align:center; margin-top:12px; padding:10px; background:rgba(34,211,238,0.1); border:1px solid var(--cy); border-radius:8px; color:var(--cy); font-weight:800; font-size:14px; font-family:monospace;">';
       H += '️ Thời gian trận đấu: <span id="match-duration">' + durationText + '</span>';
@@ -1382,11 +1380,9 @@ function renderTournamentList() {
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
     H += '<div class="t-meta">';
-    
     var startDateFormatted = formatDateDDMMYYYY(t.start_date);
     var endDateFormatted = t.end_date && t.end_date !== t.start_date ? ' → ' + formatDateDDMMYYYY(t.end_date) : '';
     var daysLeftText = getDaysLeftText(t.start_date);
-    
     H += '<span>📅 ' + startDateFormatted + endDateFormatted + '<span style="color:var(--li); font-weight:700;">' + daysLeftText + '</span></span>';
     if (t.location_name) H += '<span> Địa điểm: ' + esc(t.location_name) + '</span>';
     H += '<span>🏷️ Mã: ' + esc(t.code) + '</span></div>';
@@ -1406,17 +1402,14 @@ function renderTournamentDetail() {
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header">';
   H += '<div><h2>' + esc(t.name) + '</h2>';
-  
   var startDateFormatted = formatDateDDMMYYYY(t.start_date);
   var endDateFormatted = t.end_date && t.end_date !== t.start_date ? ' → ' + formatDateDDMMYYYY(t.end_date) : '';
   var daysLeftText = getDaysLeftText(t.start_date);
-  
   H += '<div class="meta"><span>📅 ' + startDateFormatted + endDateFormatted + '<span style="color:var(--li); font-weight:700;">' + daysLeftText + '</span></span>';
   if (t.location_name) H += '<span> Địa điểm: ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
   H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ Link giải</button>';
   H += '</div>';
-  
   if (canManage) {
     var refereeUrl = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(t.id);
     H += '<div class="manage-bar">';
@@ -1425,7 +1418,6 @@ function renderTournamentDetail() {
     H += '</div>';
   }
   H += '</div>';
-  
   if (DATA.events.length) {
     H += '<div class="event-tabs">';
     DATA.events.forEach(function(e) {
@@ -1468,10 +1460,7 @@ window.shareTournament = function(tid) {
 window.shareRefereeLink = function(tid) {
   var url = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(tid);
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
-  var shareData = { 
-    title: "Link Trọng Tài: " + name, 
-    url: url 
-  };
+  var shareData = { title: "Link Trọng Tài: " + name, url: url };
   if (navigator.share) {
     navigator.share(shareData).catch(function(error) {
       if (error.name !== 'AbortError') fallbackCopyText(url);
@@ -1505,29 +1494,45 @@ function renderFinalStandings(ckMatch, bkMatches) {
   var a = Number(ckMatch.away_score)||0;
   var isDone = ckMatch.match_status === 'completed' || ckMatch.match_status === 'finished' || h > 0 || a > 0;
   if (!isDone) return '';
-  var winnerId = h > a ? ckMatch.home_team_id : ckMatch.away_team_id;
-  var loserId = h > a ? ckMatch.away_team_id : ckMatch.home_team_id;
-  var winnerName = getDisplayTeamName(winnerId, null, ckMatch, h > a);
-  var loserName = getDisplayTeamName(loserId, null, ckMatch, h <= a);
+
+  resolveKnockoutBracketPositions();
+
+  var winnerId, loserId;
+  if (h > a) {
+    winnerId = ckMatch.home_team_id;
+    loserId = ckMatch.away_team_id;
+  } else if (a > h) {
+    winnerId = ckMatch.away_team_id;
+    loserId = ckMatch.home_team_id;
+  } else {
+    winnerId = ckMatch.home_team_id || ckMatch.away_team_id;
+    loserId = ckMatch.home_team_id ? (ckMatch.home_team_id === winnerId ? ckMatch.away_team_id : ckMatch.home_team_id) : null;
+  }
+
+  var winnerName = getDisplayTeamName(winnerId, null, ckMatch, true);
+  var loserName = getDisplayTeamName(loserId, null, ckMatch, false);
+
   var thirdPlaceTeams = [];
   if (bkMatches && bkMatches.length >= 2) {
     bkMatches.forEach(function(m) {
-      var mh = Number(m.home_score)||0;
-      var ma = Number(m.away_score)||0;
-      var isHomeWinner = mh > ma;
-      var loserTid = isHomeWinner ? m.away_team_id : m.home_team_id;
-      if (loserTid) thirdPlaceTeams.push(getDisplayTeamName(loserTid, null, m, !isHomeWinner));
+      var loserTid = getLoserOfMatch(m);
+      if (loserTid) {
+        var loserName = getDisplayTeamName(loserTid, null, m, false);
+        if (thirdPlaceTeams.indexOf(loserName) === -1) {
+          thirdPlaceTeams.push(loserName);
+        }
+      }
     });
   }
-  var uniqueThird = thirdPlaceTeams.filter(function(item, pos) { return thirdPlaceTeams.indexOf(item) == pos; });
+
   var H = '<div class="section-title" style="margin-top:20px"> BẢNG THÀNH TÍCH</div>';
   H += '<div class="group-card" style="border: 2px solid var(--li); background: rgba(163,230,53,0.05);">';
   H += '<table><tbody>';
-  H += '<tr style="background:rgba(163,230,53,.15)"><td style="padding:10px;font-weight:900;color:var(--li);font-size:18px;width:60px;text-align:center">🥇1</td><td style="padding:10px;font-weight:800;font-size:16px;color:var(--li)">' + esc(winnerName) + '</td></tr>';
-  H += '<tr><td style="padding:10px;font-weight:900;color:var(--mu);font-size:18px;width:60px;text-align:center">🥈2</td><td style="padding:10px;font-weight:700;font-size:15px;color:var(--mu)">' + esc(loserName) + '</td></tr>';
-  if (uniqueThird.length > 0) {
-    for (var i = 0; i < uniqueThird.length; i++) {
-      H += '<tr><td style="padding:10px;font-weight:900;color:var(--or);font-size:18px;width:60px;text-align:center">🥉3</td><td style="padding:10px;font-weight:700;font-size:15px;color:var(--or)">' + esc(uniqueThird[i]) + '</td></tr>';
+  H += '<tr style="background:rgba(163,230,53,.15)"><td style="padding:10px;font-weight:900;color:var(--li);font-size:18px;width:60px;text-align:center">🥇1</td><td style="padding:10px;font-weight:800;font-size:16px;color:var(--li)">' + esc(winnerName || 'TBD') + '</td></tr>';
+  H += '<tr><td style="padding:10px;font-weight:900;color:var(--mu);font-size:18px;width:60px;text-align:center">🥈2</td><td style="padding:10px;font-weight:700;font-size:15px;color:var(--mu)">' + esc(loserName || 'TBD') + '</td></tr>';
+  if (thirdPlaceTeams.length > 0) {
+    for (var i = 0; i < thirdPlaceTeams.length; i++) {
+      H += '<tr><td style="padding:10px;font-weight:900;color:var(--or);font-size:18px;width:60px;text-align:center">🥉3</td><td style="padding:10px;font-weight:700;font-size:15px;color:var(--or)">' + esc(thirdPlaceTeams[i]) + '</td></tr>';
     }
   }
   H += '</tbody></table></div>';
