@@ -181,69 +181,93 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ FIX GỐC RỄ: Trang trọng tài KHÔNG tự tính pairing từ bảng xếp hạng.
-   Chỉ ĐỌC bracket_position đã lưu trong DB (cùng nguồn với trang Index)
-   và LAN TRUYỀN đội thắng theo đúng position đó.
+   ✅ LOGIC MỚI: Dynamic Resolution cho vòng Knockout (Khớp 100% Index)
+   - Tứ kết: Chỉ hiện đội khi vòng bảng tương ứng đã hoàn thành (isGroupComplete)
+   - Bán kết: Chỉ hiện đội thắng khi trận Tứ kết tương ứng đã finished
+   - Chung kết: Chỉ hiện đội thắng khi trận Bán kết tương ứng đã finished
    ===================================================================== */
 
-// Parse "Thắng V16-3" / "Thắng TK2" / "Thắng BK1" -> trả về teamId đội thắng (hoặc null)
-function getWinnerFromPositionRef(positionRef){
-  if(!positionRef) return null;
-  // Bỏ qua seed trực tiếp (1A,2B...) & bye/TBD -> để DB tự quyết định
-  if(/^[1234][A-D]$/.test(positionRef) || positionRef==="Miễn (Bye)" || positionRef==="TBD") return null;
-
-  var mV=positionRef.match(/V16[-\s]?(\d+)/i);
-  if(mV){ var slot=parseInt(mV[1]); var mt=DATA.matches.find(function(x){return Number(x.round)===1&&Number(x.bracket_slot)===slot}); return mt?pickWinner(mt):null; }
-
-  var mT=positionRef.match(/TK[-\s]?(\d+)/i);
-  if(mT){ var tk=parseInt(mT[1]); var mt=DATA.matches.find(function(x){return Number(x.round)===2&&Number(x.bracket_slot)===8+tk}); return mt?pickWinner(mt):null; }
-
-  var mB=positionRef.match(/BK[-\s]?(\d+)/i);
-  if(mB){ var bk=parseInt(mB[1]); var mt=DATA.matches.find(function(x){return Number(x.round)===3&&Number(x.bracket_slot)===12+bk}); return mt?pickWinner(mt):null; }
-
-  return null;
+function getGroupIdByCode(code) {
+    var g = DATA.groups.find(function(x) { return x && x.code === code; });
+    return g ? g.id : null;
 }
 
-// Lấy đội thắng của 1 trận (tôn trọng cả bye: 1 đội null + đối thủ có teamId => đội kia thắng)
-function pickWinner(mt){
-  if(!mt) return null;
-  var h=Number(mt.home_score)||0, a=Number(mt.away_score)||0;
-  // Bye: 1 bên null, bên kia có đội => bên có đội thắng mặc định
-  if((!mt.home_team_id&&mt.away_team_id)||(mt.home_team_id&&!mt.away_team_id)){
-    return mt.home_team_id||mt.away_team_id;
-  }
-  if(h>a) return mt.home_team_id;
-  if(a>h) return mt.away_team_id;
-  return null;
-}
-
-// Chỉ dùng cho HIỂN THỊ (không ghi DB): điền teamId local khi DB đang null
-function resolveKnockoutBracketPositions(){
-  var koMatches=DATA.matches.filter(function(m){return !m.group_id&&m.round;});
-  koMatches.forEach(function(m){
-    if(!m.home_team_id&&m.home_bracket_position){ m.home_team_id=getWinnerFromPositionRef(m.home_bracket_position); }
-    if(!m.away_team_id&&m.away_bracket_position){ m.away_team_id=getWinnerFromPositionRef(m.away_bracket_position); }
-  });
-}
-
-// ✅ Thay thế syncKO()+computeKOTeams(): lan truyền đội thắng THEO POSITION đã lưu trong DB
-async function propagateWinners(){
-  var koMatches=DATA.matches.filter(function(m){return !m.group_id&&m.round;});
-  var changed=true, guard=0;
-  while(changed&&guard<6){
-    changed=false; guard++;
-    for(var i=0;i<koMatches.length;i++){
-      var m=koMatches[i];
-      if(!m.home_team_id&&m.home_bracket_position){
-        var w=getWinnerFromPositionRef(m.home_bracket_position);
-        if(w){ await sb.from("matches").update({home_team_id:w}).eq("id",m.id); m.home_team_id=w; changed=true; }
-      }
-      if(!m.away_team_id&&m.away_bracket_position){
-        var w2=getWinnerFromPositionRef(m.away_bracket_position);
-        if(w2){ await sb.from("matches").update({away_team_id:w2}).eq("id",m.id); m.away_team_id=w2; changed=true; }
-      }
+function getWinnerOfMatch(m) {
+    if (!m) return null;
+    var h = Number(m.home_score) || 0;
+    var a = Number(m.away_score) || 0;
+    
+    // Nếu match đã kết thúc hoặc có tỷ số phân định
+    if (m.match_status === 'finished' || m.match_status === 'completed') {
+        if (h > a) return m.home_team_id;
+        if (a > h) return m.away_team_id;
     }
-  }
+    // Xử lý trường hợp Bye (1 đội null, đội kia có ID)
+    if (!m.home_team_id && m.away_team_id && (m.match_status === 'finished' || m.match_status === 'completed' || m.match_status === 'bye')) return m.away_team_id;
+    if (m.home_team_id && !m.away_team_id && (m.match_status === 'finished' || m.match_status === 'completed' || m.match_status === 'bye')) return m.home_team_id;
+    
+    return null;
+}
+
+// Hàm trung tâm để lấy tên đội hiển thị dựa trên trạng thái thực tế
+function getDynamicTeamName(match, isHome) {
+    var teamId = isHome ? match.home_team_id : match.away_team_id;
+    var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
+
+    // 1. Nếu là Bye hoặc TBD
+    if (posRef === "Miễn (Bye)" || posRef === "TBD") {
+        return teamId ? getMatchTeamName(teamId, null) : "TBD";
+    }
+
+    // 2. Kiểm tra vị trí trực tiếp từ vòng bảng (ví dụ: "1A", "2B")
+    var groupMatch = posRef ? posRef.match(/^([1234])([A-D])$/i) : null;
+    if (groupMatch) {
+        var pos = parseInt(groupMatch[1]);
+        var groupCode = groupMatch[2].toUpperCase();
+        var gid = getGroupIdByCode(groupCode);
+        
+        // ✅ CHỈ hiển thị đội khi vòng bảng đó đã HOÀN THÀNH
+        if (gid && isGroupComplete(gid)) {
+            var st = standings(gid);
+            if (st.length >= pos && st[pos - 1]) {
+                return getMatchTeamName(st[pos - 1].id, posRef);
+            }
+        }
+        // Nếu chưa hoàn thành, trả về mã vị trí (ví dụ: "1A") để hiển thị dạng placeholder
+        return posRef; 
+    }
+
+    // 3. Kiểm tra "Thắng V16-X"
+    var v16Match = posRef ? posRef.match(/V16[-\s]?(\d+)/i) : null;
+    if (v16Match) {
+        var slot = parseInt(v16Match[1]);
+        var m = DATA.matches.find(function(x) { return Number(x.round) === 1 && Number(x.bracket_slot) === slot; });
+        var winnerId = getWinnerOfMatch(m);
+        return winnerId ? getMatchTeamName(winnerId, posRef) : ("Thắng V16-" + slot);
+    }
+
+    // 4. Kiểm tra "Thắng TK-X" (Tứ kết)
+    var tkMatch = posRef ? posRef.match(/TK[-\s]?(\d+)/i) : null;
+    if (tkMatch) {
+        var tkNum = parseInt(tkMatch[1]);
+        var slot = 8 + tkNum; // TK1 = slot 9, TK2 = 10...
+        var m = DATA.matches.find(function(x) { return Number(x.round) === 2 && Number(x.bracket_slot) === slot; });
+        var winnerId = getWinnerOfMatch(m);
+        return winnerId ? getMatchTeamName(winnerId, posRef) : ("Thắng TK" + tkNum);
+    }
+
+    // 5. Kiểm tra "Thắng BK-X" (Bán kết)
+    var bkMatch = posRef ? posRef.match(/BK[-\s]?(\d+)/i) : null;
+    if (bkMatch) {
+        var bkNum = parseInt(bkMatch[1]);
+        var slot = 12 + bkNum; // BK1 = slot 13, BK2 = 14
+        var m = DATA.matches.find(function(x) { return Number(x.round) === 3 && Number(x.bracket_slot) === slot; });
+        var winnerId = getWinnerOfMatch(m);
+        return winnerId ? getMatchTeamName(winnerId, posRef) : ("Thắng BK" + bkNum);
+    }
+
+    // Fallback: Nếu có teamId trong DB thì dùng, không thì dùng posRef
+    return teamId ? getMatchTeamName(teamId, posRef) : (posRef || "TBD");
 }
 
 function openLogin(){el("login-modal").classList.add("show");el("lmsg").textContent=""}
@@ -370,7 +394,6 @@ async function loadMatches(){
       }else{DATA.groups=[];DATA.groupTeams=[]}
     }else{DATA.teams=[];DATA.players=[];DATA.stages=[];DATA.groups=[];DATA.groupTeams=[]}
 
-    resolveKnockoutBracketPositions(); // chỉ display, không ghi DB
     renderMatchesByRound()
   }catch(e){console.error(e)}
 }
@@ -380,6 +403,7 @@ function teamsInG(gid){
   tids=[...new Set(tids)];
   return DATA.teams.filter(function(t){return tids.indexOf(t.id)>=0})
 }
+
 function isGroupComplete(gid){
   var t=teamsInG(gid);
   var exp=t.length*(t.length-1)/2;
@@ -391,6 +415,7 @@ function isGroupComplete(gid){
   });
   return t.length>=2&&finishedMatches.length>=exp;
 }
+
 function standings(gid){
   var t=teamsInG(gid);
   var st={};
@@ -414,11 +439,13 @@ function standings(gid){
     return y.pf-x.pf;
   });
 }
+
 function getMatchTeamName(teamId,bracketPos){
   if(!teamId)return bracketPos?bracketPos:'TBD';
   var t=DATA.teams.find(function(x){return x&&x.id===teamId});
   return t?(t.name||'TBD'):'TBD';
 }
+
 function getTeamPlayers(teamId){
   if(!teamId)return[];
   var team=DATA.teams.find(function(x){return x&&x.id===teamId});
@@ -433,6 +460,7 @@ function getTeamPlayers(teamId){
   });
   return result;
 }
+
 function getRoundInfo(match){
   if(!match)return{type:'other',name:'Khác',class:''};
   if(match.group_id){
@@ -445,6 +473,7 @@ function getRoundInfo(match){
   if(match.round===4)return{type:'ck',name:'🏆 Chung kết',class:'ko-header'};
   return{type:'other',name:'Khác',class:'ko-header'};
 }
+
 function displayCode(m){
   if(!m)return"?";
   if(m.group_id){
@@ -461,6 +490,7 @@ function displayCode(m){
   if(m.round===4)return"CK";
   return String(m.match_code||"?");
 }
+
 function renderMatchesByRound(){
   if(!DATA.matches||DATA.matches.length===0){
     el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Chưa có trận</p></div>';
@@ -499,18 +529,25 @@ function renderMatchesByRound(){
   });
   el("matches-container").innerHTML=H;
 }
+
 function renderMatchCard(m){
   if(!m)return'';
   var status=m.match_status||'scheduled';
-  var hn=getMatchTeamName(m.home_team_id,m.home_bracket_position);
-  var an=getMatchTeamName(m.away_team_id,m.away_bracket_position);
+  // ✅ SỬ DỤNG LOGIC ĐỘNG ĐỂ HIỂN THỊ ĐÚNG TRẠNG THÁI
+  var hn=getDynamicTeamName(m, true);
+  var an=getDynamicTeamName(m, false);
   var h=Number(m.home_score)||0,a=Number(m.away_score)||0;
   var scoreText=(status==='finished')?(h+" - "+a):"vs";
   var scoreClass=(status==='finished')?'done':'';
   var matchCode=displayCode(m);
-  var isBracket=!m.home_team_id||!m.away_team_id;
-  var homeClass=isBracket?'team-name bracket':'team-name home';
-  var awayClass=isBracket?'team-name bracket':'team-name away';
+  
+  // Nếu tên đội là mã vị trí (chưa có đội thật), hiển thị kiểu bracket
+  var isBracketHome = !m.home_team_id || /^[1234][A-D]$/i.test(m.home_bracket_position) || /^Thắng/i.test(m.home_bracket_position);
+  var isBracketAway = !m.away_team_id || /^[1234][A-D]$/i.test(m.away_bracket_position) || /^Thắng/i.test(m.away_bracket_position);
+  
+  var homeClass=(isBracketHome)?'team-name bracket':'team-name home';
+  var awayClass=(isBracketAway)?'team-name bracket':'team-name away';
+  
   var H='<div class="match-card '+status+'" onclick="openScoreModal(\''+m.id+'\')">';
   H+='<div class="match-header"><div class="match-code">'+esc(matchCode)+'</div>';
   H+='<span class="match-status '+status+'">'+(status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳'))+'</span></div>';
@@ -519,30 +556,38 @@ function renderMatchCard(m){
   H+='<div class="'+awayClass+'">'+esc(an)+'</div></div></div>';
   return H;
 }
+
 async function openScoreModal(matchId){
   currentMatchId=matchId;
   currentMatchData=DATA.matches.find(function(x){return x&&x.id===matchId});
   if(!currentMatchData){toast("❌ Không tìm thấy trận");return}
-  var hn=getMatchTeamName(currentMatchData.home_team_id,currentMatchData.home_bracket_position);
-  var an=getMatchTeamName(currentMatchData.away_team_id,currentMatchData.away_bracket_position);
+  
+  // ✅ SỬ DỤNG LOGIC ĐỘNG CHO MODAL
+  var hn=getDynamicTeamName(currentMatchData, true);
+  var an=getDynamicTeamName(currentMatchData, false);
+  
   el("modal-match-code").textContent="🎯 "+displayCode(currentMatchData);
   el("modal-home-name").textContent=hn;
   el("modal-away-name").textContent=an;
   el("modal-home-score").textContent=currentMatchData.home_score||0;
   el("modal-away-score").textContent=currentMatchData.away_score||0;
+  
   populateSlotSelect('slot-home-1',getTeamPlayers(currentMatchData.home_team_id),1);
   populateSlotSelect('slot-home-2',getTeamPlayers(currentMatchData.home_team_id),2);
   populateSlotSelect('slot-away-1',getTeamPlayers(currentMatchData.away_team_id),1);
   populateSlotSelect('slot-away-2',getTeamPlayers(currentMatchData.away_team_id),2);
+  
   if(currentMatchData.home_player_slot1)el("slot-home-1").value=currentMatchData.home_player_slot1;
   if(currentMatchData.home_player_slot2)el("slot-home-2").value=currentMatchData.home_player_slot2;
   if(currentMatchData.away_player_slot1)el("slot-away-1").value=currentMatchData.away_player_slot1;
   if(currentMatchData.away_player_slot2)el("slot-away-2").value=currentMatchData.away_player_slot2;
+  
   localServeState.team=currentMatchData.serving_team||'home';
   localServeState.turn=currentMatchData.serving_turn||1;
   updateServeButtons();updateTopScoreDisplay();updateScoreControlsVisibility();
   el("score-modal").classList.add("show");
 }
+
 function populateSlotSelect(selectId,players,position){
   var sel=el(selectId);
   sel.innerHTML='<option value="">-- Chọn --</option>';
@@ -555,6 +600,7 @@ function populateSlotSelect(selectId,players,position){
     });
   }
 }
+
 function updateServeButtons(){
   var st=localServeState.team,tu=localServeState.turn;
   el("serve-home-l1").classList.toggle('active',st==='home'&&tu===1);
@@ -562,6 +608,7 @@ function updateServeButtons(){
   el("serve-away-l1").classList.toggle('active',st==='away'&&tu===1);
   el("serve-away-l2").classList.toggle('active',st==='away'&&tu===2);
 }
+
 function updateTopScoreDisplay(){
   if(!currentMatchData)return;
   var h=currentMatchData.home_score||0,a=currentMatchData.away_score||0;
@@ -575,6 +622,7 @@ function updateTopScoreDisplay(){
   el("top-receiver-score").textContent=rScore;
   el("top-serve-turn").textContent=tu;
 }
+
 function updateScoreControlsVisibility(){
   var hc=el("home-score-controls"),ac=el("away-score-controls");
   if(!hc||!ac)return;
@@ -582,6 +630,7 @@ function updateScoreControlsVisibility(){
   else if(localServeState.team==='away'){hc.style.display='none';ac.style.display='flex'}
   else{hc.style.display='flex';ac.style.display='flex'}
 }
+
 function closeScoreModal(){el("score-modal").classList.remove("show");currentMatchId=null;currentMatchData=null;lastRallyKey=null}
 
 async function onSlotChange(team,slotNum){
@@ -599,6 +648,7 @@ async function onSlotChange(team,slotNum){
     toast("✅ Đã cập nhật VĐV");
   }catch(e){toast("❌ Lỗi: "+e.message)}
 }
+
 async function setServe(team,turn){
   if(!currentMatchId)return;
   if(localServeState.team===team&&localServeState.turn===turn)return;
@@ -613,6 +663,7 @@ async function setServe(team,turn){
     toast("✅ "+(team==='home'?el("modal-home-name").textContent:el("modal-away-name").textContent)+" giao L"+turn);
   }catch(e){toast("❌ Lỗi: "+e.message);localServeState.team=currentMatchData.serving_team||'home';localServeState.turn=currentMatchData.serving_turn||1;updateServeButtons();updateScoreControlsVisibility()}
 }
+
 async function changeScore(team,delta){
   if(!currentMatchId)return;
   var h=parseInt(currentMatchData.home_score)||0,a=parseInt(currentMatchData.away_score)||0;
@@ -625,10 +676,11 @@ async function changeScore(team,delta){
     currentMatchData.home_score=h;currentMatchData.away_score=a;currentMatchData.match_status='live';
     await createRally(team==='home'?'HOME_SCORE':'AWAY_SCORE');
     updateTopScoreDisplay();
-    renderMatchesByRound();
+    renderMatchesByRound(); // Cập nhật UI ngay lập tức
     toast("✅ "+h+" - "+a);
   }catch(e){toast("❌ Lỗi: "+e.message)}
 }
+
 async function createRally(eventType){
   if(!currentMatchId||!CURRENT_USER||!currentMatchData)return;
   var m=currentMatchData,st=localServeState.team,tu=localServeState.turn;
@@ -644,6 +696,7 @@ async function createRally(eventType){
   var description=serverName+' (đội: '+serverTeamName+') giao từ Ô '+tu+' → '+receiverName+' (đội: '+receiverTeamName+') đỡ ở Ô '+tu+' - Lượt Giao '+tu;
   await insertRallyDirect({match_id:currentMatchId,home_score:m.home_score||0,away_score:m.away_score||0,serve_turn:tu,event_type:eventType,server_player_id:serverPlayerId||null,server_team:st,server_slot:tu,receiver_player_id:receiverPlayerId||null,receiver_team:st==='home'?'away':'home',receiver_slot:tu,home_position:m.home_bracket_position||m.home_position||'1-2',away_position:m.away_bracket_position||m.away_position||'1-2',description:description,created_by:CURRENT_USER.id});
 }
+
 async function insertRallyDirect(rallyData){
   try{
     var{data:lastRally}=await sb.from("match_rallies").select("rally_number").eq("match_id",rallyData.match_id).order("rally_number",{ascending:false}).limit(1).maybeSingle();
@@ -662,11 +715,15 @@ async function finishMatch(){
   try{
     const{error}=await sb.from("matches").update({home_score:h,away_score:a,match_status:'finished'}).eq("id",currentMatchId);
     if(error){toast("❌ Lỗi lưu DB: "+error.message);return}
+    
     var idx=DATA.matches.findIndex(x=>x.id===currentMatchId);
-    if(idx!==-1){DATA.matches[idx].home_score=h;DATA.matches[idx].away_score=a;DATA.matches[idx].match_status='finished';}
-    // ✅ Lan truyền đội thắng THEO POSITION đã lưu (khớp trang Index), KHÔNG tính pairing mới
-    await propagateWinners();
-    resolveKnockoutBracketPositions();
+    if(idx!==-1){
+      DATA.matches[idx].home_score=h;
+      DATA.matches[idx].away_score=a;
+      DATA.matches[idx].match_status='finished';
+    }
+    
+    // ✅ Tải lại dữ liệu để Dynamic Resolution cập nhật ngay lập tức các vòng sau
     await loadMatches();
     closeScoreModal();
     toast("🏁 Đã kết thúc trận");
@@ -733,8 +790,7 @@ function startRealtime(){
             else if(status==='bye'){ match.match_status='finished'; }
             return match;
           });
-          resolveKnockoutBracketPositions(); // display-only, không ghi DB
-          renderMatchesByRound();
+          renderMatchesByRound(); // Dynamic resolution sẽ tự xử lý khi render
           if(currentMatchId&&currentMatchData){
             var cm=DATA.matches.find(function(x){return x&&x.id===currentMatchId});
             if(cm){currentMatchData.home_score=cm.home_score;currentMatchData.away_score=cm.away_score;currentMatchData.match_status=cm.match_status;el("modal-home-score").textContent=cm.home_score||0;el("modal-away-score").textContent=cm.away_score||0;updateTopScoreDisplay()}
