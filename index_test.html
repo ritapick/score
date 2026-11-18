@@ -432,7 +432,6 @@ function getMatchTeamName(teamId, bracketPos) {
   return t ? (t.name || 'TBD') : 'TBD';
 }
 
-// ✅ HÀM KIỂM TRA TẤT CẢ CÁC TRẬN ĐƯỢC LỌC ĐÃ FINISH CHƯA
 function areMatchesFinished(filterFn) {
   var matches = DATA.matches.filter(filterFn);
   if (matches.length === 0) return true;
@@ -442,14 +441,12 @@ function areMatchesFinished(filterFn) {
   });
 }
 
-// ✅ HÀM KIỂM TRA MỘT TRẬN CỤ THỂ ĐÃ FINISH CHƯA
 function isMatchFinished(m) {
   if (!m) return false;
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   return status === 'finished' || status === 'completed' || status === 'bye';
 }
 
-// ✅ TÌM TRẬN ĐẤU CỤ THỂ Ở VÒNG TRƯỚC CUNG CẤP ĐỘI CHO VỊ TRÍ NÀY
 function findFeedingMatch(prevRound, positionRef) {
   if (!positionRef) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
@@ -460,7 +457,6 @@ function findFeedingMatch(prevRound, positionRef) {
   });
 }
 
-// ✅ NÂNG CẤP: Hiển thị tên đội theo đúng điều kiện hoàn thành của vòng trước
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
   var round = Number(match.round);
@@ -484,7 +480,6 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   return getMatchTeamName(teamId, bracketPos);
 }
 
-// ✅ FIX LỖI: Lấy ĐỘI THẮNG chuẩn xác (so điểm, xử lý bye / điểm bằng)
 function getWinnerOfMatch(m) {
   if (!m) return null;
   if (!isMatchFinished(m)) return null;
@@ -492,81 +487,65 @@ function getWinnerOfMatch(m) {
   var a = Number(m.away_score) || 0;
   if (h > a) return m.home_team_id || null;
   if (a > h) return m.away_team_id || null;
-  // Điểm bằng nhau hoặc trận bye (0-0): lấy đội duy nhất có team_id
   if (m.home_team_id && !m.away_team_id) return m.home_team_id;
   if (m.away_team_id && !m.home_team_id) return m.away_team_id;
   return null;
 }
 
-// ✅ FIX LỖI: LUÔN ghi đè teamId của TK/BK/CK theo ĐỘI THẮNG thực sự của vòng trước
-// (trước đây chỉ gán khi teamId trống -> dẫn tới hiển thị sai đội thua lên bán kết)
+// ✅ FIX: resolveSlot xử lý cả vị trí vòng bảng ("1A","2B") và vị trí nhánh đấu ("V16-x","TKx","BKx")
+function resolveSlot(pos) {
+  if (!pos) return null;
+  if (/V16/i.test(pos)) return findWinnerFromV16(pos);
+  if (/TK/i.test(pos)) return findWinnerFromTK(pos);
+  if (/BK/i.test(pos)) return findWinnerFromBK(pos);
+  return null;
+}
+
+// ✅ FIX: resolve bracket positions, ưu tiên teamId có sẵn trong DB (khớp trang trọng tài)
 function resolveKnockoutBracketPositions() {
   var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
-  var positionToTeamId = {};
 
+  // Build map vị trí vòng bảng -> teamId
+  var positionToTeamId = {};
   if (DATA.gStage) {
-    var groups = DATA.groups.filter(function(g) { return g.stage_id === DATA.gStage.id; });
+    var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; });
     groups.forEach(function(g) {
       var st = standings(g.id);
       st.forEach(function(team, idx) {
-        var pos = (idx + 1) + g.code;
-        positionToTeamId[pos] = team.id;
+        positionToTeamId[(idx + 1) + g.code] = team.id;
       });
     });
   }
 
-  // V16: resolve từ vị trí vòng bảng
-  var v16Matches = koMatches.filter(function(m) { return Number(m.round) === 1; });
-  v16Matches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position && positionToTeamId[m.home_bracket_position]) {
-      m.home_team_id = positionToTeamId[m.home_bracket_position];
+  function resolveHomeAway(m) {
+    // HOME
+    if (!m.home_team_id) {
+      var pos = m.home_bracket_position;
+      if (pos && positionToTeamId[pos]) {
+        m.home_team_id = positionToTeamId[pos];
+      } else {
+        m.home_team_id = resolveSlot(pos) || null;
+      }
     }
-    if (!m.away_team_id && m.away_bracket_position && positionToTeamId[m.away_bracket_position]) {
-      m.away_team_id = positionToTeamId[m.away_bracket_position];
+    // AWAY
+    if (!m.away_team_id) {
+      var pos = m.away_bracket_position;
+      if (pos && positionToTeamId[pos]) {
+        m.away_team_id = positionToTeamId[pos];
+      } else {
+        m.away_team_id = resolveSlot(pos) || null;
+      }
     }
-  });
+  }
 
-  // TK: ghi đè từ đội thắng V16
-  var tkMatches = koMatches.filter(function(m) { return Number(m.round) === 2; });
-  tkMatches.forEach(function(m) {
-    if (m.home_bracket_position) {
-      var w = findWinnerFromV16(m.home_bracket_position);
-      if (w) m.home_team_id = w;
-    }
-    if (m.away_bracket_position) {
-      var w = findWinnerFromV16(m.away_bracket_position);
-      if (w) m.away_team_id = w;
-    }
-  });
-
-  // BK: ghi đè từ đội thắng TK
-  var bkMatches = koMatches.filter(function(m) { return Number(m.round) === 3; });
-  bkMatches.forEach(function(m) {
-    if (m.home_bracket_position) {
-      var w = findWinnerFromTK(m.home_bracket_position);
-      if (w) m.home_team_id = w;
-    }
-    if (m.away_bracket_position) {
-      var w = findWinnerFromTK(m.away_bracket_position);
-      if (w) m.away_team_id = w;
-    }
-  });
-
-  // CK: ghi đè từ đội thắng BK
-  var ckMatches = koMatches.filter(function(m) { return Number(m.round) === 4; });
-  ckMatches.forEach(function(m) {
-    if (m.home_bracket_position) {
-      var w = findWinnerFromBK(m.home_bracket_position);
-      if (w) m.home_team_id = w;
-    }
-    if (m.away_bracket_position) {
-      var w = findWinnerFromBK(m.away_bracket_position);
-      if (w) m.away_team_id = w;
-    }
+  // Resolve theo thứ tự vòng: V16 -> TK -> BK -> CK
+  [1,2,3,4].forEach(function(r){
+    koMatches.filter(function(m){ return Number(m.round) === r; }).forEach(resolveHomeAway);
   });
 }
 
 function findWinnerFromV16(positionRef) {
+  if (!positionRef || !/V16/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
   var v16Match = DATA.matches.find(function(m) { 
@@ -576,6 +555,7 @@ function findWinnerFromV16(positionRef) {
 }
 
 function findWinnerFromTK(positionRef) {
+  if (!positionRef || !/TK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
   var tkMatch = DATA.matches.find(function(m) { 
@@ -585,6 +565,7 @@ function findWinnerFromTK(positionRef) {
 }
 
 function findWinnerFromBK(positionRef) {
+  if (!positionRef || !/BK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
   var bkMatch = DATA.matches.find(function(m) { 
