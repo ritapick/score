@@ -457,46 +457,56 @@ function findFeedingMatch(prevRound, positionRef) {
   });
 }
 
-// ✅ FIX: Tự động resolve tên đội từ bracketPos khi teamId chưa có
+// ✅ FIX: Kiểm tra điều kiện vòng trước FIN TRƯỚC, chỉ khi thỏa mới lấy tên thật
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
+  // Admin/referee luôn thấy tên thật
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
   
-  // Nếu có teamId, ưu tiên dùng
-  if (teamId) {
+  var round = Number(match.round);
+  
+  // === VÒNG BẢNG (round=0 hoặc có group_id) ===
+  if (!round || match.group_id) {
     return getMatchTeamName(teamId, bracketPos);
   }
   
-  // Nếu không có teamId, thử resolve từ bracketPos
-  if (bracketPos) {
-    var round = Number(match.round);
-    
-    if (round === 2) {
-      // TK: chờ tất cả trận vòng bảng FIN
-      if (!areMatchesFinished(function(m) { return m.group_id; })) {
-        return isHome ? "TEAM A" : "TEAM B";
-      }
-      // bracketPos có dạng "1A", "2B"... → resolve từ standings
-      return resolveFromGroupPosition(bracketPos);
-    } else if (round === 3) {
-      // BK: bracketPos có dạng "Thắng TK1", "Thắng TK2"...
-      var tkMatch = findFeedingMatch(2, bracketPos);
-      if (!tkMatch || !isMatchFinished(tkMatch)) {
-        return bracketPos;
-      }
-      var winnerId = getWinnerOfMatch(tkMatch);
-      return getMatchTeamName(winnerId, bracketPos);
-    } else if (round === 4) {
-      // CK: bracketPos có dạng "Thắng BK1", "Thắng BK2"...
-      var bkMatch = findFeedingMatch(3, bracketPos);
-      if (!bkMatch || !isMatchFinished(bkMatch)) {
-        return bracketPos;
-      }
-      var winnerId = getWinnerOfMatch(bkMatch);
-      return getMatchTeamName(winnerId, bracketPos);
+  // === TỨ KẾT (round=2): phải TẤT CẢ trận vòng bảng FIN mới hiện tên thật ===
+  if (round === 2) {
+    if (!areMatchesFinished(function(m) { return m.group_id; })) {
+      return isHome ? "TEAM A" : "TEAM B";
     }
+    // Đã FIN hết → lấy tên thật từ teamId hoặc resolve từ bracketPos
+    if (teamId) return getMatchTeamName(teamId, bracketPos);
+    if (bracketPos) return resolveFromGroupPosition(bracketPos);
+    return isHome ? "TEAM A" : "TEAM B";
   }
   
-  return bracketPos ? bracketPos : 'TBD';
+  // === BÁN KẾT (round=3): phải trận TK tương ứng FIN mới hiện tên thật ===
+  if (round === 3) {
+    var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
+    var tkMatch = findFeedingMatch(2, pos);
+    if (!tkMatch || !isMatchFinished(tkMatch)) {
+      return bracketPos ? bracketPos : 'TBD';
+    }
+    // TK đã FIN → lấy đội thắng
+    var winnerId = getWinnerOfMatch(tkMatch);
+    if (winnerId) return getMatchTeamName(winnerId, bracketPos);
+    return bracketPos ? bracketPos : 'TBD';
+  }
+  
+  // === CHUNG KẾT (round=4): phải trận BK tương ứng FIN mới hiện tên thật ===
+  if (round === 4) {
+    var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
+    var bkMatch = findFeedingMatch(3, pos);
+    if (!bkMatch || !isMatchFinished(bkMatch)) {
+      return bracketPos ? bracketPos : 'TBD';
+    }
+    // BK đã FIN → lấy đội thắng
+    var winnerId = getWinnerOfMatch(bkMatch);
+    if (winnerId) return getMatchTeamName(winnerId, bracketPos);
+    return bracketPos ? bracketPos : 'TBD';
+  }
+  
+  return getMatchTeamName(teamId, bracketPos);
 }
 
 // ✅ Resolve tên đội từ vị trí bảng (1A, 2B, 3C...)
