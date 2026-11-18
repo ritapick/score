@@ -480,6 +480,7 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   return getMatchTeamName(teamId, bracketPos);
 }
 
+// ✅ FIX: Lấy đội thắng chuẩn xác (so điểm, xử lý bye / điểm bằng)
 function getWinnerOfMatch(m) {
   if (!m) return null;
   if (!isMatchFinished(m)) return null;
@@ -492,7 +493,7 @@ function getWinnerOfMatch(m) {
   return null;
 }
 
-// ✅ FIX: resolveSlot xử lý cả vị trí vòng bảng ("1A","2B") và vị trí nhánh đấu ("V16-x","TKx","BKx")
+// ✅ FIX: Resolve slot - xử lý cả vị trí vòng bảng ("1A","2B") và nhánh đấu ("V16-x","TKx","BKx")
 function resolveSlot(pos) {
   if (!pos) return null;
   if (/V16/i.test(pos)) return findWinnerFromV16(pos);
@@ -501,7 +502,8 @@ function resolveSlot(pos) {
   return null;
 }
 
-// ✅ FIX: resolve bracket positions, ưu tiên teamId có sẵn trong DB (khớp trang trọng tài)
+// ✅ FIX QUAN TRỌNG: LUÔN ghi đè team_id của BK/CK dựa trên đội thắng thực sự từ vòng trước
+// (trước đây chỉ gán khi team_id trống → nếu DB lưu sai đội thua, code không sửa)
 function resolveKnockoutBracketPositions() {
   var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
 
@@ -517,30 +519,33 @@ function resolveKnockoutBracketPositions() {
     });
   }
 
-  function resolveHomeAway(m) {
+  function resolveHomeAway(m, round) {
     // HOME
-    if (!m.home_team_id) {
-      var pos = m.home_bracket_position;
-      if (pos && positionToTeamId[pos]) {
-        m.home_team_id = positionToTeamId[pos];
-      } else {
-        m.home_team_id = resolveSlot(pos) || null;
-      }
+    var homePos = m.home_bracket_position;
+    if (homePos && positionToTeamId[homePos]) {
+      // Vị trí vòng bảng: chỉ gán khi trống
+      if (!m.home_team_id) m.home_team_id = positionToTeamId[homePos];
+    } else if (homePos) {
+      // Vị trí nhánh đấu: LUÔN ghi đè từ đội thắng vòng trước
+      var winner = resolveSlot(homePos);
+      if (winner !== null) m.home_team_id = winner;
     }
+
     // AWAY
-    if (!m.away_team_id) {
-      var pos = m.away_bracket_position;
-      if (pos && positionToTeamId[pos]) {
-        m.away_team_id = positionToTeamId[pos];
-      } else {
-        m.away_team_id = resolveSlot(pos) || null;
-      }
+    var awayPos = m.away_bracket_position;
+    if (awayPos && positionToTeamId[awayPos]) {
+      if (!m.away_team_id) m.away_team_id = positionToTeamId[awayPos];
+    } else if (awayPos) {
+      var winner = resolveSlot(awayPos);
+      if (winner !== null) m.away_team_id = winner;
     }
   }
 
   // Resolve theo thứ tự vòng: V16 -> TK -> BK -> CK
   [1,2,3,4].forEach(function(r){
-    koMatches.filter(function(m){ return Number(m.round) === r; }).forEach(resolveHomeAway);
+    koMatches.filter(function(m){ return Number(m.round) === r; }).forEach(function(m){
+      resolveHomeAway(m, r);
+    });
   });
 }
 
