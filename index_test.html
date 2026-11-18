@@ -454,49 +454,56 @@ function findFeedingMatch(prevRound, positionRef) {
   if (!positionRef) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
-  
   var codePrefix = prevRound === 2 ? 'TK' : 'BK';
-  
   return DATA.matches.find(function(m) { 
-    return Number(m.round) === prevRound && String(displayCode(m)).includes(codePrefix + matchNum); 
+    return Number(m.round) === prevRound && String(displayCode(m)) === codePrefix + matchNum; 
   });
 }
 
 // ✅ NÂNG CẤP: Hiển thị tên đội theo đúng điều kiện hoàn thành của vòng trước
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
-  
   var round = Number(match.round);
-  
   if (round === 2) {
-    // Tứ kết: chờ tất cả trận vòng bảng fin
     if (!areMatchesFinished(function(m) { return m.group_id; })) {
       return isHome ? "TEAM A" : "TEAM B";
     }
   } else if (round === 3) {
-    // Bán kết: chờ trận tứ kết tương ứng fin
     var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
     var tkMatch = findFeedingMatch(2, pos);
     if (!tkMatch || !isMatchFinished(tkMatch)) {
       return bracketPos ? bracketPos : 'TBD';
     }
   } else if (round === 4) {
-    // Chung kết: chờ trận bán kết tương ứng fin
     var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
     var bkMatch = findFeedingMatch(3, pos);
     if (!bkMatch || !isMatchFinished(bkMatch)) {
       return bracketPos ? bracketPos : 'TBD';
     }
   }
-  
   return getMatchTeamName(teamId, bracketPos);
 }
 
-// ✅ FIX: Resolve bracket positions to team IDs before rendering
+// ✅ FIX LỖI: Lấy ĐỘI THẮNG chuẩn xác (so điểm, xử lý bye / điểm bằng)
+function getWinnerOfMatch(m) {
+  if (!m) return null;
+  if (!isMatchFinished(m)) return null;
+  var h = Number(m.home_score) || 0;
+  var a = Number(m.away_score) || 0;
+  if (h > a) return m.home_team_id || null;
+  if (a > h) return m.away_team_id || null;
+  // Điểm bằng nhau hoặc trận bye (0-0): lấy đội duy nhất có team_id
+  if (m.home_team_id && !m.away_team_id) return m.home_team_id;
+  if (m.away_team_id && !m.home_team_id) return m.away_team_id;
+  return null;
+}
+
+// ✅ FIX LỖI: LUÔN ghi đè teamId của TK/BK/CK theo ĐỘI THẮNG thực sự của vòng trước
+// (trước đây chỉ gán khi teamId trống -> dẫn tới hiển thị sai đội thua lên bán kết)
 function resolveKnockoutBracketPositions() {
   var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
   var positionToTeamId = {};
-  
+
   if (DATA.gStage) {
     var groups = DATA.groups.filter(function(g) { return g.stage_id === DATA.gStage.id; });
     groups.forEach(function(g) {
@@ -507,97 +514,83 @@ function resolveKnockoutBracketPositions() {
       });
     });
   }
-  
+
+  // V16: resolve từ vị trí vòng bảng
   var v16Matches = koMatches.filter(function(m) { return Number(m.round) === 1; });
   v16Matches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
+    if (!m.home_team_id && m.home_bracket_position && positionToTeamId[m.home_bracket_position]) {
+      m.home_team_id = positionToTeamId[m.home_bracket_position];
     }
-    if (!m.away_team_id && m.away_bracket_position) {
-      m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
+    if (!m.away_team_id && m.away_bracket_position && positionToTeamId[m.away_bracket_position]) {
+      m.away_team_id = positionToTeamId[m.away_bracket_position];
     }
   });
-  
+
+  // TK: ghi đè từ đội thắng V16
   var tkMatches = koMatches.filter(function(m) { return Number(m.round) === 2; });
   tkMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromV16(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
+    if (m.home_bracket_position) {
+      var w = findWinnerFromV16(m.home_bracket_position);
+      if (w) m.home_team_id = w;
     }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromV16(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
+    if (m.away_bracket_position) {
+      var w = findWinnerFromV16(m.away_bracket_position);
+      if (w) m.away_team_id = w;
     }
   });
-  
+
+  // BK: ghi đè từ đội thắng TK
   var bkMatches = koMatches.filter(function(m) { return Number(m.round) === 3; });
   bkMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromTK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
+    if (m.home_bracket_position) {
+      var w = findWinnerFromTK(m.home_bracket_position);
+      if (w) m.home_team_id = w;
     }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromTK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
+    if (m.away_bracket_position) {
+      var w = findWinnerFromTK(m.away_bracket_position);
+      if (w) m.away_team_id = w;
     }
   });
-  
+
+  // CK: ghi đè từ đội thắng BK
   var ckMatches = koMatches.filter(function(m) { return Number(m.round) === 4; });
   ckMatches.forEach(function(m) {
-    if (!m.home_team_id && m.home_bracket_position) {
-      var winner = findWinnerFromBK(m.home_bracket_position);
-      if (winner) m.home_team_id = winner;
+    if (m.home_bracket_position) {
+      var w = findWinnerFromBK(m.home_bracket_position);
+      if (w) m.home_team_id = w;
     }
-    if (!m.away_team_id && m.away_bracket_position) {
-      var winner = findWinnerFromBK(m.away_bracket_position);
-      if (winner) m.away_team_id = winner;
+    if (m.away_bracket_position) {
+      var w = findWinnerFromBK(m.away_bracket_position);
+      if (w) m.away_team_id = w;
     }
   });
 }
 
 function findWinnerFromV16(positionRef) {
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
   var v16Match = DATA.matches.find(function(m) { 
     return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum; 
   });
-  
-  if (!v16Match) return null;
-  
-  var h = Number(v16Match.home_score) || 0;
-  var a = Number(v16Match.away_score) || 0;
-  if (h > a) return v16Match.home_team_id;
-  if (a > h) return v16Match.away_team_id;
-  return null;
+  return getWinnerOfMatch(v16Match);
 }
 
 function findWinnerFromTK(positionRef) {
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
   var tkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 2 && String(displayCode(m)).includes('TK' + matchNum); 
+    return Number(m.round) === 2 && String(displayCode(m)) === 'TK' + matchNum; 
   });
-  
-  if (!tkMatch) return null;
-  
-  var h = Number(tkMatch.home_score) || 0;
-  var a = Number(tkMatch.away_score) || 0;
-  if (h > a) return tkMatch.home_team_id;
-  if (a > h) return tkMatch.away_team_id;
-  return null;
+  return getWinnerOfMatch(tkMatch);
 }
 
 function findWinnerFromBK(positionRef) {
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
   var bkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 3 && String(displayCode(m)).includes('BK' + matchNum); 
+    return Number(m.round) === 3 && String(displayCode(m)) === 'BK' + matchNum; 
   });
-  
-  if (!bkMatch) return null;
-  
-  var h = Number(bkMatch.home_score) || 0;
-  var a = Number(bkMatch.away_score) || 0;
-  if (h > a) return bkMatch.home_team_id;
-  if (a > h) return bkMatch.away_team_id;
-  return null;
+  return getWinnerOfMatch(bkMatch);
 }
 
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
@@ -801,10 +794,8 @@ function startDurationTimer() {
   if (!currentTimelineMatchId) return;
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   if (!match || match.match_status !== 'live') return;
-  
   var startTime = getMatchStartTime();
   if (startTime === null) return;
-  
   durationInterval = setInterval(function() {
     var durationEl = document.getElementById("match-duration");
     if (durationEl) {
@@ -1076,9 +1067,7 @@ async function loadEventDetail(eid) {
     } else { DATA.groups = []; DATA.groupTeams = []; }
     var m = await sb.from("matches").select("*").eq("event_id", eid).order("match_seq");
     DATA.matches = m.data || [];
-    
     resolveKnockoutBracketPositions();
-    
     render();
     startRealtime();
   } catch(e) { console.error("Load event detail error:", e); }
@@ -1126,21 +1115,13 @@ function renderTimeline() {
   var H = '';
   var match = DATA.matches.find(function(m) { return m.id === currentTimelineMatchId; });
   var isLive = match && match.match_status === 'live';
-
   var durationText = "00:00";
   var startTime = getMatchStartTime();
   if (startTime !== null) {
     var endTime;
-    if (isLive) {
-      endTime = Date.now();
-    } else {
-      endTime = getLastRallyTime();
-    }
-    if (endTime !== null && endTime >= startTime) {
-      durationText = formatDuration(endTime - startTime);
-    }
+    if (isLive) { endTime = Date.now(); } else { endTime = getLastRallyTime(); }
+    if (endTime !== null && endTime >= startTime) { durationText = formatDuration(endTime - startTime); }
   }
-
   DATA.rallies.forEach(function(r, index) {
     var badge = getEventTypeBadge(r.event_type);
     var homeTeamName = match ? getDisplayTeamName(match.home_team_id, match.home_bracket_position, match, true) : 'Đội A';
@@ -1151,7 +1132,6 @@ function renderTimeline() {
     var serverScore = isHomeServing ? r.home_score : r.away_score;
     var receiverScore = isHomeServing ? r.away_score : r.home_score;
     var desc = '<span class="team-name">' + esc(serverName) + '</span> đang giao banh lượt ' + r.serve_turn + ', <span class="team-name">' + esc(receiverName) + '</span> đang nhận giao banh';
-    
     H += '<div class="rally-card">';
     H += '<div class="rally-header">';
     H += '<div class="rally-title">Rally #' + r.rally_number + '</div>';
@@ -1166,7 +1146,6 @@ function renderTimeline() {
     H += '</div>';
     H += '<div class="rally-desc">' + desc + '</div>';
     H += '</div>';
-
     if (index === DATA.rallies.length - 1) {
       H += '<div style="text-align:center; margin-top:12px; padding:10px; background:rgba(34,211,238,0.1); border:1px solid var(--cy); border-radius:8px; color:var(--cy); font-weight:800; font-size:14px; font-family:monospace;">';
       H += '️ Thời gian trận đấu: <span id="match-duration">' + durationText + '</span>';
@@ -1382,11 +1361,9 @@ function renderTournamentList() {
     H += '<span class="t-status ' + statusCls + '">' + statusText + '</span>';
     H += '<div class="t-name">' + esc(t.name) + '</div>';
     H += '<div class="t-meta">';
-    
     var startDateFormatted = formatDateDDMMYYYY(t.start_date);
     var endDateFormatted = t.end_date && t.end_date !== t.start_date ? ' → ' + formatDateDDMMYYYY(t.end_date) : '';
     var daysLeftText = getDaysLeftText(t.start_date);
-    
     H += '<span>📅 ' + startDateFormatted + endDateFormatted + '<span style="color:var(--li); font-weight:700;">' + daysLeftText + '</span></span>';
     if (t.location_name) H += '<span> Địa điểm: ' + esc(t.location_name) + '</span>';
     H += '<span>🏷️ Mã: ' + esc(t.code) + '</span></div>';
@@ -1406,17 +1383,14 @@ function renderTournamentDetail() {
   var H = '<button class="back-btn" onclick="backToList()">← TRANG CHỦ</button>';
   H += '<div class="t-detail"><div class="t-detail-header">';
   H += '<div><h2>' + esc(t.name) + '</h2>';
-  
   var startDateFormatted = formatDateDDMMYYYY(t.start_date);
   var endDateFormatted = t.end_date && t.end_date !== t.start_date ? ' → ' + formatDateDDMMYYYY(t.end_date) : '';
   var daysLeftText = getDaysLeftText(t.start_date);
-  
   H += '<div class="meta"><span>📅 ' + startDateFormatted + endDateFormatted + '<span style="color:var(--li); font-weight:700;">' + daysLeftText + '</span></span>';
   if (t.location_name) H += '<span> Địa điểm: ' + esc(t.location_name) + '</span>';
   H += '<span class="t-status ' + statusCls + '" style="position:static">' + statusText + '</span></div></div>';
   H += '<button class="btn btn-b" onclick="shareTournament(\'' + t.id + '\')" style="flex-shrink:0">🔗 Chia sẻ Link giải</button>';
   H += '</div>';
-  
   if (canManage) {
     var refereeUrl = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(t.id);
     H += '<div class="manage-bar">';
@@ -1425,7 +1399,6 @@ function renderTournamentDetail() {
     H += '</div>';
   }
   H += '</div>';
-  
   if (DATA.events.length) {
     H += '<div class="event-tabs">';
     DATA.events.forEach(function(e) {
@@ -1468,10 +1441,7 @@ window.shareTournament = function(tid) {
 window.shareRefereeLink = function(tid) {
   var url = "https://ritapick.github.io/score/referee.html?tournament=" + encodeURIComponent(tid);
   var name = DATA.tournament ? DATA.tournament.name : 'Giải đấu Pickleball';
-  var shareData = { 
-    title: "Link Trọng Tài: " + name, 
-    url: url 
-  };
+  var shareData = { title: "Link Trọng Tài: " + name, url: url };
   if (navigator.share) {
     navigator.share(shareData).catch(function(error) {
       if (error.name !== 'AbortError') fallbackCopyText(url);
