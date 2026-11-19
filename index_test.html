@@ -472,7 +472,7 @@ function areAllGroupsFinished() {
 function getAdvancingThirdPlaceTeamIds() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups !== 3) return [];
-  
+
   var thirdPlaces = [];
   var allSt = {};
   DATA.groups.forEach(g => {
@@ -497,24 +497,44 @@ function getAdvancingThirdPlaceTeamIds() {
   return thirdPlaces.slice(0, 2).map(item => item.teamId);
 }
 
+// ✅ HÀM MỚI: Trả về class đánh dấu cho 1 đội trong bảng (chỉ khi tất cả bảng đã fin)
+// Luật 3 bảng: top 2 mỗi bảng (✓) + 2 đội hạng 3 tốt nhất (★)
+function getQualifyClassForTeam(teamId, groupCode, rankIndex, numGroups) {
+  if (!areAllGroupsFinished()) return "";
+  var qualifyCount = getQualifyCountForGroup(0, groupCode, numGroups);
+  // rankIndex: 0 = hạng 1, 1 = hạng 2, 2 = hạng 3...
+  if (rankIndex < qualifyCount) {
+    // Đội nhất/nhì bảng -> ✓
+    if (rankIndex < 2) return "qualify";
+    // rankIndex === 2 (hạng 3) và bảng lấy top 3 -> ★
+    return "qualify-third";
+  }
+  // rankIndex >= qualifyCount: nếu là hạng 3 và thuộc top 2 hạng 3 tốt nhất -> ★
+  if (numGroups === 3 && rankIndex === 2) {
+    var adv = getAdvancingThirdPlaceTeamIds();
+    if (adv.indexOf(teamId) !== -1) return "qualify-third";
+  }
+  return "";
+}
+
 function findFeedingMatch(prevRound, positionRef) {
   if (!positionRef) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
   var codePrefix = prevRound === 2 ? 'TK' : 'BK';
-  return DATA.matches.find(function(m) { 
-    return Number(m.round) === prevRound && String(displayCode(m)) === codePrefix + matchNum; 
+  return DATA.matches.find(function(m) {
+    return Number(m.round) === prevRound && String(displayCode(m)) === codePrefix + matchNum;
   });
 }
 
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
-  
+
   var round = Number(match.round);
   if (!round || match.group_id) {
     return getMatchTeamName(teamId, bracketPos);
   }
-  
+
   if (round === 2) {
     if (!areMatchesFinished(function(m) { return m.group_id; })) {
       return isHome ? "TEAM A" : "TEAM B";
@@ -523,7 +543,7 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
     if (bracketPos) return resolveFromGroupPosition(bracketPos);
     return isHome ? "TEAM A" : "TEAM B";
   }
-  
+
   if (round === 3) {
     var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
     var tkMatch = findFeedingMatch(2, pos);
@@ -534,7 +554,7 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
     var winnerId = getWinnerOfMatch(tkMatch);
     return getMatchTeamName(winnerId, bracketPos);
   }
-  
+
   if (round === 4) {
     var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
     var bkMatch = findFeedingMatch(3, pos);
@@ -545,7 +565,7 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
     var winnerId = getWinnerOfMatch(bkMatch);
     return getMatchTeamName(winnerId, bracketPos);
   }
-  
+
   return getMatchTeamName(teamId, bracketPos);
 }
 
@@ -635,8 +655,8 @@ function findWinnerFromV16(positionRef) {
   if (!positionRef || !/V16/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
-  var v16Match = DATA.matches.find(function(m) { 
-    return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum; 
+  var v16Match = DATA.matches.find(function(m) {
+    return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum;
   });
   return getWinnerOfMatch(v16Match);
 }
@@ -645,8 +665,8 @@ function findWinnerFromTK(positionRef) {
   if (!positionRef || !/TK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
-  var tkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 2 && String(displayCode(m)) === 'TK' + matchNum; 
+  var tkMatch = DATA.matches.find(function(m) {
+    return Number(m.round) === 2 && String(displayCode(m)) === 'TK' + matchNum;
   });
   return getWinnerOfMatch(tkMatch);
 }
@@ -655,8 +675,8 @@ function findWinnerFromBK(positionRef) {
   if (!positionRef || !/BK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
   if (isNaN(matchNum)) return null;
-  var bkMatch = DATA.matches.find(function(m) { 
-    return Number(m.round) === 3 && String(displayCode(m)) === 'BK' + matchNum; 
+  var bkMatch = DATA.matches.find(function(m) {
+    return Number(m.round) === 3 && String(displayCode(m)) === 'BK' + matchNum;
   });
   return getWinnerOfMatch(bkMatch);
 }
@@ -891,8 +911,8 @@ function startRealtime() {
         var changed = false;
         for (var i = 0; i < m.data.length; i++) {
           var old = DATA.matches.find(x => x.id === m.data[i].id);
-          if (!old || old.home_score !== m.data[i].home_score || old.away_score !== m.data[i].away_score || 
-              old.match_status !== m.data[i].match_status || old.serving_team !== m.data[i].serving_team || 
+          if (!old || old.home_score !== m.data[i].home_score || old.away_score !== m.data[i].away_score ||
+              old.match_status !== m.data[i].match_status || old.serving_team !== m.data[i].serving_team ||
               old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id) {
             changed = true; break;
           }
@@ -1027,13 +1047,11 @@ function updateStandingsDOM() {
     if (!card) return;
     var st = standings(g.id);
     var mb = teamsInG(g.id);
-    var completed = DATA.matches.filter(function(m){ 
+    var completed = DATA.matches.filter(function(m){
       var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
-      return m.group_id===g.id && (status==="completed" || status==="finished"); 
+      return m.group_id===g.id && (status==="completed" || status==="finished");
     }).length;
     var expected = expectedMatchesInGroup(g.id);
-    var isComplete = isGroupComplete(g.id);
-    var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
     var badge = card.querySelector('.badge');
     if (badge) badge.textContent = mb.length + ' đội · ' + completed + '/' + expected + ' trận';
     var tbody = card.querySelector('tbody');
@@ -1045,22 +1063,9 @@ function updateStandingsDOM() {
           var diff = t.pf - t.pa;
           var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
           var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
-          
-          // ✅ FIX: Chỉ đánh dấu khi TẤT CẢ các trận đấu bảng đã kết thúc (fin)
-          var allGroupsDone = areAllGroupsFinished();
-          var qClass = "";
-          
-          if (allGroupsDone && i < qualifyCount) {
-              if (numGroups === 3 && i === 2) {
-                  var advancingThirdIds = getAdvancingThirdPlaceTeamIds();
-                  if (advancingThirdIds.indexOf(t.id) !== -1) {
-                      qClass = "qualify-third"; // Đánh dấu sao cho đội hạng 3 được chọn
-                  }
-                  // Nếu là hạng 3 nhưng không được chọn, qClass = "" (không đánh dấu)
-              } else {
-                  qClass = "qualify"; // Đánh dấu ✓ cho các đội nhất/nhì bảng
-              }
-          }
+
+          // ✅ Dùng hàm đánh dấu tập trung
+          var qClass = getQualifyClassForTeam(t.id, g.code, i, numGroups);
 
           tbodyHTML += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
         });
@@ -1251,9 +1256,9 @@ function expectedMatchesInGroup(gid) {
 function isGroupComplete(gid) {
   var t = teamsInG(gid);
   var exp = t.length * (t.length - 1) / 2;
-  return t.length >= 2 && DATA.matches.filter(function(m){ 
+  return t.length >= 2 && DATA.matches.filter(function(m){
     var st = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
-    return m.group_id===gid && (st==="completed" || st==="finished"); 
+    return m.group_id===gid && (st==="completed" || st==="finished");
   }).length >= exp;
 }
 
@@ -1261,9 +1266,9 @@ function standings(g) {
   var t = teamsInG(g);
   var st = {};
   t.forEach(function(x){ st[x.id] = {id:x.id, w:0, l:0, pf:0, pa:0, played:0}; });
-  DATA.matches.filter(function(m){ 
+  DATA.matches.filter(function(m){
     var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
-    return m.group_id===g && (status==="completed" || status==="finished"); 
+    return m.group_id===g && (status==="completed" || status==="finished");
   }).forEach(function(m){
     var h = st[m.home_team_id], a = st[m.away_team_id];
     if (!h || !a) return;
@@ -1310,22 +1315,19 @@ function displayCode(m) {
   return String(m.match_code||"?");
 }
 
+// ✅ SỬA: 3 bảng -> mỗi bảng lấy top 2, còn lại chọn 2 đội hạng 3 tốt nhất (tổng 8)
 function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
-  if (numGroups === 3) {
-    if (groupCode === "A" || groupIndex === 0) return 3;
-    if (groupCode === "B" || groupIndex === 1) return 2;
-    if (groupCode === "C" || groupIndex === 2) return 3;
-  }
+  if (numGroups === 3) return 2;
   if (numGroups === 2) return 2;
   if (numGroups === 4) return 2;
-  return 2; 
+  return 2;
 }
 
 // ✅ Cập nhật logic: Chỉ chọn đội hạng 3 khi TẤT CẢ các bảng đã kết thúc
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
-  
+
   var allGroupsDone = areAllGroupsFinished();
 
   var advancing = [], allSt = {};
@@ -1347,7 +1349,7 @@ function computeKOTeams() {
     result.matches.push({round: 3, slot: 13, h: seeds[0].teamId, a: seeds[3].teamId, code: "BK1", h_pos: seeds[0].pos, a_pos: seeds[3].pos});
     result.matches.push({round: 3, slot: 14, h: seeds[1].teamId, a: seeds[2].teamId, code: "BK2", h_pos: seeds[1].pos, a_pos: seeds[2].pos});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-  } 
+  }
   else if (numGroups === 3 || numGroups === 4) {
     var qualified = [];
     var thirdPlaces = [];
@@ -1358,7 +1360,7 @@ function computeKOTeams() {
         thirdPlaces.push(adv.pos3);
       }
     });
-    
+
     if (numGroups === 3) {
       if (allGroupsDone) {
         // Chỉ sắp xếp và chọn 2 đội tốt nhất khi TẤT CẢ các bảng đã kết thúc
@@ -1376,7 +1378,7 @@ function computeKOTeams() {
       }
       // Nếu chưa kết thúc hết, qualified sẽ chỉ có 6 đội (1st và 2nd), 2 slot hạng 3 sẽ là null/TBD
     }
-    
+
     var sortedQualified = qualified.slice().sort((a, b) => {
       if (!a.stats && !b.stats) return (a.pos || "TBD").localeCompare(b.pos || "TBD");
       if (!a.stats) return 1;
@@ -1386,7 +1388,7 @@ function computeKOTeams() {
       if (db !== da) return db - da;
       return b.stats.pf - a.stats.pf;
     });
-    
+
     // Đảm bảo đủ 8 đội, nếu thiếu (do chưa có hạng 3) thì điền null
     while (sortedQualified.length < 8) {
       sortedQualified.push({ teamId: null, pos: "TBD", stats: null });
@@ -1397,11 +1399,11 @@ function computeKOTeams() {
     result.matches.push({round: 2, slot: 10, h: s[3].teamId, a: s[4].teamId, code: "TK2", h_pos: s[3].pos, a_pos: s[4].pos});
     result.matches.push({round: 2, slot: 11, h: s[2].teamId, a: s[5].teamId, code: "TK3", h_pos: s[2].pos, a_pos: s[5].pos});
     result.matches.push({round: 2, slot: 12, h: s[1].teamId, a: s[6].teamId, code: "TK4", h_pos: s[1].pos, a_pos: s[6].pos});
-    
+
     result.matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK2"});
     result.matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK3", a_pos: "Thắng TK4"});
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-  } 
+  }
   else {
     var firstPlaces = advancing.map(a => a.pos1);
     var secondPlaces = advancing.map(a => a.pos2);
@@ -1434,22 +1436,22 @@ function computeKOTeams() {
 
     var byeTeam = null;
     var topTeam = sortedFirst[0];
-    var tiedTeams = sortedFirst.filter(p => 
+    var tiedTeams = sortedFirst.filter(p =>
       p.stats && topTeam.stats &&
       p.stats.w === topTeam.stats.w &&
       (p.stats.pf - p.stats.pa) === (topTeam.stats.pf - topTeam.stats.pa) &&
       p.stats.pf === topTeam.stats.pf
     );
-    
+
     if (tiedTeams.length > 1) byeTeam = tiedTeams[Math.floor(Math.random() * tiedTeams.length)];
     else byeTeam = topTeam;
-    
+
     var seeds = [];
     sortedFirst.filter(p => p.teamId !== byeTeam.teamId).forEach(p => seeds.push({teamId: p.teamId, pos: p.pos}));
     sortedSecond.slice(0, 5).forEach(p => seeds.push({teamId: p.teamId, pos: p.pos}));
     var needThirds = Math.max(0, 14 - seeds.length);
     sortedThird.slice(0, needThirds).forEach(p => seeds.push({teamId: p.teamId, pos: p.pos}));
-    
+
     seeds.push({teamId: byeTeam ? byeTeam.teamId : null, pos: byeTeam ? byeTeam.pos : "Miễn (Bye)"});
     while (seeds.length < 16) seeds.push({teamId: null, pos: "TBD"});
     seeds = seeds.slice(0, 16);
@@ -1458,10 +1460,10 @@ function computeKOTeams() {
     for (var i = 0; i < 8; i++) {
       var h_info = seeds[pairings[i][0]];
       var a_info = seeds[pairings[i][1]];
-      var isBye = (i === 7 && byeTeam); 
+      var isBye = (i === 7 && byeTeam);
       result.matches.push({round: 1, slot: i + 1, h: h_info.teamId, a: a_info.teamId, code: "V16-" + (i + 1), h_pos: h_info.pos, a_pos: a_info.pos, isBye: isBye});
     }
-    
+
     result.matches.push({round: 2, slot: 9, h: null, a: null, code: "TK1", h_pos: "Thắng V16-1", a_pos: "Thắng V16-8"});
     result.matches.push({round: 2, slot: 10, h: null, a: null, code: "TK2", h_pos: "Thắng V16-4", a_pos: "Thắng V16-5"});
     result.matches.push({round: 2, slot: 11, h: null, a: null, code: "TK3", h_pos: "Thắng V16-3", a_pos: "Thắng V16-6"});
@@ -1648,13 +1650,11 @@ function renderEventDetail() {
   groups.forEach(function(g, idx) {
     var st = standings(g.id);
     var mb = teamsInG(g.id);
-    var completed = DATA.matches.filter(function(m){ 
+    var completed = DATA.matches.filter(function(m){
       var status = m.match_status || ((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
-      return m.group_id===g.id && (status==="completed" || status==="finished"); 
+      return m.group_id===g.id && (status==="completed" || status==="finished");
     }).length;
     var expected = expectedMatchesInGroup(g.id);
-    var isComplete = isGroupComplete(g.id);
-    var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
     H += '<div class="group-card" data-group-id="' + g.id + '"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' trận</span></h4>';
     if (st.length) {
       H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>L</th><th>HS</th><th>GF</th></tr></thead><tbody>';
@@ -1663,20 +1663,9 @@ function renderEventDetail() {
         var diff = t.pf - t.pa;
         var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
         var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
-        
-        var qClass = "";
-        var allGroupsDone = areAllGroupsFinished();
-        
-        if (allGroupsDone && i < qualifyCount) {
-            if (numGroups === 3 && i === 2) {
-                var advancingThirdIds = getAdvancingThirdPlaceTeamIds();
-                if (advancingThirdIds.indexOf(t.id) !== -1) {
-                    qClass = "qualify-third";
-                }
-            } else {
-                qClass = "qualify";
-            }
-        }
+
+        // ✅ Dùng hàm đánh dấu tập trung (chỉ hiện khi tất cả bảng đã fin)
+        var qClass = getQualifyClassForTeam(t.id, g.code, i, numGroups);
 
         H += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
       });
@@ -1784,8 +1773,8 @@ function renderMatchItem(m, isKO) {
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   var h = Number(m.home_score)||0, a = Number(m.away_score)||0;
   var statusText = "⏳ Chưa đấu", statusClass = "scheduled";
-  if (status === 'live') { statusText = "🔴 LIVE"; statusClass = "live"; } 
-  else if (status === 'finished' || status === 'completed') { statusText = "✅ FIN"; statusClass = "finished"; } 
+  if (status === 'live') { statusText = "🔴 LIVE"; statusClass = "live"; }
+  else if (status === 'finished' || status === 'completed') { statusText = "✅ FIN"; statusClass = "finished"; }
   else if (status === 'bye') { statusText = "🎟 BYE"; statusClass = "bye"; }
   var homeLeadingClass = h > a ? "leading" : "";
   var awayLeadingClass = a > h ? "leading" : "";
