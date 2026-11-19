@@ -68,6 +68,20 @@ td.rank{font-weight:800;font-size:12px;color:var(--mu);width:28px}
 tr.qualify{background:rgba(163,230,53,.08)}
 tr.qualify td.rank{color:var(--li)}
 tr.qualify td.rank::before{content:"✓ ";color:var(--li);font-weight:900}
+/* ✅ CSS mới: Đánh dấu nổi bật đội hạng 3 được chọn */
+tr.qualify-third {
+  background: rgba(251, 146, 60, 0.15) !important;
+  border-left: 3px solid var(--or);
+}
+tr.qualify-third td.rank {
+  color: var(--or);
+}
+tr.qualify-third td.rank::before {
+  content: "★ ";
+  color: var(--or);
+  font-weight: 900;
+}
+
 td.wins{color:var(--li);font-weight:800;font-family:monospace}
 td.losses{color:var(--rd);font-weight:800;font-family:monospace}
 td.diff{font-family:monospace;font-weight:700}
@@ -445,6 +459,42 @@ function isMatchFinished(m) {
   if (!m) return false;
   var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
   return status === 'finished' || status === 'completed' || status === 'bye';
+}
+
+// ✅ Hàm kiểm tra xem TẤT CẢ các trận vòng bảng đã kết thúc chưa
+function areAllGroupsFinished() {
+  if (!DATA.gStage) return false;
+  var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; });
+  return groups.every(function(g) { return isGroupComplete(g.id); });
+}
+
+// ✅ Hàm lấy danh sách ID của 2 đội hạng 3 tốt nhất được chọn
+function getAdvancingThirdPlaceTeamIds() {
+  var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
+  if (numGroups !== 3) return [];
+  
+  var thirdPlaces = [];
+  var allSt = {};
+  DATA.groups.forEach(g => {
+    if (!DATA.gStage || g.stage_id !== DATA.gStage.id) return;
+    var st = standings(g.id);
+    st.forEach(s => allSt[s.id] = s);
+    if (st.length >= 3) {
+      thirdPlaces.push({ groupCode: g.code, teamId: st[2].id, stats: allSt[st[2].id] });
+    }
+  });
+
+  thirdPlaces.sort((a, b) => {
+    if (!a.stats && !b.stats) return a.groupCode.localeCompare(b.groupCode);
+    if (!a.stats) return 1;
+    if (!b.stats) return -1;
+    if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
+    var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
+    if (db !== da) return db - da;
+    return b.stats.pf - a.stats.pf;
+  });
+
+  return thirdPlaces.slice(0, 2).map(item => item.teamId);
 }
 
 function findFeedingMatch(prevRound, positionRef) {
@@ -996,6 +1046,13 @@ function updateStandingsDOM() {
           var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
           var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
           var qClass = (i < qualifyCount && isComplete) ? " qualify" : "";
+          
+          // ✅ Highlight đội hạng 3 được chọn nếu tất cả bảng đã kết thúc
+          var advancingThirdIds = areAllGroupsFinished() ? getAdvancingThirdPlaceTeamIds() : [];
+          if (numGroups === 3 && i === 2 && advancingThirdIds.indexOf(t.id) !== -1) {
+            qClass = "qualify-third";
+          }
+
           tbodyHTML += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
         });
         tbody.innerHTML = tbodyHTML;
@@ -1255,10 +1312,13 @@ function getQualifyCountForGroup(groupIndex, groupCode, numGroups) {
   return 2; 
 }
 
-// ✅ FIX: Logic xếp hạng cho trường hợp 3 bảng (lấy đúng 2 đội hạng 3 tốt nhất)
+// ✅ Cập nhật logic: Chỉ chọn đội hạng 3 khi TẤT CẢ các bảng đã kết thúc
 function computeKOTeams() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups < 2) return null;
+  
+  var allGroupsDone = areAllGroupsFinished();
+
   var advancing = [], allSt = {};
   DATA.groups.forEach(g => {
     if (!DATA.gStage || g.stage_id !== DATA.gStage.id) return;
@@ -1271,6 +1331,7 @@ function computeKOTeams() {
       pos3: { teamId: (st.length > 2) ? st[2].id : null, pos: "3" + g.code, stats: (st.length > 2) ? allSt[st[2].id] : null }
     });
   });
+
   var result = { matches: [] };
   if (numGroups === 2) {
     var seeds = [advancing[0].pos1, advancing[1].pos2, advancing[1].pos1, advancing[0].pos2];
@@ -1289,23 +1350,26 @@ function computeKOTeams() {
       }
     });
     
-    // Sắp xếp các đội hạng 3 để lấy ra 2 đội tốt nhất (cho trường hợp 3 bảng)
     if (numGroups === 3) {
-      thirdPlaces.sort((a, b) => {
-        if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
-        if (!a.stats) return 1;
-        if (!b.stats) return -1;
-        if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
-        var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
-        if (db !== da) return db - da;
-        return b.stats.pf - a.stats.pf;
-      });
-      qualified.push(thirdPlaces[0]);
-      qualified.push(thirdPlaces[1]);
+      if (allGroupsDone) {
+        // Chỉ sắp xếp và chọn 2 đội tốt nhất khi TẤT CẢ các bảng đã kết thúc
+        thirdPlaces.sort((a, b) => {
+          if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
+          if (!a.stats) return 1;
+          if (!b.stats) return -1;
+          if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
+          var da = a.stats.pf - a.stats.pa, db = b.stats.pf - b.stats.pa;
+          if (db !== da) return db - da;
+          return b.stats.pf - a.stats.pf;
+        });
+        qualified.push(thirdPlaces[0]);
+        qualified.push(thirdPlaces[1]);
+      }
+      // Nếu chưa kết thúc hết, qualified sẽ chỉ có 6 đội (1st và 2nd), 2 slot hạng 3 sẽ là null/TBD
     }
     
     var sortedQualified = qualified.slice().sort((a, b) => {
-      if (!a.stats && !b.stats) return a.pos.localeCompare(b.pos);
+      if (!a.stats && !b.stats) return (a.pos || "TBD").localeCompare(b.pos || "TBD");
       if (!a.stats) return 1;
       if (!b.stats) return -1;
       if (b.stats.w !== a.stats.w) return b.stats.w - a.stats.w;
@@ -1314,6 +1378,11 @@ function computeKOTeams() {
       return b.stats.pf - a.stats.pf;
     });
     
+    // Đảm bảo đủ 8 đội, nếu thiếu (do chưa có hạng 3) thì điền null
+    while (sortedQualified.length < 8) {
+      sortedQualified.push({ teamId: null, pos: "TBD", stats: null });
+    }
+
     var s = sortedQualified;
     result.matches.push({round: 2, slot: 9,  h: s[0].teamId, a: s[7].teamId, code: "TK1", h_pos: s[0].pos, a_pos: s[7].pos});
     result.matches.push({round: 2, slot: 10, h: s[3].teamId, a: s[4].teamId, code: "TK2", h_pos: s[3].pos, a_pos: s[4].pos});
@@ -1585,7 +1654,18 @@ function renderEventDetail() {
         var diff = t.pf - t.pa;
         var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
         var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
-        var qClass = (i < qualifyCount && isComplete) ? " qualify" : "";
+        
+        var qClass = "";
+        if (i < qualifyCount && isComplete) {
+          qClass = "qualify";
+        }
+        
+        // ✅ Highlight đội hạng 3 được chọn nếu tất cả bảng đã kết thúc
+        var advancingThirdIds = areAllGroupsFinished() ? getAdvancingThirdPlaceTeamIds() : [];
+        if (numGroups === 3 && i === 2 && advancingThirdIds.indexOf(t.id) !== -1) {
+          qClass = "qualify-third";
+        }
+
         H += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
       });
       H += '</tbody></table>';
