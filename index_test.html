@@ -1035,7 +1035,7 @@ function updateStandingsDOM() {
     var isComplete = isGroupComplete(g.id);
     var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
     var badge = card.querySelector('.badge');
-    if (badge) badge.textContent = mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount;
+    if (badge) badge.textContent = mb.length + ' đội · ' + completed + '/' + expected + ' trận';
     var tbody = card.querySelector('tbody');
     if (tbody) {
       if (st.length) {
@@ -1045,12 +1045,21 @@ function updateStandingsDOM() {
           var diff = t.pf - t.pa;
           var diffClass = diff > 0 ? "pos" : (diff < 0 ? "neg" : "");
           var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
-          var qClass = (i < qualifyCount && isComplete) ? " qualify" : "";
           
-          // ✅ Highlight đội hạng 3 được chọn nếu tất cả bảng đã kết thúc
-          var advancingThirdIds = areAllGroupsFinished() ? getAdvancingThirdPlaceTeamIds() : [];
-          if (numGroups === 3 && i === 2 && advancingThirdIds.indexOf(t.id) !== -1) {
-            qClass = "qualify-third";
+          // ✅ FIX: Chỉ đánh dấu khi TẤT CẢ các trận đấu bảng đã kết thúc (fin)
+          var allGroupsDone = areAllGroupsFinished();
+          var qClass = "";
+          
+          if (allGroupsDone && i < qualifyCount) {
+              if (numGroups === 3 && i === 2) {
+                  var advancingThirdIds = getAdvancingThirdPlaceTeamIds();
+                  if (advancingThirdIds.indexOf(t.id) !== -1) {
+                      qClass = "qualify-third"; // Đánh dấu sao cho đội hạng 3 được chọn
+                  }
+                  // Nếu là hạng 3 nhưng không được chọn, qClass = "" (không đánh dấu)
+              } else {
+                  qClass = "qualify"; // Đánh dấu ✓ cho các đội nhất/nhì bảng
+              }
           }
 
           tbodyHTML += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
@@ -1223,7 +1232,7 @@ function renderTimeline() {
     H += '</div>';
     if (index === DATA.rallies.length - 1) {
       H += '<div style="text-align:center; margin-top:12px; padding:10px; background:rgba(34,211,238,0.1); border:1px solid var(--cy); border-radius:8px; color:var(--cy); font-weight:800; font-size:14px; font-family:monospace;">';
-      H += '️ Thời gian trận đấu: <span id="match-duration">' + durationText + '</span>';
+      H += '⏱️ Thời gian trận đấu: <span id="match-duration">' + durationText + '</span>';
       H += '</div>';
     }
   });
@@ -1646,7 +1655,7 @@ function renderEventDetail() {
     var expected = expectedMatchesInGroup(g.id);
     var isComplete = isGroupComplete(g.id);
     var qualifyCount = getQualifyCountForGroup(idx, g.code, numGroups);
-    H += '<div class="group-card" data-group-id="' + g.id + '"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' · ✓ Top ' + qualifyCount + '</span></h4>';
+    H += '<div class="group-card" data-group-id="' + g.id + '"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' trận</span></h4>';
     if (st.length) {
       H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>L</th><th>HS</th><th>GF</th></tr></thead><tbody>';
       st.forEach(function(t, i) {
@@ -1656,14 +1665,17 @@ function renderEventDetail() {
         var diffText = diff > 0 ? "+" + diff : (diff < 0 ? diff : "0");
         
         var qClass = "";
-        if (i < qualifyCount && isComplete) {
-          qClass = "qualify";
-        }
+        var allGroupsDone = areAllGroupsFinished();
         
-        // ✅ Highlight đội hạng 3 được chọn nếu tất cả bảng đã kết thúc
-        var advancingThirdIds = areAllGroupsFinished() ? getAdvancingThirdPlaceTeamIds() : [];
-        if (numGroups === 3 && i === 2 && advancingThirdIds.indexOf(t.id) !== -1) {
-          qClass = "qualify-third";
+        if (allGroupsDone && i < qualifyCount) {
+            if (numGroups === 3 && i === 2) {
+                var advancingThirdIds = getAdvancingThirdPlaceTeamIds();
+                if (advancingThirdIds.indexOf(t.id) !== -1) {
+                    qClass = "qualify-third";
+                }
+            } else {
+                qClass = "qualify";
+            }
         }
 
         H += '<tr class="' + qClass + '"><td class="rank">' + (i+1) + '</td><td class="team-name">' + esc(name) + '</td><td>' + t.played + '</td><td class="wins">' + t.w + '</td><td class="losses">' + t.l + '</td><td class="diff ' + diffClass + '">' + diffText + '</td><td class="pf">' + t.pf + '</td></tr>';
