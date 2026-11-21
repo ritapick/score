@@ -527,12 +527,23 @@ function findFeedingMatch(prevRound, positionRef) {
   });
 }
 
+// ✅ FIX LỖI 2 BẢNG: Nhận diện vị trí dạng bảng ("1A", "2B"...) -> resolve từ BXH,
+// không đi tìm trận TK (vì 2 bảng không có Tứ kết) nên trước đây trả về nguyên văn "1A vs 2B"
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
 
   var round = Number(match.round);
   if (!round || match.group_id) {
     return getMatchTeamName(teamId, bracketPos);
+  }
+
+  var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
+
+  // Vị trí dạng bảng (VD: "1A", "2B"): chỉ hiện tên đội khi TẤT CẢ các bảng đã fin
+  if (pos && /^\d+[A-Z]$/i.test(pos)) {
+    if (!areAllGroupsFinished()) return pos;
+    if (teamId) return getMatchTeamName(teamId, pos);
+    return resolveFromGroupPosition(pos);
   }
 
   if (round === 2) {
@@ -545,7 +556,6 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   }
 
   if (round === 3) {
-    var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
     var tkMatch = findFeedingMatch(2, pos);
     if (!tkMatch || !isMatchFinished(tkMatch)) {
       return bracketPos ? bracketPos : 'TBD';
@@ -556,7 +566,6 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
   }
 
   if (round === 4) {
-    var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
     var bkMatch = findFeedingMatch(3, pos);
     if (!bkMatch || !isMatchFinished(bkMatch)) {
       return bracketPos ? bracketPos : 'TBD';
