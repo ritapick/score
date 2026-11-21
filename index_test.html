@@ -97,6 +97,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-item.finished{border-left:3px solid var(--li);opacity:.95}
 .match-item.ko{border-left:3px solid var(--or)}
 .match-item.ck{border-left:3px solid var(--li);background:rgba(163,230,53,.05)}
+.match-item.tp{border-left:3px solid var(--or);background:rgba(251,146,60,.08)}
 .match-item.bye{border-left:3px solid var(--cy);background:rgba(34,211,238,.05)}
 @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 4px rgba(248,113,113,0)}}
 
@@ -104,6 +105,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-main-row .m-code{font-family:monospace;font-weight:800;color:var(--li);font-size:11px;text-align:center}
 .match-item.ko .m-code{color:var(--or)}
 .match-item.ck .m-code{color:var(--li);font-size:12px}
+.match-item.tp .m-code{color:var(--or);font-size:12px}
 .match-item.bye .m-code{color:var(--cy)}
 
 .match-main-row .m-team{font-weight:700;font-size:11px;min-width:0;transition:color .2s;word-break:break-word;white-space:normal;line-height:1.2}
@@ -143,6 +145,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .ko-group-header.tk{background:rgba(251,146,60,.15);color:var(--or)}
 .ko-group-header.bk{background:rgba(34,211,238,.1);color:var(--cy)}
 .ko-group-header.ck{background:rgba(163,230,53,.15);color:var(--li)}
+.ko-group-header.tp{background:rgba(251,146,60,.25);color:var(--or)}
 .ko-group-header.r16{background:rgba(34,211,238,.1);color:var(--cy)}
 .ko-group .match-list{padding:6px}
 
@@ -157,6 +160,7 @@ td.pf{font-family:monospace;color:var(--cy)}
 .bracket-header.tk{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff}
 .bracket-header.bk{background:linear-gradient(135deg,#065f46,#10b981);color:#fff}
 .bracket-header.ck{background:linear-gradient(135deg,#991b1b,#ef4444);color:#fff}
+.bracket-header.tp{background:linear-gradient(135deg,#b45309,#f59e0b);color:#fff}
 
 .bracket-matches-wrapper{flex:1;display:flex;flex-direction:column;justify-content:space-around;position:relative}
 
@@ -461,6 +465,26 @@ function isMatchFinished(m) {
   return status === 'finished' || status === 'completed' || status === 'bye';
 }
 
+// ✅ HÀM MỚI: Nhận diện trận TRANH HẠNG 3 (round 5, match_code TP/TH3/HANG/PT/3RD, hoặc slot 16)
+function isThirdPlaceMatch(m) {
+  if (!m || m.group_id) return false;
+  if (Number(m.round) === 5) return true;
+  var code = String(m.match_code || "").toUpperCase();
+  if (/(TP|TH3|HANG|3RD|PT)/.test(code)) return true;
+  if (Number(m.bracket_slot) === 16) return true;
+  return false;
+}
+
+// ✅ HÀM MỚI: Đếm số trận knockout quan trọng (CK + TP) đã kết thúc
+function koKeyDoneCount(matches) {
+  return matches.filter(function(m) {
+    if (m.group_id) return false;
+    if (Number(m.round) !== 4 && !isThirdPlaceMatch(m)) return false;
+    var status = m.match_status || ((Number(m.home_score)>0 || Number(m.away_score)>0) ? "completed" : "scheduled");
+    return status === 'finished' || status === 'completed';
+  }).length;
+}
+
 // ✅ Hàm kiểm tra xem TẤT CẢ các trận vòng bảng đã kết thúc chưa
 function areAllGroupsFinished() {
   if (!DATA.gStage) return false;
@@ -546,6 +570,17 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
     return resolveFromGroupPosition(pos);
   }
 
+  // ✅ FIX MỚI: Trận TRANH HẠNG 3 -> lấy đội THUA của trận Bán kết tương ứng ("Thua BK1", "Thua BK2")
+  if (isThirdPlaceMatch(match)) {
+    var bkM = findFeedingMatch(3, pos);
+    if (!bkM || !isMatchFinished(bkM)) {
+      return bracketPos ? bracketPos : 'TBD';
+    }
+    if (teamId) return getMatchTeamName(teamId, bracketPos);
+    var loserId = getLoserOfMatch(bkM);
+    return getMatchTeamName(loserId, bracketPos);
+  }
+
   if (round === 2) {
     if (!areMatchesFinished(function(m) { return m.group_id; })) {
       return isHome ? "TEAM A" : "TEAM B";
@@ -617,9 +652,10 @@ function getLoserOfMatch(m) {
 
 function resolveSlot(pos) {
   if (!pos) return null;
-  if (/V16/i.test(pos)) return findWinnerFromV16(pos);
-  if (/TK/i.test(pos)) return findWinnerFromTK(pos);
-  if (/BK/i.test(pos)) return findWinnerFromBK(pos);
+  var isLoserRef = /thua|loser|bai/i.test(pos);
+  if (/V16/i.test(pos)) return isLoserRef ? findLoserFromV16(pos) : findWinnerFromV16(pos);
+  if (/TK/i.test(pos)) return isLoserRef ? findLoserFromTK(pos) : findWinnerFromTK(pos);
+  if (/BK/i.test(pos)) return isLoserRef ? findLoserFromBK(pos) : findWinnerFromBK(pos);
   return null;
 }
 
@@ -653,7 +689,7 @@ function resolveKnockoutBracketPositions() {
     }
   }
 
-  [1,2,3,4].forEach(function(r){
+  [1,2,3,4,5].forEach(function(r){
     koMatches.filter(function(m){ return Number(m.round) === r; }).forEach(function(m){
       resolveHomeAway(m, r);
     });
@@ -670,6 +706,16 @@ function findWinnerFromV16(positionRef) {
   return getWinnerOfMatch(v16Match);
 }
 
+function findLoserFromV16(positionRef) {
+  if (!positionRef || !/V16/i.test(positionRef)) return null;
+  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
+  var v16Match = DATA.matches.find(function(m) {
+    return Number(m.round) === 1 && Number(m.bracket_slot) === matchNum;
+  });
+  return getLoserOfMatch(v16Match);
+}
+
 function findWinnerFromTK(positionRef) {
   if (!positionRef || !/TK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
@@ -680,6 +726,16 @@ function findWinnerFromTK(positionRef) {
   return getWinnerOfMatch(tkMatch);
 }
 
+function findLoserFromTK(positionRef) {
+  if (!positionRef || !/TK/i.test(positionRef)) return null;
+  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
+  var tkMatch = DATA.matches.find(function(m) {
+    return Number(m.round) === 2 && String(displayCode(m)) === 'TK' + matchNum;
+  });
+  return getLoserOfMatch(tkMatch);
+}
+
 function findWinnerFromBK(positionRef) {
   if (!positionRef || !/BK/i.test(positionRef)) return null;
   var matchNum = parseInt(positionRef.replace(/\D/g, ''));
@@ -688,6 +744,17 @@ function findWinnerFromBK(positionRef) {
     return Number(m.round) === 3 && String(displayCode(m)) === 'BK' + matchNum;
   });
   return getWinnerOfMatch(bkMatch);
+}
+
+// ✅ HÀM MỚI: Tìm đội THUA của trận Bán kết (phục vụ trận tranh hạng 3)
+function findLoserFromBK(positionRef) {
+  if (!positionRef || !/BK/i.test(positionRef)) return null;
+  var matchNum = parseInt(positionRef.replace(/\D/g, ''));
+  if (isNaN(matchNum)) return null;
+  var bkMatch = DATA.matches.find(function(m) {
+    return Number(m.round) === 3 && String(displayCode(m)) === 'BK' + matchNum;
+  });
+  return getLoserOfMatch(bkMatch);
 }
 
 function openLogin() { el("login-modal").classList.add("show"); el("lmsg").textContent=""; }
@@ -927,16 +994,12 @@ function startRealtime() {
           }
         }
         if (changed) {
-          var oldCK = DATA.matches.find(x => Number(x.round) === 4);
-          var newCK = m.data.find(x => Number(x.round) === 4);
-          var ckJustFinished = false;
-          if (oldCK && newCK) {
-             var oldDone = oldCK.match_status === 'completed' || oldCK.match_status === 'finished' || Number(oldCK.home_score)>0 || Number(oldCK.away_score)>0;
-             var newDone = newCK.match_status === 'completed' || newCK.match_status === 'finished' || Number(newCK.home_score)>0 || Number(newCK.away_score)>0;
-             if (!oldDone && newDone) ckJustFinished = true;
-          }
+          // ✅ FIX: re-render khi CK hoặc TP vừa kết thúc (để cập nhật bảng thành tích)
+          var oldKeyDone = koKeyDoneCount(DATA.matches);
+          var newKeyDone = koKeyDoneCount(m.data);
+          var keyJustFinished = newKeyDone > oldKeyDone;
           DATA.matches = m.data;
-          if (ckJustFinished) {
+          if (keyJustFinished) {
             render();
           } else {
             updateMatchRowsDOM();
@@ -1320,6 +1383,8 @@ function displayCode(m) {
     if (slot === 14) return "BK2";
     return "BK" + (slot - 12);
   }
+  // ✅ FIX: Trận tranh hạng 3 hiển thị mã TP (hoặc match_code nếu có)
+  if (isThirdPlaceMatch(m)) return String(m.match_code || "TP");
   if (m.round === 4) return "CK";
   return String(m.match_code||"?");
 }
@@ -1604,12 +1669,13 @@ function execCopy(text) {
   document.body.removeChild(textArea);
 }
 
-function renderFinalStandings(ckMatch, bkMatches) {
-  if (!ckMatch) return '';
-  var ckStatus = ckMatch.match_status || ((Number(ckMatch.home_score)>0 || Number(ckMatch.away_score)>0) ? "completed" : "scheduled");
+// ✅ NÂNG CẤP: renderFinalStandings nhận thêm tpMatch (trận tranh hạng 3)
+function renderFinalStandings(ckMatch, bkMatches, tpMatch) {
+  if (!ckMatch && !tpMatch) return '';
+  var ckStatus = ckMatch ? (ckMatch.match_status || ((Number(ckMatch.home_score)>0 || Number(ckMatch.away_score)>0) ? "completed" : "scheduled")) : "scheduled";
   var ckIsFinished = ckStatus === 'finished' || ckStatus === 'completed';
-  var h = Number(ckMatch.home_score)||0;
-  var a = Number(ckMatch.away_score)||0;
+  var h = ckMatch ? Number(ckMatch.home_score)||0 : 0;
+  var a = ckMatch ? Number(ckMatch.away_score)||0 : 0;
   resolveKnockoutBracketPositions();
 
   var H = '<div class="section-title" style="margin-top:20px"> BẢNG THÀNH TÍCH</div>';
@@ -1629,7 +1695,17 @@ function renderFinalStandings(ckMatch, bkMatches) {
     H += '<tr style="background:rgba(163,230,53,.15)"><td style="padding:10px;font-weight:900;color:var(--li);font-size:18px;width:60px;text-align:center">🥇1</td><td style="padding:10px;font-weight:800;font-size:16px;color:var(--li)">' + esc(winnerName || 'TBD') + '</td></tr>';
     H += '<tr><td style="padding:10px;font-weight:900;color:var(--mu);font-size:18px;width:60px;text-align:center">🥈2</td><td style="padding:10px;font-weight:700;font-size:15px;color:var(--mu)">' + esc(loserName || 'TBD') + '</td></tr>';
   }
-  if (bkMatches && bkMatches.length >= 2) {
+
+  // ✅ Hạng 3: nếu CÓ trận tranh hạng 3 -> đội THẮNG trận TP đạt hạng 3 (chỉ hiện khi TP đã FIN)
+  if (tpMatch && isMatchFinished(tpMatch)) {
+    var thirdId = getWinnerOfMatch(tpMatch);
+    var thirdName = getMatchTeamName(thirdId, null);
+    if (thirdName && thirdName !== 'TBD') {
+      H += '<tr><td style="padding:10px;font-weight:900;color:var(--or);font-size:18px;width:60px;text-align:center">🥉3</td><td style="padding:10px;font-weight:700;font-size:15px;color:var(--or)">' + esc(thirdName) + '</td></tr>';
+    }
+  }
+  // ❌ Không có trận tranh hạng 3 -> giữ logic cũ: 2 đội thua BK đồng hạng 3
+  else if (!tpMatch && bkMatches && bkMatches.length >= 2) {
     var thirdPlaceTeams = [];
     bkMatches.forEach(function(m) {
       if (isMatchFinished(m)) {
@@ -1704,15 +1780,20 @@ function renderEventDetail() {
     var r16 = km.filter(function(m){ return Number(m.round)===1; });
     var tk = km.filter(function(m){ return Number(m.round)===2; });
     var bk = km.filter(function(m){ return Number(m.round)===3; });
-    var ck = km.filter(function(m){ return Number(m.round)===4; });
+    // ✅ Tách riêng trận TRANH HẠNG 3, loại TP ra khỏi danh sách Chung kết
+    var tp = km.filter(function(m){ return isThirdPlaceMatch(m); });
+    var ck = km.filter(function(m){ return Number(m.round)===4 && !isThirdPlaceMatch(m); });
     if (r16.length) H += renderKOGroup("🎯 VÒNG 1/16", "r16", r16);
     if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
     if (bk.length) H += renderKOGroup("🏅 BÁN KẾT", "bk", bk);
+    // ✅ Hiển thị trận tranh hạng 3 NGAY SAU bán kết
+    if (tp.length) H += renderKOGroup("🥉 TRANH HẠNG 3", "tp", tp);
     if (ck.length) H += renderKOGroup("🏆 CHUNG KẾT", "ck", ck);
     H += '</div>';
-    H += renderBracketTree(tk, bk, ck, numGroups);
+    H += renderBracketTree(tk, bk, ck, numGroups, tp);
     var ckMatch = ck.length > 0 ? ck[0] : null;
-    H += renderFinalStandings(ckMatch, bk);
+    var tpMatch = tp.length > 0 ? tp[0] : null;
+    H += renderFinalStandings(ckMatch, bk, tpMatch);
   }
   return H;
 }
@@ -1747,8 +1828,10 @@ function renderBracketMatchCard(m, codeOverride, isPlaceholder) {
   return H;
 }
 
-function renderBracketTree(tk, bk, ck, numGroups) {
+// ✅ NÂNG CẤP: renderBracketTree thêm cột "Tranh Hạng 3" giữa Bán Kết và Chung Kết
+function renderBracketTree(tk, bk, ck, numGroups, tp) {
   var hasTK = tk && tk.length > 0;
+  var hasTP = tp && tp.length > 0;
   var H = '<div class="bracket-section"><h3>🌳 SƠ ĐỒ NHÁNH ĐẤU</h3><div class="bracket-container"><div class="bracket-tree">';
   if (hasTK) {
     H += '<div class="bracket-round"><div class="bracket-header tk">🎯 Tứ Kết</div><div class="bracket-matches-wrapper">';
@@ -1758,6 +1841,11 @@ function renderBracketTree(tk, bk, ck, numGroups) {
     if (bk && bk.length) bk.forEach(function(m) { H += renderBracketMatchCard(m, displayCode(m), false); });
     else { H += renderBracketMatchCard(null, 'Thắng TK1', true); H += renderBracketMatchCard(null, 'Thắng TK2', true); }
     H += '</div></div>';
+    if (hasTP) {
+      H += '<div class="bracket-round"><div class="bracket-header tp">🥉 Tranh Hạng 3</div><div class="bracket-matches-wrapper">';
+      tp.forEach(function(m) { H += renderBracketMatchCard(m, displayCode(m), false); });
+      H += '</div></div>';
+    }
     H += '<div class="bracket-round"><div class="bracket-header ck"> Chung Kết</div><div class="bracket-matches-wrapper">';
     if (ck && ck.length) ck.forEach(function(m) { H += renderBracketMatchCard(m, displayCode(m), false); });
     else H += renderBracketMatchCard(null, 'Thắng BK1', true);
@@ -1767,6 +1855,11 @@ function renderBracketTree(tk, bk, ck, numGroups) {
     if (bk && bk.length) bk.forEach(function(m) { H += renderBracketMatchCard(m, displayCode(m), false); });
     else { H += renderBracketMatchCard(null, 'Nhất bảng A', true); H += renderBracketMatchCard(null, 'Nhất bảng B', true); }
     H += '</div></div>';
+    if (hasTP) {
+      H += '<div class="bracket-round"><div class="bracket-header tp">🥉 Tranh Hạng 3</div><div class="bracket-matches-wrapper">';
+      tp.forEach(function(m) { H += renderBracketMatchCard(m, displayCode(m), false); });
+      H += '</div></div>';
+    }
     H += '<div class="bracket-round"><div class="bracket-header ck"> Chung Kết</div><div class="bracket-matches-wrapper">';
     if (ck && ck.length) ck.forEach(function(m) { H += renderBracketMatchCard(m, displayCode(m), false); });
     else H += renderBracketMatchCard(null, 'Thắng BK1', true);
@@ -1795,7 +1888,9 @@ function renderMatchItem(m, isKO) {
     var aScoreClass = a > h ? "score-leading" : "score-normal";
     scoreHtml = '<span class="' + hScoreClass + '">' + h + '</span><span class="score-sep-small">-</span><span class="' + aScoreClass + '">' + a + '</span>';
   }
-  var H = '<div class="match-item ' + (isKO ? (Number(m.round)===4?'ck':'ko') : '') + (status === 'bye' ? ' bye' : '') + '" data-match-id="' + m.id + '" onclick="openTimelineModal(\'' + m.id + '\')">';
+  // ✅ Phân loại class: TP (tranh hạng 3) > CK > KO
+  var koCls = isKO ? (isThirdPlaceMatch(m) ? 'tp' : (Number(m.round)===4 ? 'ck' : 'ko')) : '';
+  var H = '<div class="match-item ' + koCls + (status === 'bye' ? ' bye' : '') + '" data-match-id="' + m.id + '" onclick="openTimelineModal(\'' + m.id + '\')">';
   H += '<div class="match-main-row">';
   H += '<div class="m-code">' + esc(displayCode(m)) + '</div>';
   H += '<div class="m-team home ' + homeLeadingClass + '">' + esc(hn) + homeIcon + '</div>';
