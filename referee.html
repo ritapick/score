@@ -182,6 +182,7 @@ function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show"
 
 /* =====================================================================
    ✅ LOGIC DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
+   - Hỗ trợ phân biệt "Thắng" vs "Thua" (sửa lỗi trận tranh hạng 3)
    ===================================================================== */
 
 function getGroupIdByCode(code) {
@@ -189,16 +190,49 @@ function getGroupIdByCode(code) {
     return g ? g.id : null;
 }
 
+/* ✅ HÀM MỚI: PARSE bracket_position, phân biệt Thắng/Thua */
+function parseBracketRef(posStr) {
+    if (!posStr) return null;
+    var s = String(posStr).trim();
+    var want = null;
+    if (/^th[aă]ng/i.test(s)) want = 'win';        // "Thắng" / "Thang"
+    else if (/^thua/i.test(s)) want = 'lose';      // "Thua"
+    var mm;
+    if ((mm = s.match(/V16[-\s]?(\d+)/i))) return { kind: 'V16', num: parseInt(mm[1]), want: want };
+    if ((mm = s.match(/TK[-\s]?(\d+)/i)))   return { kind: 'TK',  num: parseInt(mm[1]), want: want };
+    if ((mm = s.match(/BK[-\s]?(\d+)/i)))   return { kind: 'BK',  num: parseInt(mm[1]), want: want };
+    return null;
+}
+
+/* Tìm trận nguồn theo kind+num */
+function findSourceMatch(ref) {
+    if (!ref) return null;
+    if (ref.kind === 'V16') {
+        return DATA.matches.find(function(x) { return Number(x.round) === 1 && Number(x.bracket_slot) === ref.num; });
+    }
+    if (ref.kind === 'TK') {
+        var slot = 8 + ref.num;
+        return DATA.matches.find(function(x) { return Number(x.round) === 2 && Number(x.bracket_slot) === slot; });
+    }
+    if (ref.kind === 'BK') {
+        var slot2 = 12 + ref.num;
+        return DATA.matches.find(function(x) { return Number(x.round) === 3 && Number(x.bracket_slot) === slot2; });
+    }
+    return null;
+}
+
+/* Lấy teamId của 1 slot trong trận (đệ quy qua bracket_position) */
 function resolveTeamId(match, isHome) {
     var teamId = isHome ? match.home_team_id : match.away_team_id;
     if (teamId) return teamId;
-    
+
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
     var posStr = posRef ? String(posRef).trim() : "";
-    
+
     if (!posStr || posStr === "TBD") return null;
     if (posStr === "Miễn (Bye)") return null;
-    
+
+    // Mã bảng trực tiếp (1A-4D)
     var groupMatch = posStr.match(/^([1234])\s*([A-D])$/i);
     if (groupMatch) {
         var pos = parseInt(groupMatch[1]);
@@ -206,75 +240,45 @@ function resolveTeamId(match, isHome) {
         var gid = getGroupIdByCode(groupCode);
         if (gid && isGroupComplete(gid)) {
             var st = standings(gid);
-            if (st.length >= pos && st[pos - 1]) {
-                return st[pos - 1].id;
-            }
+            if (st.length >= pos && st[pos - 1]) return st[pos - 1].id;
         }
         return null;
     }
-    
-    var v16Match = posStr.match(/V16[-\s]?(\d+)/i);
-    if (v16Match) {
-        var slot = parseInt(v16Match[1]);
-        var m = DATA.matches.find(function(x) { return Number(x.round) === 1 && Number(x.bracket_slot) === slot; });
-        if (m) {
-            var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
-            if (m.match_status === 'finished' || m.match_status === 'completed') {
-                if (h > a) return resolveTeamId(m, true);
-                if (a > h) return resolveTeamId(m, false);
-            }
-        }
-        return null;
+
+    // "Thắng/Thua V16/TK/BK"
+    var ref = parseBracketRef(posStr);
+    if (ref) {
+        var src = findSourceMatch(ref);
+        if (!src) return null;
+        // want='lose' -> lấy đội thua; còn lại (win hoặc không có prefix) -> lấy đội thắng
+        return ref.want === 'lose' ? getLoserOfMatch(src) : getWinnerOfMatch(src);
     }
-    
-    var tkMatch = posStr.match(/TK[-\s]?(\d+)/i);
-    if (tkMatch) {
-        var tkNum = parseInt(tkMatch[1]);
-        var slot = 8 + tkNum;
-        var m = DATA.matches.find(function(x) { return Number(x.round) === 2 && Number(x.bracket_slot) === slot; });
-        if (m) {
-            var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
-            if (m.match_status === 'finished' || m.match_status === 'completed') {
-                if (h > a) return resolveTeamId(m, true);
-                if (a > h) return resolveTeamId(m, false);
-            }
-        }
-        return null;
-    }
-    
-    var bkMatch = posStr.match(/BK[-\s]?(\d+)/i);
-    if (bkMatch) {
-        var bkNum = parseInt(bkMatch[1]);
-        var slot = 12 + bkNum;
-        var m = DATA.matches.find(function(x) { return Number(x.round) === 3 && Number(x.bracket_slot) === slot; });
-        if (m) {
-            var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
-            if (m.match_status === 'finished' || m.match_status === 'completed') {
-                if (h > a) return resolveTeamId(m, true);
-                if (a > h) return resolveTeamId(m, false);
-            }
-        }
-        return null;
-    }
-    
+
     return null;
 }
 
 function getWinnerOfMatch(m) {
     if (!m) return null;
-    var h = Number(m.home_score) || 0;
-    var a = Number(m.away_score) || 0;
-    
-    var homeId = resolveTeamId(m, true);
-    var awayId = resolveTeamId(m, false);
-    
+    var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
+    var homeId = resolveTeamId(m, true), awayId = resolveTeamId(m, false);
     if (m.match_status === 'finished' || m.match_status === 'completed') {
         if (h > a) return homeId;
         if (a > h) return awayId;
     }
     if (!homeId && awayId && (m.match_status === 'finished' || m.match_status === 'completed' || m.match_status === 'bye')) return awayId;
     if (homeId && !awayId && (m.match_status === 'finished' || m.match_status === 'completed' || m.match_status === 'bye')) return homeId;
-    
+    return null;
+}
+
+/* ✅ HÀM MỚI: Lấy đội THUA của trận (dùng cho tranh hạng 3) */
+function getLoserOfMatch(m) {
+    if (!m) return null;
+    var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
+    var homeId = resolveTeamId(m, true), awayId = resolveTeamId(m, false);
+    if (m.match_status === 'finished' || m.match_status === 'completed') {
+        if (h > a) return awayId;   // home thắng -> away thua
+        if (a > h) return homeId;   // away thắng -> home thua
+    }
     return null;
 }
 
@@ -286,50 +290,30 @@ function getDynamicTeamName(match, isHome) {
     if (posStr === "" || posStr === "TBD") {
         return teamId ? getMatchTeamName(teamId, null) : "TBD";
     }
-
     if (posStr === "Miễn (Bye)") {
         return teamId ? getMatchTeamName(teamId, posRef) : "Miễn (Bye)";
     }
 
+    // Mã bảng trực tiếp
     var groupMatch = posStr.match(/^([1234])\s*([A-D])$/i);
     if (groupMatch) {
         var pos = parseInt(groupMatch[1]);
         var groupCode = groupMatch[2].toUpperCase();
         var gid = getGroupIdByCode(groupCode);
-        
         if (gid && isGroupComplete(gid)) {
             var st = standings(gid);
-            if (st.length >= pos && st[pos - 1]) {
-                return getMatchTeamName(st[pos - 1].id, posRef);
-            }
+            if (st.length >= pos && st[pos - 1]) return getMatchTeamName(st[pos - 1].id, posRef);
         }
-        return posStr; 
+        return posStr;
     }
 
-    var v16Match = posStr.match(/V16[-\s]?(\d+)/i);
-    if (v16Match) {
-        var slot = parseInt(v16Match[1]);
-        var m = DATA.matches.find(function(x) { return Number(x.round) === 1 && Number(x.bracket_slot) === slot; });
-        var winnerId = getWinnerOfMatch(m);
-        return winnerId ? getMatchTeamName(winnerId, posRef) : ("Thắng V16-" + slot);
-    }
-
-    var tkMatch = posStr.match(/TK[-\s]?(\d+)/i);
-    if (tkMatch) {
-        var tkNum = parseInt(tkMatch[1]);
-        var slot = 8 + tkNum;
-        var m = DATA.matches.find(function(x) { return Number(x.round) === 2 && Number(x.bracket_slot) === slot; });
-        var winnerId = getWinnerOfMatch(m);
-        return winnerId ? getMatchTeamName(winnerId, posRef) : ("Thắng TK" + tkNum);
-    }
-
-    var bkMatch = posStr.match(/BK[-\s]?(\d+)/i);
-    if (bkMatch) {
-        var bkNum = parseInt(bkMatch[1]);
-        var slot = 12 + bkNum;
-        var m = DATA.matches.find(function(x) { return Number(x.round) === 3 && Number(x.bracket_slot) === slot; });
-        var winnerId = getWinnerOfMatch(m);
-        return winnerId ? getMatchTeamName(winnerId, posRef) : ("Thắng BK" + bkNum);
+    // "Thắng/Thua ..."
+    var ref = parseBracketRef(posStr);
+    if (ref) {
+        var src = findSourceMatch(ref);
+        var id = ref.want === 'lose' ? getLoserOfMatch(src) : getWinnerOfMatch(src);
+        // Fallback label dùng CHÍNH XÁC chuỗi gốc (giữ "Thắng"/"Thua")
+        return id ? getMatchTeamName(id, posRef) : posStr;
     }
 
     return teamId ? getMatchTeamName(teamId, posRef) : posStr;
@@ -343,22 +327,13 @@ function getTeamPlayersResolved(match, isHome) {
 function autoSelectOtherPlayer(team, selectedSlot) {
     var teamId = resolveTeamId(currentMatchData, team === 'home');
     var players = getTeamPlayers(teamId);
-    
     if (players.length !== 2) return;
-    
     var selectedId = el("slot-" + team + "-" + selectedSlot).value;
     var otherSlot = selectedSlot === 1 ? 2 : 1;
     var otherSelect = el("slot-" + team + "-" + otherSlot);
-    
-    if (!selectedId) {
-        otherSelect.value = "";
-        return;
-    }
-    
+    if (!selectedId) { otherSelect.value = ""; return; }
     var otherPlayer = players.find(function(p) { return p.id !== selectedId; });
-    if (otherPlayer) {
-        otherSelect.value = otherPlayer.id;
-    }
+    if (otherPlayer) otherSelect.value = otherPlayer.id;
 }
 
 function openLogin(){el("login-modal").classList.add("show");el("lmsg").textContent=""}
@@ -403,11 +378,7 @@ async function loadData(){
         if(!t||!t.id)return;
         tSelect.innerHTML+='<option value="'+t.id+'">'+esc(t.name||'Unknown')+'</option>'
       })
-      // ✅ TỰ ĐỘNG CHỌN GIẢI ĐẦU TIÊN
-      if(firstValidT) {
-          tSelect.value = firstValidT.id;
-          await onTournamentChange();
-      }
+      if(firstValidT) { tSelect.value = firstValidT.id; await onTournamentChange(); }
     } else {
       el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><div style="font-size:36px;margin-bottom:6px">📭</div><p style="font-size:12px;margin:0">Bạn chưa tạo giải đấu nào</p></div>'
     }
@@ -434,13 +405,8 @@ async function onTournamentChange(){
         if(!e||!e.id)return;
         eSelect.innerHTML+='<option value="'+e.id+'">'+esc(e.name||'Unknown')+'</option>'
       })
-      // ✅ TỰ ĐỘNG CHỌN NỘI DUNG ĐẦU TIÊN
-      if(firstValidE) {
-          eSelect.value = firstValidE.id;
-          await loadMatches();
-      } else {
-          el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p style="font-size:12px;margin:0">Chưa có nội dung</p></div>'
-      }
+      if(firstValidE) { eSelect.value = firstValidE.id; await loadMatches(); }
+      else { el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p style="font-size:12px;margin:0">Chưa có nội dung</p></div>' }
     } else {
       el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p style="font-size:12px;margin:0">Chưa có nội dung</p></div>'
     }
@@ -563,7 +529,6 @@ function getTeamPlayers(teamId){
   return result;
 }
 
-/* ✅ CẬP NHẬT: NHẬN DIỆN TRẬN TRANH HẠNG 3 */
 function getRoundInfo(match){
   if(!match)return{type:'other',name:'Khác',class:''};
   if(match.group_id){
@@ -581,7 +546,6 @@ function getRoundInfo(match){
   return{type:'other',name:'Khác',class:'ko-header'};
 }
 
-/* ✅ CẬP NHẬT: HIỂN THỊ MÃ TRẬN CHO HẠNG 3 */
 function displayCode(m){
   if(!m)return"?";
   if(m.group_id){
@@ -628,7 +592,6 @@ function renderMatchesByRound(){
     matches.forEach(function(m){H+=renderMatchCard(m)});
     H+='</div>';
   });
-  // ✅ CẬP NHẬT: THÊM HẠNG 3 VÀO THỨ TỰ HIỂN THỊ
   var koOrder=['r16','tk','bk','h3','ck','other'];
   var koTitles={'r16':'🎯 Vòng 1/16','tk':'🎯 Tứ kết','bk':'🏅 Bán kết','h3':'🥉 Tranh hạng 3','ck':'🏆 Chung kết','other':'Khác'};
   koOrder.forEach(function(type){
@@ -650,13 +613,10 @@ function renderMatchCard(m){
   var scoreText=(status==='finished')?(h+" - "+a):"vs";
   var scoreClass=(status==='finished')?'done':'';
   var matchCode=displayCode(m);
-  
-  var isBracketHome = !resolveTeamId(m, true) || /^[1234][A-D]$/i.test(m.home_bracket_position) || /^Thắng/i.test(m.home_bracket_position);
-  var isBracketAway = !resolveTeamId(m, false) || /^[1234][A-D]$/i.test(m.away_bracket_position) || /^Thắng/i.test(m.away_bracket_position);
-  
+  var isBracketHome = !resolveTeamId(m, true);
+  var isBracketAway = !resolveTeamId(m, false);
   var homeClass=(isBracketHome)?'team-name bracket':'team-name home';
   var awayClass=(isBracketAway)?'team-name bracket':'team-name away';
-  
   var H='<div class="match-card '+status+'" onclick="openScoreModal(\''+m.id+'\')">';
   H+='<div class="match-header"><div class="match-code">'+esc(matchCode)+'</div>';
   H+='<span class="match-status '+status+'">'+(status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳'))+'</span></div>';
@@ -670,41 +630,27 @@ async function openScoreModal(matchId){
   currentMatchId=matchId;
   currentMatchData=DATA.matches.find(function(x){return x&&x.id===matchId});
   if(!currentMatchData){toast("❌ Không tìm thấy trận");return}
-  
   var hn=getDynamicTeamName(currentMatchData, true);
   var an=getDynamicTeamName(currentMatchData, false);
-  
   el("modal-match-code").textContent="🎯 "+displayCode(currentMatchData);
   el("modal-home-name").textContent=hn;
   el("modal-away-name").textContent=an;
-  
   el("modal-home-score").textContent=currentMatchData.home_score||0;
   el("modal-away-score").textContent=currentMatchData.away_score||0;
-  
   var homePlayers = getTeamPlayersResolved(currentMatchData, true);
   var awayPlayers = getTeamPlayersResolved(currentMatchData, false);
-  
   populateSlotSelect('slot-home-1', homePlayers, 1);
   populateSlotSelect('slot-home-2', homePlayers, 2);
   populateSlotSelect('slot-away-1', awayPlayers, 1);
   populateSlotSelect('slot-away-2', awayPlayers, 2);
-  
   if(currentMatchData.home_player_slot1)el("slot-home-1").value=currentMatchData.home_player_slot1;
   if(currentMatchData.home_player_slot2)el("slot-home-2").value=currentMatchData.home_player_slot2;
   if(currentMatchData.away_player_slot1)el("slot-away-1").value=currentMatchData.away_player_slot1;
   if(currentMatchData.away_player_slot2)el("slot-away-2").value=currentMatchData.away_player_slot2;
-  
-  if (currentMatchData.home_player_slot1 && !currentMatchData.home_player_slot2) {
-    autoSelectOtherPlayer('home', 1);
-  } else if (currentMatchData.home_player_slot2 && !currentMatchData.home_player_slot1) {
-    autoSelectOtherPlayer('home', 2);
-  }
-  if (currentMatchData.away_player_slot1 && !currentMatchData.away_player_slot2) {
-    autoSelectOtherPlayer('away', 1);
-  } else if (currentMatchData.away_player_slot2 && !currentMatchData.away_player_slot1) {
-    autoSelectOtherPlayer('away', 2);
-  }
-  
+  if (currentMatchData.home_player_slot1 && !currentMatchData.home_player_slot2) autoSelectOtherPlayer('home', 1);
+  else if (currentMatchData.home_player_slot2 && !currentMatchData.home_player_slot1) autoSelectOtherPlayer('home', 2);
+  if (currentMatchData.away_player_slot1 && !currentMatchData.away_player_slot2) autoSelectOtherPlayer('away', 1);
+  else if (currentMatchData.away_player_slot2 && !currentMatchData.away_player_slot1) autoSelectOtherPlayer('away', 2);
   localServeState.team=currentMatchData.serving_team||'home';
   localServeState.turn=currentMatchData.serving_turn||1;
   updateServeButtons();updateTopScoreDisplay();updateScoreControlsVisibility();
@@ -758,9 +704,7 @@ function closeScoreModal(){el("score-modal").classList.remove("show");currentMat
 
 async function onSlotChange(team,slotNum){
   if(!currentMatchId)return;
-  
   autoSelectOtherPlayer(team, slotNum);
-  
   var s1=el("slot-"+team+"-1").value,s2=el("slot-"+team+"-2").value;
   if(s1&&s2&&s1===s2){alert("⚠️ 2 VĐV phải khác nhau!");el("slot-"+team+"-"+slotNum).value="";return}
   var update={};
@@ -841,14 +785,8 @@ async function finishMatch(){
   try{
     const{error}=await sb.from("matches").update({home_score:h,away_score:a,match_status:'finished'}).eq("id",currentMatchId);
     if(error){toast("❌ Lỗi lưu DB: "+error.message);return}
-    
     var idx=DATA.matches.findIndex(x=>x.id===currentMatchId);
-    if(idx!==-1){
-      DATA.matches[idx].home_score=h;
-      DATA.matches[idx].away_score=a;
-      DATA.matches[idx].match_status='finished';
-    }
-    
+    if(idx!==-1){DATA.matches[idx].home_score=h;DATA.matches[idx].away_score=a;DATA.matches[idx].match_status='finished';}
     await loadMatches();
     closeScoreModal();
     toast("🏁 Đã kết thúc trận");
