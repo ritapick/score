@@ -181,9 +181,7 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
-   - Hỗ trợ "Thắng" vs "Thua" (tranh hạng 3)
-   - TÔN TRỌNG ADMIN CHỌN ĐỘI THỦ CÔNG (fix lỗi BK1 không hiện tên)
+   ✅ LOGIC DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
    ===================================================================== */
 
 function getGroupIdByCode(code) {
@@ -220,16 +218,20 @@ function findSourceMatch(ref) {
     return null;
 }
 
-/* ✅ HÀM MỚI: XÁC ĐỊNH TRẬN ĐÃ CÓ KẾT QUẢ (kể cả khi admin chọn thủ công, chưa bấm Kết thúc) */
+/* ✅ HÀM MỚI: XÁC ĐỊNH TRẬN ĐÃ CÓ KẾT QUẢ (KỂ CẢ KHI ADMIN CHỌN THỦ CÔNG) */
 function hasResult(m) {
     if (!m) return false;
-    var st = m.match_status;
-    if (st === 'finished' || st === 'completed') return true;
-    // ✅ Admin điền tay CẢ 2 team_id trong DB + tỷ số phân định => coi như đã xong
+    // 1. Đã bấm kết thúc chính thức
+    if (m.match_status === 'finished' || m.match_status === 'completed') return true;
+    
+    // 2. QUAN TRỌNG NHẤT: Nếu DB đã chứa cả 2 Team ID (admin chọn tay hoặc sync tự động) 
+    // VÀ tỷ số khác nhau -> Coi như đã xong, tính ngay người thắng.
     if (m.home_team_id && m.away_team_id) {
-        var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
+        var h = Number(m.home_score) || 0;
+        var a = Number(m.away_score) || 0;
         if (h !== a) return true;
     }
+    
     return false;
 }
 
@@ -265,14 +267,12 @@ function resolveTeamId(match, isHome) {
     return null;
 }
 
-/* ✅ SỬA: dùng hasResult để tôn trọng lựa chọn thủ công */
 function getWinnerOfMatch(m) {
     if (!m || !hasResult(m)) return null;
     var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
     var homeId = resolveTeamId(m, true), awayId = resolveTeamId(m, false);
     if (h > a) return homeId;
     if (a > h) return awayId;
-    // Bye: 1 đội có team_id gốc, đội kia null
     if (m.home_team_id && !m.away_team_id) return m.home_team_id;
     if (m.away_team_id && !m.home_team_id) return m.away_team_id;
     return null;
@@ -284,7 +284,7 @@ function getLoserOfMatch(m) {
     var homeId = resolveTeamId(m, true), awayId = resolveTeamId(m, false);
     if (h > a) return awayId;
     if (a > h) return homeId;
-    return null; // Bye không có đội thua
+    return null;
 }
 
 function getDynamicTeamName(match, isHome) {
