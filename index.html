@@ -464,7 +464,7 @@ function isMatchFinished(m) {
   return status === 'finished' || status === 'completed' || status === 'bye';
 }
 
-// ✅ Nhận diện trận TRANH HẠNG 3
+// ✅ HÀM MỚI: Nhận diện trận TRANH HẠNG 3 (round 5, match_code TP/TH3/HANG/PT/3RD, hoặc slot 16)
 function isThirdPlaceMatch(m) {
   if (!m || m.group_id) return false;
   if (Number(m.round) === 5) return true;
@@ -492,6 +492,7 @@ function areAllGroupsFinished() {
 function getAdvancingThirdPlaceTeamIds() {
   var numGroups = DATA.groups.filter(g => DATA.gStage && g.stage_id === DATA.gStage.id).length;
   if (numGroups !== 3) return [];
+
   var thirdPlaces = [];
   var allSt = {};
   DATA.groups.forEach(g => {
@@ -502,6 +503,7 @@ function getAdvancingThirdPlaceTeamIds() {
       thirdPlaces.push({ groupCode: g.code, teamId: st[2].id, stats: allSt[st[2].id] });
     }
   });
+
   thirdPlaces.sort((a, b) => {
     if (!a.stats && !b.stats) return a.groupCode.localeCompare(b.groupCode);
     if (!a.stats) return 1;
@@ -511,6 +513,7 @@ function getAdvancingThirdPlaceTeamIds() {
     if (db !== da) return db - da;
     return b.stats.pf - a.stats.pf;
   });
+
   return thirdPlaces.slice(0, 2).map(item => item.teamId);
 }
 
@@ -528,10 +531,13 @@ function getQualifyClassForTeam(teamId, groupCode, rankIndex, numGroups) {
   return "";
 }
 
-// ✅ Lấy danh sách trận knockout theo round, sắp xếp theo bracket_slot (robust, không phụ thuộc mã)
+// ✅✅ FIX LỖI HIỂN THỊ TÊN ĐỘI TP & CK:
+// Trước đây findFeedingMatch/findWinnerFrom* so khớp bằng displayCode (chuỗi "BK1","TK1"...)
+// -> khi bracket_slot/match_code lệch dữ liệu thì KHÔNG khớp => trả null => không hiện tên đội.
+// Nay lấy trận theo THỨ TỰ bracket_slot đã sắp xếp (robust, không phụ thuộc mã).
 function koMatchesByRound(r) {
   return DATA.matches
-    .filter(function(m){ return !m.group_id && Number(m.round) === r && !(r === 4 && isThirdPlaceMatch(m)); })
+    .filter(function(m){ return !m.group_id && Number(m.round) === r; })
     .sort(function(a,b){ return Number(a.bracket_slot) - Number(b.bracket_slot); });
 }
 
@@ -547,15 +553,8 @@ function findFeedingMatch(prevRound, positionRef) {
   return koMatchesByRound(prevRound)[n - 1] || null;
 }
 
-// ✅✅ FIX LỖI HIỂN THỊ ĐỘI KHI ADMIN CHỌN THỦ CÔNG:
-// Nguyên tắc mới: nếu teamId đã có (admin chọn thủ công hoặc tự động resolve) -> HIỆN TÊN ĐỘI NGAY,
-// KHÔNG cần chờ trận cung cấp (TK/BK) kết thúc. Chỉ khi teamId null mới suy từ trận cung cấp,
-// và nếu cũng không resolve được thì mới hiện nhãn vị trí ("Thắng TK1", "1A",...).
+// ✅ FIX LỖI 2 BẢNG: Nhận diện vị trí dạng bảng ("1A", "2B"...) -> resolve từ BXH
 function getDisplayTeamName(teamId, bracketPos, match, isHome) {
-  // 1) CÓ TEAM ID THẬT (admin chọn thủ công hoặc DB đã gán) -> luôn hiện tên đội
-  if (teamId) return getMatchTeamName(teamId, bracketPos);
-
-  // 2) Người dùng đặc quyền (admin/trọng tài): hiện nguyên dữ liệu thô
   if (isPrivileged()) return getMatchTeamName(teamId, bracketPos);
 
   var round = Number(match.round);
@@ -565,49 +564,50 @@ function getDisplayTeamName(teamId, bracketPos, match, isHome) {
 
   var pos = isHome ? match.home_bracket_position : match.away_bracket_position;
 
-  // 3) Vị trí dạng bảng ("1A","2B"...): resolve từ BXH khi vòng bảng đã fin
   if (pos && /^\d+[A-Z]$/i.test(pos)) {
     if (!areAllGroupsFinished()) return pos;
+    if (teamId) return getMatchTeamName(teamId, pos);
     return resolveFromGroupPosition(pos);
   }
 
-  // 4) Trận TRANH HẠNG 3: suy từ đội THUA của trận Bán kết tương ứng
+  // ✅ Trận TRANH HẠNG 3: lấy đội THUA của trận Bán kết tương ứng
   if (isThirdPlaceMatch(match)) {
     var bkM = findFeedingMatch(3, pos);
-    if (bkM && isMatchFinished(bkM)) {
-      var loserId = getLoserOfMatch(bkM);
-      if (loserId) return getMatchTeamName(loserId, bracketPos);
+    if (!bkM || !isMatchFinished(bkM)) {
+      return bracketPos ? bracketPos : 'TBD';
     }
-    return bracketPos ? bracketPos : 'TBD';
+    if (teamId) return getMatchTeamName(teamId, bracketPos);
+    var loserId = getLoserOfMatch(bkM);
+    return getMatchTeamName(loserId, bracketPos);
   }
 
-  // 5) Tứ kết (round 2): suy từ BXH vòng bảng
   if (round === 2) {
     if (!areMatchesFinished(function(m) { return m.group_id; })) {
       return isHome ? "TEAM A" : "TEAM B";
     }
+    if (teamId) return getMatchTeamName(teamId, bracketPos);
     if (bracketPos) return resolveFromGroupPosition(bracketPos);
     return isHome ? "TEAM A" : "TEAM B";
   }
 
-  // 6) Bán kết (round 3): suy từ đội THẮNG của trận Tứ kết tương ứng
   if (round === 3) {
     var tkMatch = findFeedingMatch(2, pos);
-    if (tkMatch && isMatchFinished(tkMatch)) {
-      var wId = getWinnerOfMatch(tkMatch);
-      if (wId) return getMatchTeamName(wId, bracketPos);
+    if (!tkMatch || !isMatchFinished(tkMatch)) {
+      return bracketPos ? bracketPos : 'TBD';
     }
-    return bracketPos ? bracketPos : 'TBD';
+    if (teamId) return getMatchTeamName(teamId, bracketPos);
+    var winnerId = getWinnerOfMatch(tkMatch);
+    return getMatchTeamName(winnerId, bracketPos);
   }
 
-  // 7) Chung kết (round 4): suy từ đội THẮNG của trận Bán kết tương ứng
   if (round === 4) {
     var bkMatch = findFeedingMatch(3, pos);
-    if (bkMatch && isMatchFinished(bkMatch)) {
-      var wId2 = getWinnerOfMatch(bkMatch);
-      if (wId2) return getMatchTeamName(wId2, bracketPos);
+    if (!bkMatch || !isMatchFinished(bkMatch)) {
+      return bracketPos ? bracketPos : 'TBD';
     }
-    return bracketPos ? bracketPos : 'TBD';
+    if (teamId) return getMatchTeamName(teamId, bracketPos);
+    var winnerId2 = getWinnerOfMatch(bkMatch);
+    return getMatchTeamName(winnerId2, bracketPos);
   }
 
   return getMatchTeamName(teamId, bracketPos);
@@ -660,6 +660,7 @@ function resolveSlot(pos) {
 }
 
 function resolveKnockoutBracketPositions() {
+  var koMatches = DATA.matches.filter(function(m) { return !m.group_id; });
   var positionToTeamId = {};
   if (DATA.gStage) {
     var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; });
@@ -671,33 +672,30 @@ function resolveKnockoutBracketPositions() {
     });
   }
 
-  // ✅ CHỈ bổ sung khi team_id đang NULL -> KHÔNG ghi đè đội admin đã chọn thủ công
   function resolveHomeAway(m) {
     var homePos = m.home_bracket_position;
-    if (!m.home_team_id) {
-      if (homePos && positionToTeamId[homePos]) {
-        m.home_team_id = positionToTeamId[homePos];
-      } else if (homePos) {
-        var hw = resolveSlot(homePos);
-        if (hw !== null) m.home_team_id = hw;
-      }
+    if (homePos && positionToTeamId[homePos]) {
+      if (!m.home_team_id) m.home_team_id = positionToTeamId[homePos];
+    } else if (homePos) {
+      var hw = resolveSlot(homePos);
+      if (hw !== null) m.home_team_id = hw;
     }
     var awayPos = m.away_bracket_position;
-    if (!m.away_team_id) {
-      if (awayPos && positionToTeamId[awayPos]) {
-        m.away_team_id = positionToTeamId[awayPos];
-      } else if (awayPos) {
-        var aw = resolveSlot(awayPos);
-        if (aw !== null) m.away_team_id = aw;
-      }
+    if (awayPos && positionToTeamId[awayPos]) {
+      if (!m.away_team_id) m.away_team_id = positionToTeamId[awayPos];
+    } else if (awayPos) {
+      var aw = resolveSlot(awayPos);
+      if (aw !== null) m.away_team_id = aw;
     }
   }
 
+  // ✅ Duyệt theo round 1->5 để cascade winner/loser (BK->TP/CK)
   [1,2,3,4,5].forEach(function(r){
     koMatchesByRound(r).forEach(function(m){ resolveHomeAway(m); });
   });
 }
 
+// ✅ FIX: dùng koMatchesByRound (thay vì so displayCode) cho mọi hàm tìm winner/loser
 function findWinnerFromV16(positionRef) {
   var n = extractMatchNum(positionRef);
   if (n === null) return null;
@@ -961,8 +959,7 @@ function startRealtime() {
           var old = DATA.matches.find(x => x.id === m.data[i].id);
           if (!old || old.home_score !== m.data[i].home_score || old.away_score !== m.data[i].away_score ||
               old.match_status !== m.data[i].match_status || old.serving_team !== m.data[i].serving_team ||
-              old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id ||
-              old.home_team_id !== m.data[i].home_team_id || old.away_team_id !== m.data[i].away_team_id) {
+              old.serving_turn !== m.data[i].serving_turn || old.serving_player_id !== m.data[i].serving_player_id) {
             changed = true; break;
           }
         }
