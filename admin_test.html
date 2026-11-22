@@ -62,7 +62,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-row.ko{border-left:3px solid var(--or)}
 .match-row.ck{border-left:3px solid var(--li);background:rgba(163,230,53,.05)}
 .match-row.bye{border-left:3px solid var(--cy);background:rgba(34,211,238,.05)}
-/* 🌟 MỚI: Style cho trận tranh hạng 3 */
 .match-row.third-place{border-left:3px solid var(--or);background:rgba(251,146,60,.06)}
 .match-row.third-place .m-code{color:var(--or)}
 @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 4px rgba(248,113,113,0)}}
@@ -75,6 +74,8 @@ td.pf{font-family:monospace;color:var(--cy)}
 .m-team.away{color:var(--cy);text-align:left}
 .m-team.tbd{color:var(--or);font-style:italic;font-weight:500;font-size:10px}
 .m-team.tbd-placeholder{color:var(--mu);font-style:italic;font-weight:600}
+/* 🌟 MỚI: Style cho tên đội BYE */
+.m-team.bye{color:var(--mu);font-style:italic;font-weight:700;letter-spacing:1px;background:rgba(148,163,184,.08);padding:2px 6px;border-radius:4px;border:1px dashed var(--ln)}
 .m-score-box{display:flex;align-items:center;gap:2px;background:#0d1626;padding:3px 5px;border-radius:6px;border:1px solid var(--ln);flex-shrink:0}
 .m-score-input{width:64px;text-align:center;background:transparent;border:none;color:var(--tx);font-weight:800;font-size:16px;font-family:monospace}
 .m-score-input:focus{outline:none;border-bottom:1px solid var(--cy)}
@@ -118,16 +119,12 @@ td.pf{font-family:monospace;color:var(--cy)}
 .ko-group-header.bk{background:rgba(34,211,238,.1);color:var(--cy)}
 .ko-group-header.ck{background:rgba(163,230,53,.15);color:var(--li)}
 .ko-group-header.r16{background:rgba(34,211,238,.1);color:var(--cy)}
-/* 🌟 MỚI: Style cho nhóm trận tranh hạng 3 */
 .ko-group-header.third{background:rgba(251,146,60,.2);color:var(--or)}
-
-/* 🌟 MỚI: Style cho checkbox điều khiển trận tranh hạng 3 */
 .third-place-toggle-bar{margin-bottom:12px;padding:10px;background:rgba(251,146,60,.05);border:1px dashed rgba(251,146,60,.3);border-radius:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .third-place-toggle-label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-weight:800;font-size:12px;color:var(--or);padding:4px 8px;border-radius:6px;transition:.15s}
 .third-place-toggle-label:hover{background:rgba(251,146,60,.1)}
 .third-place-toggle-label input{width:16px;height:16px;margin:0;accent-color:var(--or);cursor:pointer}
 .third-place-toggle-hint{font-size:10px;color:var(--mu);font-style:italic;flex:1;min-width:200px}
-
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:10px 16px;border-radius:99px;font-weight:800;font-size:12px;z-index:99;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 .modal-bg{position:fixed;inset:0;background:rgba(4,8,16,.85);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
@@ -384,7 +381,6 @@ var DATA = {
   _savedGroups: new Set(),
   koRule: 1,
   _manualKoOverrides: {},
-  // 🌟 MỚI: Trạng thái trận tranh hạng 3
   hasThirdPlaceMatch: false
 };
 var currentRefMatchId = null;
@@ -434,7 +430,6 @@ function loadManualOverrides() {
   }
 }
 
-// 🌟 MỚI: Load trạng thái trận tranh hạng 3
 function loadThirdPlaceMatchSetting() {
   if (DATA.eid) {
     DATA.hasThirdPlaceMatch = localStorage.getItem('third_place_' + DATA.eid) === 'true';
@@ -446,6 +441,27 @@ function saveThirdPlaceMatchSetting() {
   if (DATA.eid) {
     localStorage.setItem('third_place_' + DATA.eid, DATA.hasThirdPlaceMatch ? 'true' : 'false');
   }
+}
+
+// 🌟 MỚI: Lấy vị trí nhánh mặc định cho 1 trận KO (dùng để restore khi bỏ BYE)
+function getDefaultBracketPosition(round, slot, side) {
+  if (round === 2) {
+    if (slot === 9) return side === 'home' ? "Thắng V16-1" : "Thắng V16-8";
+    if (slot === 10) return side === 'home' ? "Thắng V16-4" : "Thắng V16-5";
+    if (slot === 11) return side === 'home' ? "Thắng V16-3" : "Thắng V16-6";
+    if (slot === 12) return side === 'home' ? "Thắng V16-2" : "Thắng V16-7";
+  }
+  if (round === 3) {
+    if (slot === 13) return side === 'home' ? "Thắng TK1" : "Thắng TK3";
+    if (slot === 14) return side === 'home' ? "Thắng TK2" : "Thắng TK4";
+  }
+  if (round === 4 && slot === 15) {
+    return side === 'home' ? "Thắng BK1" : "Thắng BK2";
+  }
+  if (round === 5 && slot === 16) {
+    return side === 'home' ? "Thua BK1" : "Thua BK2";
+  }
+  return null;
 }
 
 function getAdvancingThirdPlaceTeamIds() {
@@ -489,7 +505,6 @@ function getAdvancingThirdPlaceTeamIds() {
   return advancingThirdIds;
 }
 
-// 🌟 MỚI: Lấy đội THUA từ trận Bán kết
 function getLoserFromBK(bkSlot) {
   var bkMatch = DATA.matches.find(function(m) { 
     return Number(m.round) === 3 && Number(m.bracket_slot) === bkSlot; 
@@ -499,14 +514,12 @@ function getLoserFromBK(bkSlot) {
   var h = Number(bkMatch.home_score) || 0;
   var a = Number(bkMatch.away_score) || 0;
   
-  // Chỉ xác định được đội thua khi trận đã kết thúc
   if (bkMatch.match_status !== 'finished' && bkMatch.match_status !== 'completed') {
     return null;
   }
   
-  // Đội thua = đội có điểm thấp hơn
-  if (h > a) return bkMatch.away_team_id;  // Home thắng → Away thua
-  if (a > h) return bkMatch.home_team_id;  // Away thắng → Home thua
+  if (h > a) return bkMatch.away_team_id;
+  if (a > h) return bkMatch.home_team_id;
   return null;
 }
 
@@ -543,9 +556,13 @@ function resolveKnockoutBracketPositions() {
     var homeManual = isManualOverride(m.id, 'home');
     var awayManual = isManualOverride(m.id, 'away');
 
+    // 🌟 BỎ QUA nếu bracket_position là "BYE" (do user chọn hủy)
+    var homeIsBye = m.home_bracket_position === 'BYE';
+    var awayIsBye = m.away_bracket_position === 'BYE';
+
     if (round === 1) {
-      if (!homeManual && !m.home_team_id && m.home_bracket_position) m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
-      if (!awayManual && !m.away_team_id && m.away_bracket_position) m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
+      if (!homeManual && !homeIsBye && !m.home_team_id && m.home_bracket_position) m.home_team_id = positionToTeamId[m.home_bracket_position] || null;
+      if (!awayManual && !awayIsBye && !m.away_team_id && m.away_bracket_position) m.away_team_id = positionToTeamId[m.away_bracket_position] || null;
     } else if (round === 2) {
       var sourceSlots = [];
       if (slot === 9) sourceSlots = [1, 8];
@@ -554,8 +571,8 @@ function resolveKnockoutBracketPositions() {
       else if (slot === 12) sourceSlots = [2, 7];
 
       if (sourceSlots.length === 2) {
-        if (!homeManual && !m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
-        if (!awayManual && !m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
+        if (!homeManual && !homeIsBye && !m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
+        if (!awayManual && !awayIsBye && !m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
       }
     } else if (round === 3) {
       var sourceSlots = [];
@@ -563,20 +580,18 @@ function resolveKnockoutBracketPositions() {
       else if (slot === 14) sourceSlots = [10, 12];
 
       if (sourceSlots.length === 2) {
-        if (!homeManual && !m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
-        if (!awayManual && !m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
+        if (!homeManual && !homeIsBye && !m.home_team_id) m.home_team_id = getWinnerBySlot(sourceSlots[0]);
+        if (!awayManual && !awayIsBye && !m.away_team_id) m.away_team_id = getWinnerBySlot(sourceSlots[1]);
       }
     } else if (round === 4) {
       if (slot === 15) {
-        if (!homeManual && !m.home_team_id) m.home_team_id = getWinnerBySlot(13);
-        if (!awayManual && !m.away_team_id) m.away_team_id = getWinnerBySlot(14);
+        if (!homeManual && !homeIsBye && !m.home_team_id) m.home_team_id = getWinnerBySlot(13);
+        if (!awayManual && !awayIsBye && !m.away_team_id) m.away_team_id = getWinnerBySlot(14);
       }
-    } 
-    // 🌟 MỚI: Xử lý trận tranh hạng 3 (round 5, slot 16)
-    else if (round === 5) {
+    } else if (round === 5) {
       if (slot === 16) {
-        if (!homeManual && !m.home_team_id) m.home_team_id = getLoserFromBK(13); // Thua BK1
-        if (!awayManual && !m.away_team_id) m.away_team_id = getLoserFromBK(14); // Thua BK2
+        if (!homeManual && !homeIsBye && !m.home_team_id) m.home_team_id = getLoserFromBK(13);
+        if (!awayManual && !awayIsBye && !m.away_team_id) m.away_team_id = getLoserFromBK(14);
       }
     }
   });
@@ -646,7 +661,6 @@ async function selE(eid) {
     var savedRule = localStorage.getItem('ko_rule_' + eid);
     DATA.koRule = savedRule ? parseInt(savedRule) : 1;
     loadManualOverrides();
-    // 🌟 MỚI: Load trạng thái trận tranh hạng 3
     loadThirdPlaceMatchSetting();
 
     var t = await sb.from("teams").select("id,name,team_members(player_id,position,players(id,full_name,skill_rating))").eq("event_id", eid);
@@ -1125,7 +1139,6 @@ function computeKOTeams() {
     matches.push({round: 3, slot: 13, h: null, a: null, code: "BK1", h_pos: "Thắng TK1", a_pos: "Thắng TK3"});
     matches.push({round: 3, slot: 14, h: null, a: null, code: "BK2", h_pos: "Thắng TK2", a_pos: "Thắng TK4"});
     matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
-    // 🌟 MỚI: Thêm trận tranh hạng 3 nếu được bật
     if (DATA.hasThirdPlaceMatch) {
       matches.push({round: 5, slot: 16, h: null, a: null, code: "3RD", h_pos: "Thua BK1", a_pos: "Thua BK2"});
     }
@@ -1235,7 +1248,6 @@ function computeKOTeams() {
     result.matches.push({round: 4, slot: 15, h: null, a: null, code: "CK", h_pos: "Thắng BK1", a_pos: "Thắng BK2"});
   }
   
-  // 🌟 MỚI: Thêm trận tranh hạng 3 cho TẤT CẢ các trường hợp có BK (2, 3, >4 bảng)
   if (DATA.hasThirdPlaceMatch) {
     result.matches.push({round: 5, slot: 16, h: null, a: null, code: "3RD", h_pos: "Thua BK1", a_pos: "Thua BK2"});
   }
@@ -1296,6 +1308,9 @@ async function tryAutoSyncKO() {
     
     var m = DATA.matches.find(x => x.stage_id === DATA.kStage.id && Number(x.bracket_slot) === Number(km.slot));
     if (!m) continue;
+    
+    // 🌟 BỎ QUA nếu trận này đang được đánh dấu BYE ở 1 trong 2 side
+    if (m.home_bracket_position === 'BYE' || m.away_bracket_position === 'BYE') continue;
     
     var homeManual = isManualOverride(m.id, 'home');
     var awayManual = isManualOverride(m.id, 'away');
@@ -1371,16 +1386,13 @@ async function applyKoRule() {
   }
 }
 
-// 🌟 MỚI: Bật/tắt trận tranh hạng 3
 async function toggleThirdPlaceMatch(checked) {
-  // Nếu đang tắt và trận đã có kết quả → cảnh báo
   if (!checked && DATA.hasThirdPlaceMatch) {
     var thirdMatch = DATA.matches.find(m => !m.group_id && Number(m.round) === 5 && Number(m.bracket_slot) === 16);
     if (thirdMatch && (thirdMatch.match_status === 'finished' || thirdMatch.match_status === 'completed' || 
         Number(thirdMatch.home_score) > 0 || Number(thirdMatch.away_score) > 0 ||
         thirdMatch.match_status === 'live')) {
       if (!confirm("⚠️ Trận tranh hạng 3 đã có kết quả/đang diễn ra.\n\nBạn có chắc chắn muốn xóa trận này?")) {
-        // Trả lại checkbox về trạng thái cũ
         var cb = document.getElementById('third-place-cb');
         if (cb) cb.checked = true;
         return;
@@ -1392,17 +1404,14 @@ async function toggleThirdPlaceMatch(checked) {
   saveThirdPlaceMatchSetting();
   
   if (!DATA.kStage) {
-    // Chưa có stage KO, chỉ cần lưu setting, khi tạo KO sẽ tự thêm trận 3RD
     toast(checked ? "🥉 Đã bật trận tranh hạng 3" : "⚪ Đã tắt trận tranh hạng 3");
     render();
     return;
   }
   
   if (checked) {
-    // Kiểm tra xem trận 3RD đã tồn tại chưa
     var existingThird = DATA.matches.find(m => !m.group_id && Number(m.round) === 5 && Number(m.bracket_slot) === 16);
     if (!existingThird) {
-      // Tạo trận mới
       var eventIndex = DATA.events.findIndex(e => e.id === DATA.eid);
       var prefix = DATA.tournament.code + pad(eventIndex + 1, 1);
       try {
@@ -1440,11 +1449,9 @@ async function toggleThirdPlaceMatch(checked) {
       toast("🥉 Đã bật trận tranh hạng 3");
     }
   } else {
-    // Xóa trận 3RD
     var existingThird = DATA.matches.find(m => !m.group_id && Number(m.round) === 5 && Number(m.bracket_slot) === 16);
     if (existingThird) {
       try {
-        // Xóa manual override nếu có
         if (DATA._manualKoOverrides[existingThird.id]) {
           delete DATA._manualKoOverrides[existingThird.id];
           saveManualOverrides();
@@ -1699,7 +1706,6 @@ function displayCode(m) {
     return "BK" + (slot - 12);
   }
   if (m.round === 4) return "CK";
-  // 🌟 MỚI: Trận tranh hạng 3
   if (m.round === 5) return "Tranh hạng 3";
   return String(m.match_code||"?");
 }
@@ -1928,9 +1934,8 @@ function render() {
     var km = DATA.matches.filter(m => !m.group_id).sort((a,b) => Number(a.bracket_slot) - Number(b.bracket_slot));
     if (km.length) {
       H += '<div class="ko-section"><h3>🔥 VÒNG LOẠI TRỰC TIẾP</h3>';
-      H += '<div class="hint" style="margin-bottom:10px">💡 Nhấn <b style="color:var(--or)">✏️</b> bên cạnh mỗi đội để thiết lập thủ công. Khi đã khóa, giá trị sẽ KHÔNG bị thay đổi dù bảng xếp hạng có cập nhật.</div>';
+      H += '<div class="hint" style="margin-bottom:10px">💡 Nhấn <b style="color:var(--or)">✏️</b> để thiết lập thủ công. <b style="color:var(--mu)">Để trống dropdown</b> = đánh dấu <b style="color:var(--cy)">BYE</b> (hủy nhánh đó).</div>';
       
-      // 🌟 MỚI: Checkbox điều khiển trận tranh hạng 3
       H += '<div class="third-place-toggle-bar">';
       H += '<label class="third-place-toggle-label">';
       H += '<input type="checkbox" id="third-place-cb" '+(DATA.hasThirdPlaceMatch?'checked':'')+' onchange="toggleThirdPlaceMatch(this.checked)">';
@@ -1952,7 +1957,6 @@ function render() {
       if (tk.length) H += renderKOGroup("🎯 TỨ KẾT", "tk", tk);
       if (bk.length) H += renderKOGroup("🥉 BÁN KẾT", "bk", bk);
       if (ck.length) H += renderKOGroup("🥇 CHUNG KẾT", "ck", ck);
-      // 🌟 MỚI: Hiển thị nhóm trận tranh hạng 3
       if (thirdPlace.length) H += renderKOGroup("🥉 TRANH HẠNG 3", "third", thirdPlace);
       H += '</div>';
     }
@@ -2000,13 +2004,27 @@ function renderStandingsTable(gid, st) {
   return H;
 }
 
+// 🌟 HÀM MỚI: Lấy tên hiển thị cho 1 side của trận KO (xử lý BYE)
+function getKoDisplayName(m, side) {
+  var teamId = m[side + '_team_id'];
+  var bracketPos = m[side + '_bracket_position'];
+  
+  if (teamId) {
+    return tName(teamId);
+  }
+  if (bracketPos === 'BYE') {
+    return 'BYE';
+  }
+  return bracketPos || 'TBD';
+}
+
 function renderMatchRow(m, isKO) {
-  var hn = m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD");
-  var an = m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD");
+  // 🌟 SỬA: Dùng hàm mới để lấy tên hiển thị (xử lý BYE)
+  var hn = isKO ? getKoDisplayName(m, 'home') : (m.home_team_id ? tName(m.home_team_id) : (m.home_bracket_position || "TBD"));
+  var an = isKO ? getKoDisplayName(m, 'away') : (m.away_team_id ? tName(m.away_team_id) : (m.away_bracket_position || "TBD"));
   var status = m.match_status || 'scheduled';
   var rowClass = "match-row";
   if (isKO) {
-    // 🌟 MỚI: Xử lý class cho trận tranh hạng 3
     if (Number(m.round) === 5) rowClass += " third-place";
     else if (Number(m.round) === 4) rowClass += " ck";
     else if (status === 'bye') rowClass += " bye";
@@ -2024,13 +2042,21 @@ function renderMatchRow(m, isKO) {
       homeOptions += '<option value="'+t.id+'" '+(m.home_team_id === t.id ? 'selected' : '')+'>'+esc(sn(t.name))+'</option>';
     });
     H += '<div class="ko-side home">';
-    H += '<label class="ko-manual-toggle '+(isHomeManual?'active':'')+'" title="Thiết lập thủ công - khóa đội này khỏi logic tự động">';
+    H += '<label class="ko-manual-toggle '+(isHomeManual?'active':'')+'" title="Thiết lập thủ công. Để trống = BYE (hủy nhánh)">';
     H += '<input type="checkbox" '+(isHomeManual?'checked':'')+' onchange="toggleManualKo(\''+m.id+'\',\'home\',this.checked)">';
     H += '<span>✏️</span></label>';
     H += '<select id="ko-home-'+m.id+'" class="ko-team-select '+(isHomeManual?'manual-on':'')+'" data-side="home" '+(isHomeManual?'':'disabled')+' onchange="onKoTeamChange(\''+m.id+'\',\'home\',this.value)">'+homeOptions+'</select>';
     H += '</div>';
   } else {
-    var homeClass = m.home_team_id ? "home" : "home tbd-placeholder";
+    // 🌟 SỬA: Hiển thị BYE nếu bracket_position là "BYE"
+    var homeClass;
+    if (m.home_team_id) {
+      homeClass = "home";
+    } else if (m.home_bracket_position === 'BYE') {
+      homeClass = "home bye";
+    } else {
+      homeClass = "home tbd-placeholder";
+    }
     H += '<div class="m-team '+homeClass+'">'+esc(hn)+'</div>';
   }
 
@@ -2049,12 +2075,20 @@ function renderMatchRow(m, isKO) {
     });
     H += '<div class="ko-side away">';
     H += '<select id="ko-away-'+m.id+'" class="ko-team-select '+(isAwayManual?'manual-on':'')+'" data-side="away" '+(isAwayManual?'':'disabled')+' onchange="onKoTeamChange(\''+m.id+'\',\'away\',this.value)">'+awayOptions+'</select>';
-    H += '<label class="ko-manual-toggle '+(isAwayManual?'active':'')+'" title="Thiết lập thủ công - khóa đội này khỏi logic tự động">';
+    H += '<label class="ko-manual-toggle '+(isAwayManual?'active':'')+'" title="Thiết lập thủ công. Để trống = BYE (hủy nhánh)">';
     H += '<input type="checkbox" '+(isAwayManual?'checked':'')+' onchange="toggleManualKo(\''+m.id+'\',\'away\',this.checked)">';
     H += '<span>✏️</span></label>';
     H += '</div>';
   } else {
-    var awayClass = m.away_team_id ? "away" : "away tbd-placeholder";
+    // 🌟 SỬA: Hiển thị BYE nếu bracket_position là "BYE"
+    var awayClass;
+    if (m.away_team_id) {
+      awayClass = "away";
+    } else if (m.away_bracket_position === 'BYE') {
+      awayClass = "away bye";
+    } else {
+      awayClass = "away tbd-placeholder";
+    }
     H += '<div class="m-team '+awayClass+'">'+esc(an)+'</div>';
   }
 
@@ -2094,7 +2128,7 @@ async function toggleManualKo(matchId, side, checked) {
         }
       });
     }
-    toast("🔒 Đã khóa đội này ở chế độ thủ công");
+    toast("🔒 Đã bật chế độ thủ công (chọn đội hoặc để trống = BYE)");
   } else {
     if (sel) {
       sel.disabled = true;
@@ -2105,8 +2139,19 @@ async function toggleManualKo(matchId, side, checked) {
     var m = DATA.matches.find(x => x.id === matchId);
     if (m) {
       var logicTeamId = side === 'home' ? m.home_team_id : m.away_team_id;
+      var updateData = { [side + '_team_id']: logicTeamId || null };
+      
+      // 🌟 MỚI: Nếu bracket_position đang là "BYE" → restore về mặc định
+      if (m[side + '_bracket_position'] === 'BYE') {
+        var defaultPos = getDefaultBracketPosition(Number(m.round), Number(m.bracket_slot), side);
+        if (defaultPos) {
+          updateData[side + '_bracket_position'] = defaultPos;
+          m[side + '_bracket_position'] = defaultPos;
+        }
+      }
+      
       try {
-        await sb.from("matches").update({ [side + '_team_id']: logicTeamId || null }).eq("id", matchId);
+        await sb.from("matches").update(updateData).eq("id", matchId);
         m[side + '_team_id'] = logicTeamId || null;
       } catch(e) { console.error(e); }
       
@@ -2129,20 +2174,48 @@ async function toggleManualKo(matchId, side, checked) {
   }
 }
 
+// 🌟 ĐÃ NÂNG CẤP: Xử lý khi user chọn BYE (để trống dropdown ở chế độ thủ công)
 async function onKoTeamChange(matchId, side, teamId) {
+  var m = DATA.matches.find(x => x.id === matchId);
+  if (!m) return;
+  
   var update = {};
-  update[side + '_team_id'] = teamId || null;
+  
+  if (!teamId || teamId === '') {
+    // 🌟 User chọn BYE: set team_id = null, bracket_position = "BYE"
+    update[side + '_team_id'] = null;
+    update[side + '_bracket_position'] = 'BYE';
+  } else {
+    // User chọn đội cụ thể
+    update[side + '_team_id'] = teamId;
+    // Không đổi bracket_position (giữ nguyên giá trị cũ)
+  }
+  
   try {
-    await sb.from("matches").update(update).eq("id", matchId);
-    var m = DATA.matches.find(x => x.id === matchId);
+    var { error } = await sb.from("matches").update(update).eq("id", matchId);
+    if (error) {
+      alert("❌ Lỗi DB: " + error.message);
+      return;
+    }
+    
+    // Cập nhật local state
     if (m) {
-      m[side + '_team_id'] = teamId || null;
+      if (!teamId || teamId === '') {
+        m[side + '_team_id'] = null;
+        m[side + '_bracket_position'] = 'BYE';
+      } else {
+        m[side + '_team_id'] = teamId;
+      }
     }
     
     resolveKnockoutBracketPositions();
     await tryAutoSyncKO();
     
-    toast("✅ Đã lưu đội (thủ công)");
+    if (!teamId || teamId === '') {
+      toast("🎟 Đã đánh dấu BYE (hủy nhánh này)");
+    } else {
+      toast("✅ Đã lưu đội (thủ công)");
+    }
   } catch(e) {
     alert("❌ Lỗi: " + e.message);
   }
