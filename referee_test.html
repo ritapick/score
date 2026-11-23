@@ -181,7 +181,7 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
+   ✅ LOGIC GIỐNG TRANG INDEX: ƯU TIÊN team_id TỪ DB
    ===================================================================== */
 
 function getGroupIdByCode(code) {
@@ -281,20 +281,19 @@ function getLoserOfMatch(m) {
 }
 
 /* =====================================================================
-   ✅ FIX GỐC: ƯU TIÊN team_id DB CỦA CHÍNH TRẬN TRƯỚC KHI TÍNH LẠI
-   (khớp 100% trang index - index đọc team_id DB nên luôn đúng)
+   ✅ FIX: GIỐNG TRANG INDEX - ƯU TIÊN team_id DB, CHỈ TÍNH KHI DB TRỐNG
    ===================================================================== */
 function getDynamicTeamName(match, isHome) {
     var dbTeamId = isHome ? match.home_team_id : match.away_team_id;
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
     var posStr = posRef ? String(posRef).trim() : "";
 
-    // ✅ BƯỚC 1: Nếu DB đã chứa team_id của chính trận này -> dùng ngay (KHỚP INDEX)
+    // ✅ BƯỚC 1: Nếu DB đã có team_id → dùng ngay (GIỐNG INDEX)
     if (dbTeamId) {
         return getMatchTeamName(dbTeamId, posRef);
     }
 
-    // ✅ BƯỚC 2: DB chưa có team_id -> mới tính toán từ bracket_position
+    // ✅ BƯỚC 2: DB trống → mới tính từ bracket_position
     if (posStr === "" || posStr === "TBD") {
         return "TBD";
     }
