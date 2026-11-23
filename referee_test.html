@@ -181,8 +181,27 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ LOGIC GIỐNG TRANG INDEX: ƯU TIÊN team_id TỪ DB
+   ✅ LOGIC MỚI: CHỈ DÙNG team_id DB, KHÔNG TỰ TÍNH TỪ bracket_position
+   (Giống hệt trang index - index chỉ đọc team_id từ DB)
    ===================================================================== */
+
+function getGroupIdByCode(code) {
+    var g = DATA.groups.find(function(x) { return x && x.code === code; });
+    return g ? g.id : null;
+}
+
+function getMatchTeamName(teamId, bracketPos) {
+    if (!teamId) return bracketPos ? bracketPos : 'TBD';
+    var t = DATA.teams.find(function(x) { return x && x.id === teamId; });
+    return t ? (t.name || 'TBD') : 'TBD';
+}
+
+/* ✅ HÀM MỚI: Lấy tên đội - CHỈ DÙNG team_id TỪ DB */
+function getTeamName(match, isHome) {
+    var teamId = isHome ? match.home_team_id : match.away_team_id;
+    var bracketPos = isHome ? match.home_bracket_position : match.away_bracket_position;
+    return getMatchTeamName(teamId, bracketPos);
+}
 
 function getGroupIdByCode(code) {
     var g = DATA.groups.find(function(x) { return x && x.code === code; });
@@ -280,9 +299,6 @@ function getLoserOfMatch(m) {
     return null;
 }
 
-/* =====================================================================
-   ✅ FIX: GIỐNG TRANG INDEX - ƯU TIÊN team_id DB, CHỈ TÍNH KHI DB TRỐNG
-   ===================================================================== */
 function getDynamicTeamName(match, isHome) {
     var dbTeamId = isHome ? match.home_team_id : match.away_team_id;
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
@@ -293,7 +309,7 @@ function getDynamicTeamName(match, isHome) {
         return getMatchTeamName(dbTeamId, posRef);
     }
 
-    // ✅ BƯỚC 2: DB trống → mới tính từ bracket_position
+    // ✅ BƯỚC 2: DB trống → tính từ bracket_position
     if (posStr === "" || posStr === "TBD") {
         return "TBD";
     }
