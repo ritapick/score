@@ -181,7 +181,9 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
+   ✅ LOGIC DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
+   - Ưu tiên bracket_position (Thắng/Thua) hơn team_id trong DB
+   - Đồng bộ 100% với logic trang Index
    ===================================================================== */
 
 function getGroupIdByCode(code) {
@@ -228,16 +230,24 @@ function hasResult(m) {
     return false;
 }
 
+/* ✅ SỬA: Ưu tiên bracket_position (Thắng/Thua) hơn team_id trong DB */
 function resolveTeamId(match, isHome) {
-    var teamId = isHome ? match.home_team_id : match.away_team_id;
-    if (teamId) return teamId;
-
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
     var posStr = posRef ? String(posRef).trim() : "";
 
-    if (!posStr || posStr === "TBD") return null;
-    if (posStr === "Miễn (Bye)") return null;
+    // 1. Nếu bracket_position có pattern "Thắng/Thua V16/TK/BK" -> LUÔN tính từ kết quả trận nguồn
+    //    (Bỏ qua team_id trong DB vì có thể bị sai do admin chọn thủ công nhầm)
+    var ref = parseBracketRef(posStr);
+    if (ref) {
+        var src = findSourceMatch(ref);
+        if (src) {
+            var id = ref.want === 'lose' ? getLoserOfMatch(src) : getWinnerOfMatch(src);
+            if (id) return id;
+        }
+        return null; // bracket_position có pattern nhưng chưa có kết quả -> null
+    }
 
+    // 2. Mã bảng trực tiếp (1A-4D)
     var groupMatch = posStr.match(/^([1234])\s*([A-D])$/i);
     if (groupMatch) {
         var pos = parseInt(groupMatch[1]);
@@ -250,12 +260,12 @@ function resolveTeamId(match, isHome) {
         return null;
     }
 
-    var ref = parseBracketRef(posStr);
-    if (ref) {
-        var src = findSourceMatch(ref);
-        if (!src) return null;
-        return ref.want === 'lose' ? getLoserOfMatch(src) : getWinnerOfMatch(src);
-    }
+    // 3. Fallback: dùng team_id trong DB (cho các trận admin chọn thủ công không có bracket_position chuẩn)
+    var teamId = isHome ? match.home_team_id : match.away_team_id;
+    if (teamId) return teamId;
+
+    if (!posStr || posStr === "TBD") return null;
+    if (posStr === "Miễn (Bye)") return null;
 
     return null;
 }
@@ -263,6 +273,7 @@ function resolveTeamId(match, isHome) {
 function getWinnerOfMatch(m) {
     if (!m || !hasResult(m)) return null;
     var h = Number(m.home_score) || 0, a = Number(m.away_score) || 0;
+    // ✅ Dùng resolveTeamId đệ quy để lấy đúng team_id (kể cả khi team_id trong DB null)
     var homeId = resolveTeamId(m, true), awayId = resolveTeamId(m, false);
     if (h > a) return homeId;
     if (a > h) return awayId;
@@ -280,26 +291,16 @@ function getLoserOfMatch(m) {
     return null;
 }
 
-/* =====================================================================
-   ✅ FIX GỐC: ƯU TIÊN team_id DB CỦA CHÍNH TRẬN TRƯỚC KHI TÍNH LẠI
-   (khớp 100% trang index - index đọc team_id DB nên luôn đúng)
-   ===================================================================== */
 function getDynamicTeamName(match, isHome) {
-    var dbTeamId = isHome ? match.home_team_id : match.away_team_id;
+    var teamId = resolveTeamId(match, isHome);
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
     var posStr = posRef ? String(posRef).trim() : "";
 
-    // ✅ BƯỚC 1: Nếu DB đã chứa team_id của chính trận này -> dùng ngay (KHỚP INDEX)
-    if (dbTeamId) {
-        return getMatchTeamName(dbTeamId, posRef);
-    }
-
-    // ✅ BƯỚC 2: DB chưa có team_id -> mới tính toán từ bracket_position
     if (posStr === "" || posStr === "TBD") {
-        return "TBD";
+        return teamId ? getMatchTeamName(teamId, null) : "TBD";
     }
     if (posStr === "Miễn (Bye)") {
-        return "Miễn (Bye)";
+        return teamId ? getMatchTeamName(teamId, posRef) : "Miễn (Bye)";
     }
 
     var groupMatch = posStr.match(/^([1234])\s*([A-D])$/i);
@@ -321,7 +322,7 @@ function getDynamicTeamName(match, isHome) {
         return id ? getMatchTeamName(id, posRef) : posStr;
     }
 
-    return posStr;
+    return teamId ? getMatchTeamName(teamId, posRef) : posStr;
 }
 
 function getTeamPlayersResolved(match, isHome) {
