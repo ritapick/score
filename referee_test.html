@@ -35,6 +35,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .match-card:active{transform:scale(.98)}
 .match-card.live{border-left:3px solid var(--rd)}
 .match-card.finished{border-left:3px solid var(--li);opacity:.85}
+.match-card.locked{border-left:3px solid var(--or);background:rgba(251,146,60,.08)}
 .match-card.disabled{opacity:0.35!important;pointer-events:none;cursor:not-allowed;filter:grayscale(0.6)}
 .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .match-code{font-family:monospace;font-weight:800;color:var(--pk);font-size:11px}
@@ -42,6 +43,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .match-status.live{background:var(--rd);color:#fff}
 .match-status.finished{background:var(--li);color:#0b1220}
 .match-status.scheduled{background:rgba(148,163,184,.2);color:var(--mu)}
+.match-status.locked{background:var(--or);color:#fff}
 .match-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
 .team-name{font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-name.home{color:var(--li);text-align:right}
@@ -98,6 +100,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 .toast{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--li);color:#0b1220;padding:8px 14px;border-radius:99px;font-weight:800;font-size:11px;z-index:99;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
+.toast.warn{background:var(--or)}
+.toast.error{background:var(--rd);color:#fff}
 .login-input{width:100%;padding:8px;margin-bottom:8px;background:var(--bg);border:1px solid var(--ln);border-radius:6px;color:var(--tx);font-size:13px}
 .dice-display{font-size:80px;font-weight:900;color:var(--tx);margin:12px 0;height:110px;display:flex;align-items:center;justify-content:center;background:var(--sf2);border-radius:16px;border:3px solid var(--ln);transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275)}
 .dice-display.rolling{color:var(--or);border-color:var(--or);animation:none}
@@ -176,31 +180,123 @@ var currentMatchId = null, currentMatchData = null, realtimeInterval = null, las
 var localServeState = { team: 'home', turn: 1 };
 var timeoutElapsed = 0, timeoutInterval = null, timeoutRunning = false;
 var diceRollInterval = null, diceRollTimeout = null;
+var lockHeartbeatInterval = null; // ✅ Interval heartbeat cho lock
+var LOCK_EXPIRY_MS = 30000; // ✅ Lock tự hết hạn sau 30s (phòng crash)
+var LOCK_HEARTBEAT_MS = 10000; // ✅ Gia hạn mỗi 10s
 
 function el(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
-function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
+function toast(msg, type){
+  var t=el("toast");
+  t.textContent=msg;
+  t.className="toast show" + (type ? " " + type : "");
+  if(window._tt)clearTimeout(window._tt);
+  window._tt=setTimeout(function(){t.className="toast"},3000);
+}
 
 /* =====================================================================
-   ✅ FIX: HÀM CHUẨN HÓA MATCH_STATUS - GIỮ NGUYÊN 'live' TỪ DB
+   🔒 CƠ CHẾ KHÓA TRẬN (MATCH LOCK) - CHỐNG GHI ĐIỂM TRÙNG
    ===================================================================== */
-function normalizeMatchStatus(match) {
-    var status = match.match_status;
-    if (status === 'live') {
-        // ✅ GIỮ NGUYÊN 'live' - không chuyển thành scheduled
-        return 'live';
+
+/* Atomic acquire lock: chỉ thành công nếu chưa bị khóa hoặc lock đã stale */
+async function tryAcquireLock(matchId) {
+  if (!CURRENT_USER) return { success: false, reason: "Chưa đăng nhập" };
+  
+  var now = new Date().toISOString();
+  var staleThreshold = new Date(Date.now() - LOCK_EXPIRY_MS).toISOString();
+  
+  // Atomic UPDATE: chỉ update nếu chưa bị khóa HOẶC bị khóa bởi chính mình HOẶC lock đã stale
+  var { data, error } = await sb
+    .from("matches")
+    .update({
+      locked_by_user_id: CURRENT_USER.id,
+      locked_at: now,
+      match_status: 'live'
+    })
+    .eq("id", matchId)
+    .or(
+      "locked_by_user_id.is.null," +
+      "locked_by_user_id.eq." + CURRENT_USER.id + "," +
+      "locked_at.lt." + staleThreshold
+    )
+    .select("locked_by_user_id,locked_at")
+    .single();
+  
+  if (error) {
+    console.error("Lock error:", error);
+    return { success: false, reason: "Lỗi hệ thống: " + error.message };
+  }
+  
+  // Nếu trả về data với locked_by_user_id != mình → ai đó đã抢 trước
+  if (data && data.locked_by_user_id && data.locked_by_user_id !== CURRENT_USER.id) {
+    // Check xem có phải stale không
+    if (data.locked_at && (Date.now() - new Date(data.locked_at).getTime()) < LOCK_EXPIRY_MS) {
+      return { success: false, reason: "locked_by_other" };
     }
-    if (status === 'finished' || status === 'completed') {
-        return 'finished';
+  }
+  
+  return { success: true };
+}
+
+/* Release lock khi đóng modal */
+async function releaseLock(matchId) {
+  if (!matchId || !CURRENT_USER) return;
+  try {
+    await sb
+      .from("matches")
+      .update({ locked_by_user_id: null, locked_at: null })
+      .eq("id", matchId)
+      .eq("locked_by_user_id", CURRENT_USER.id);
+  } catch(e) {
+    console.error("Release lock error:", e);
+  }
+}
+
+/* Heartbeat: gia hạn lock mỗi 10s */
+function startLockHeartbeat(matchId) {
+  stopLockHeartbeat();
+  lockHeartbeatInterval = setInterval(async function() {
+    if (!matchId || !CURRENT_USER) return;
+    try {
+      await sb
+        .from("matches")
+        .update({ locked_at: new Date().toISOString() })
+        .eq("id", matchId)
+        .eq("locked_by_user_id", CURRENT_USER.id);
+    } catch(e) {
+      console.error("Heartbeat error:", e);
     }
-    if (status === 'bye') {
-        return 'finished';
-    }
-    // scheduled hoặc null
-    if (Number(match.home_score) > 0 || Number(match.away_score) > 0) {
-        return 'finished';
-    }
-    return 'scheduled';
+  }, LOCK_HEARTBEAT_MS);
+}
+
+function stopLockHeartbeat() {
+  if (lockHeartbeatInterval) {
+    clearInterval(lockHeartbeatInterval);
+    lockHeartbeatInterval = null;
+  }
+}
+
+/* Kiểm tra xem trận có đang bị user KHÁC khóa không (dùng để hiển thị UI) */
+function isLockedByOther(match) {
+  if (!match || !CURRENT_USER) return false;
+  if (!match.locked_by_user_id) return false;
+  if (match.locked_by_user_id === CURRENT_USER.id) return false;
+  // Nếu lock đã stale → coi như không khóa
+  if (match.locked_at) {
+    var age = Date.now() - new Date(match.locked_at).getTime();
+    if (age > LOCK_EXPIRY_MS) return false;
+  }
+  return true;
+}
+
+function getLockStatusText(match) {
+  if (!match || !match.locked_by_user_id) return null;
+  if (match.locked_by_user_id === CURRENT_USER?.id) return "🔒 Bạn đang giữ";
+  if (match.locked_at) {
+    var age = Date.now() - new Date(match.locked_at).getTime();
+    if (age > LOCK_EXPIRY_MS) return null; // stale
+  }
+  return "🔒 Trọng tài khác đang ghi điểm";
 }
 
 /* =====================================================================
@@ -220,7 +316,11 @@ function getLiveTeams() {
 }
 
 function isMatchDisabled(match) {
-    if (match.match_status === 'live') return false;
+    // Trận đang live của chính mình → không disabled
+    if (match.match_status === 'live' && match.locked_by_user_id === CURRENT_USER?.id) return false;
+    
+    // Trận bị user khác khóa → disabled
+    if (isLockedByOther(match)) return true;
     
     var liveTeams = getLiveTeams();
     if (liveTeams.size === 0) return false;
@@ -343,12 +443,8 @@ function getDynamicTeamName(match, isHome) {
         return getMatchTeamName(dbTeamId, posRef);
     }
 
-    if (posStr === "" || posStr === "TBD") {
-        return "TBD";
-    }
-    if (posStr === "Miễn (Bye)") {
-        return "Miễn (Bye)";
-    }
+    if (posStr === "" || posStr === "TBD") return "TBD";
+    if (posStr === "Miễn (Bye)") return "Miễn (Bye)";
 
     var groupMatch = posStr.match(/^([1234])\s*([A-D])$/i);
     if (groupMatch) {
@@ -405,7 +501,9 @@ async function doLogin(){
   }catch(e){el("lmsg").textContent=" "+e.message}
 }
 function doLogout(){
-  CURRENT_USER=null;sessionStorage.removeItem('pb_admin');stopRealtime();applyUI();
+  // ✅ Release tất cả lock đang giữ khi logout
+  if (currentMatchId) releaseLock(currentMatchId);
+  CURRENT_USER=null;sessionStorage.removeItem('pb_admin');stopRealtime();stopLockHeartbeat();applyUI();
   el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p>Vui lòng đăng nhập</p></div>';
   toast("👋 Đã đăng xuất")
 }
@@ -467,6 +565,15 @@ async function onTournamentChange(){
 }
 async function onEventChange(){await loadMatches()}
 
+function normalizeMatchStatus(match) {
+    var status = match.match_status;
+    if (status === 'live') return 'live';
+    if (status === 'finished' || status === 'completed') return 'finished';
+    if (status === 'bye') return 'finished';
+    if (Number(match.home_score) > 0 || Number(match.away_score) > 0) return 'finished';
+    return 'scheduled';
+}
+
 async function loadMatches(){
   var tid=el("tournament-filter").value,eid=el("event-filter").value;
   if(!tid){el("matches-container").innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mu)"><p style="font-size:12px;margin:0">Chọn giải</p></div>';return}
@@ -476,7 +583,6 @@ async function loadMatches(){
     var m=await query.order("match_seq");
     if(m.error)return;
 
-    // ✅ FIX: Dùng normalizeMatchStatus để giữ nguyên 'live'
     DATA.matches=(m.data||[]).slice().map(function(match){
       match.match_status = normalizeMatchStatus(match);
       return match;
@@ -661,8 +767,11 @@ function renderMatchCard(m){
   var scoreClass=(status==='finished')?'done':'';
   var matchCode=displayCode(m);
   
+  // ✅ Check lock status
+  var lockedByOther = isLockedByOther(m);
   var disabled = isMatchDisabled(m);
   var disabledClass = disabled ? ' disabled' : '';
+  var lockedClass = lockedByOther ? ' locked' : '';
   
   var isBracketHome = !resolveTeamId(m, true);
   var isBracketAway = !resolveTeamId(m, false);
@@ -671,26 +780,62 @@ function renderMatchCard(m){
   
   var clickAttr = disabled ? '' : (' onclick="openScoreModal(\''+m.id+'\')"');
   
-  var H='<div class="match-card '+status+disabledClass+'"'+clickAttr+'>';
+  // Status badge
+  var statusBadge = '';
+  if (lockedByOther) {
+    statusBadge = '<span class="match-status locked">🔒 ĐANG KHÓA</span>';
+  } else if (status==='live') {
+    statusBadge = '<span class="match-status live">🔴 LIVE</span>';
+  } else if (status==='finished') {
+    statusBadge = '<span class="match-status finished">✅ FIN</span>';
+  } else {
+    statusBadge = '<span class="match-status scheduled">⏳</span>';
+  }
+  
+  var H='<div class="match-card '+status+disabledClass+lockedClass+'"'+clickAttr+'>';
   H+='<div class="match-header"><div class="match-code">'+esc(matchCode)+'</div>';
-  H+='<span class="match-status '+status+'">'+(status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳'))+'</span></div>';
+  H+=statusBadge+'</div>';
   H+='<div class="match-teams"><div class="'+homeClass+'">'+esc(hn)+'</div>';
   H+='<div class="match-score '+scoreClass+'">'+scoreText+'</div>';
   H+='<div class="'+awayClass+'">'+esc(an)+'</div></div></div>';
   return H;
 }
 
+/* =====================================================================
+   🔒 MỞ MODAL VỚI CƠ CHẾ LOCK
+   ===================================================================== */
 async function openScoreModal(matchId){
-  // ✅ FIX: Kiểm tra lại xem trận có bị khóa không (tránh bypass)
+  // 1. Check trận có tồn tại không
   var match = DATA.matches.find(function(x){return x&&x.id===matchId});
-  if (match && isMatchDisabled(match)) {
-    toast("⚠️ Trận này đang bị khóa vì có đội đang thi đấu");
+  if(!match){toast("❌ Không tìm thấy trận","error");return}
+  
+  // 2. Check xem có đang bị user khác khóa không
+  if (isLockedByOther(match)) {
+    toast("🔒 Trận này đang được trọng tài khác ghi điểm","warn");
     return;
   }
   
+  // 3. Thử acquire lock (atomic)
+  var lockResult = await tryAcquireLock(matchId);
+  if (!lockResult.success) {
+    if (lockResult.reason === "locked_by_other") {
+      toast("🔒 Trận này vừa được trọng tài khác mở","warn");
+    } else {
+      toast("⚠️ " + lockResult.reason,"warn");
+    }
+    // Reload để cập nhật trạng thái mới nhất
+    await loadMatches();
+    return;
+  }
+  
+  // 4. Lock thành công → cập nhật local data
+  match.match_status = 'live';
+  match.locked_by_user_id = CURRENT_USER.id;
+  match.locked_at = new Date().toISOString();
+  
+  // 5. Mở modal
   currentMatchId=matchId;
   currentMatchData=match;
-  if(!currentMatchData){toast("❌ Không tìm thấy trận");return}
   var hn=getDynamicTeamName(currentMatchData, true);
   var an=getDynamicTeamName(currentMatchData, false);
   el("modal-match-code").textContent="🎯 "+displayCode(currentMatchData);
@@ -716,6 +861,12 @@ async function openScoreModal(matchId){
   localServeState.turn=currentMatchData.serving_turn||1;
   updateServeButtons();updateTopScoreDisplay();updateScoreControlsVisibility();
   el("score-modal").classList.add("show");
+  
+  // 6. ✅ Bắt đầu heartbeat
+  startLockHeartbeat(matchId);
+  
+  // 7. Render lại để cập nhật UI (hiển thị trận này là LIVE, các trận khác bị disabled)
+  renderMatchesByRound();
 }
 
 function populateSlotSelect(selectId,players,position){
@@ -761,7 +912,19 @@ function updateScoreControlsVisibility(){
   else{hc.style.display='flex';ac.style.display='flex'}
 }
 
-function closeScoreModal(){el("score-modal").classList.remove("show");currentMatchId=null;currentMatchData=null;lastRallyKey=null}
+/* ✅ ĐÓNG MODAL - RELEASE LOCK */
+function closeScoreModal(){
+  el("score-modal").classList.remove("show");
+  if (currentMatchId) {
+    releaseLock(currentMatchId);
+    stopLockHeartbeat();
+  }
+  currentMatchId=null;
+  currentMatchData=null;
+  lastRallyKey=null;
+  // Reload để cập nhật UI (bỏ disabled các trận khác)
+  setTimeout(function(){ loadMatches(); }, 300);
+}
 
 async function onSlotChange(team,slotNum){
   if(!currentMatchId)return;
@@ -777,7 +940,7 @@ async function onSlotChange(team,slotNum){
     if(idx!==-1){DATA.matches[idx][team+'_player_slot1']=s1||null;DATA.matches[idx][team+'_player_slot2']=s2||null}
     Object.assign(currentMatchData,update);
     toast("✅ Đã cập nhật VĐV");
-  }catch(e){toast("❌ Lỗi: "+e.message)}
+  }catch(e){toast("❌ Lỗi: "+e.message,"error")}
 }
 
 async function setServe(team,turn){
@@ -792,7 +955,7 @@ async function setServe(team,turn){
     updateServeButtons();updateTopScoreDisplay();updateScoreControlsVisibility();
     await createRally('SERVE_CHANGE');
     toast("✅ "+(team==='home'?el("modal-home-name").textContent:el("modal-away-name").textContent)+" giao L"+turn);
-  }catch(e){toast("❌ Lỗi: "+e.message);localServeState.team=currentMatchData.serving_team||'home';localServeState.turn=currentMatchData.serving_turn||1;updateServeButtons();updateScoreControlsVisibility()}
+  }catch(e){toast("❌ Lỗi: "+e.message,"error");localServeState.team=currentMatchData.serving_team||'home';localServeState.turn=currentMatchData.serving_turn||1;updateServeButtons();updateScoreControlsVisibility()}
 }
 
 async function changeScore(team,delta){
@@ -809,7 +972,7 @@ async function changeScore(team,delta){
     updateTopScoreDisplay();
     renderMatchesByRound();
     toast("✅ "+h+" - "+a);
-  }catch(e){toast("❌ Lỗi: "+e.message)}
+  }catch(e){toast("❌ Lỗi: "+e.message,"error")}
 }
 
 async function createRally(eventType){
@@ -833,7 +996,7 @@ async function insertRallyDirect(rallyData){
     var{data:lastRally}=await sb.from("match_rallies").select("rally_number").eq("match_id",rallyData.match_id).order("rally_number",{ascending:false}).limit(1).maybeSingle();
     var nextRallyNumber=(lastRally&&lastRally.rally_number?lastRally.rally_number:0)+1;
     var{error:insertError}=await sb.from("match_rallies").insert({match_id:rallyData.match_id,rally_number:nextRallyNumber,home_score:rallyData.home_score,away_score:rallyData.away_score,serve_turn:rallyData.serve_turn,event_type:rallyData.event_type,server_player_id:rallyData.server_player_id,server_team:rallyData.server_team,server_slot:rallyData.server_slot,receiver_player_id:rallyData.receiver_player_id,receiver_team:rallyData.receiver_team,receiver_slot:rallyData.receiver_slot,home_position:rallyData.home_position,away_position:rallyData.away_position,description:rallyData.description,created_by:rallyData.created_by});
-    if(insertError){toast("❌ Lỗi ghi rally: "+insertError.message);return false}
+    if(insertError){toast("❌ Lỗi ghi rally: "+insertError.message,"error");return false}
     toast("🏓 Rally #"+nextRallyNumber);
     return true;
   }catch(e){return false}
@@ -844,14 +1007,28 @@ async function finishMatch(){
   var h=parseInt(currentMatchData.home_score)||0,a=parseInt(currentMatchData.away_score)||0;
   if(!confirm("🏁 Kết thúc trận?\n\nTỷ số: "+h+" - "+a))return;
   try{
-    const{error}=await sb.from("matches").update({home_score:h,away_score:a,match_status:'finished'}).eq("id",currentMatchId);
-    if(error){toast("❌ Lỗi lưu DB: "+error.message);return}
+    // ✅ Cập nhật score + status + release lock trong 1 lần
+    const{error}=await sb.from("matches").update({
+      home_score:h,
+      away_score:a,
+      match_status:'finished',
+      locked_by_user_id: null,
+      locked_at: null
+    }).eq("id",currentMatchId);
+    if(error){toast("❌ Lỗi lưu DB: "+error.message,"error");return}
     var idx=DATA.matches.findIndex(x=>x.id===currentMatchId);
-    if(idx!==-1){DATA.matches[idx].home_score=h;DATA.matches[idx].away_score=a;DATA.matches[idx].match_status='finished';}
+    if(idx!==-1){
+      DATA.matches[idx].home_score=h;
+      DATA.matches[idx].away_score=a;
+      DATA.matches[idx].match_status='finished';
+      DATA.matches[idx].locked_by_user_id=null;
+      DATA.matches[idx].locked_at=null;
+    }
+    stopLockHeartbeat();
     await loadMatches();
     closeScoreModal();
     toast("🏁 Đã kết thúc trận");
-  }catch(e){toast("❌ Lỗi: "+e.message);console.error(e)}
+  }catch(e){toast("❌ Lỗi: "+e.message,"error");console.error(e)}
 }
 
 function openTimeoutModal(){timeoutElapsed=0;el("timeout-modal").classList.add("show");startTimeout()}
@@ -891,7 +1068,6 @@ function rollDice(){
   },2000);
 }
 
-/* ✅ FIX: Realtime giữ nguyên 'live' từ DB */
 function startRealtime(){
   stopRealtime();
   realtimeInterval=setInterval(async function(){
@@ -906,10 +1082,9 @@ function startRealtime(){
         var changed=false;
         for(var i=0;i<m.data.length;i++){
           var old=DATA.matches.find(function(x){return x&&x.id===m.data[i].id});
-          if(!old||old.home_score!==m.data[i].home_score||old.away_score!==m.data[i].away_score||old.match_status!==m.data[i].match_status||old.home_team_id!==m.data[i].home_team_id||old.away_team_id!==m.data[i].away_team_id){changed=true;break}
+          if(!old||old.home_score!==m.data[i].home_score||old.away_score!==m.data[i].away_score||old.match_status!==m.data[i].match_status||old.home_team_id!==m.data[i].home_team_id||old.away_team_id!==m.data[i].away_team_id||old.locked_by_user_id!==m.data[i].locked_by_user_id){changed=true;break}
         }
         if(changed){
-          // ✅ FIX: Dùng normalizeMatchStatus để giữ nguyên 'live'
           DATA.matches=(m.data||[]).slice().map(function(match){
             match.match_status = normalizeMatchStatus(match);
             return match;
@@ -925,6 +1100,16 @@ function startRealtime(){
   },3000);
 }
 function stopRealtime(){if(realtimeInterval){clearInterval(realtimeInterval);realtimeInterval=null}}
+
+// ✅ Cleanup khi đóng tab/window
+window.addEventListener('beforeunload', function() {
+  if (currentMatchId && CURRENT_USER) {
+    // Fire-and-forget: không await vì tab đang đóng
+    sb.from("matches").update({ locked_by_user_id: null, locked_at: null })
+      .eq("id", currentMatchId)
+      .eq("locked_by_user_id", CURRENT_USER.id);
+  }
+});
 
 (async function init(){
   try{
