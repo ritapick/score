@@ -59,7 +59,7 @@ main{max-width:1200px;margin:0 auto;padding:12px}
 .bxh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:14px}
 .group-card{background:var(--sf2);border:1px solid var(--ln);border-radius:10px;padding:10px;overflow:hidden}
 .group-card h4{margin:0 0 8px;color:var(--li);font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
-.group-card h4 .badge{background:var(--li);color:#0b1220;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:800;white-space:nowrap}
+.group-card h4 .badge{background:var(--li);color:#0b100;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:800;white-space:nowrap}
 table{width:100%;border-collapse:collapse;font-size:11px}
 th,td{padding:5px 4px;border-bottom:1px solid var(--ln);text-align:center}
 th{color:var(--mu);font-size:9px;text-transform:uppercase;font-weight:800;background:rgba(26,37,64,.5);letter-spacing:.3px}
@@ -715,14 +715,36 @@ function findLoserFromBK(positionRef) {
   return getLoserOfMatch(koMatchesByRound(3)[n - 1]);
 }
 
-// ✅✅ TÌM KIẾM VĐV - SO KHỚP THEO TỪ TRỌN VẸN (PHÂN BIỆT "hảo" / "thảo")
-// Tách text thành các token bằng ký tự phân cách, so sánh chính xác từng token với keyword.
+// ✅✅✅ TÌM KIẾM VĐV - NÂNG CẤP: hỗ trợ tìm từ đơn VÀ cụm từ đầy đủ
+// Ví dụ: "đình phong" ≠ "thanh phong"
 function textContainsWholeWord(text, keyword) {
   if (!keyword) return false;
   var kw = keyword.toLowerCase().trim();
   if (!kw) return false;
   var txt = String(text).toLowerCase();
-  // Tách thành các token: dãy ký tự "từ" (chữ cái, số, tiếng Việt có dấu)
+  
+  // Nếu keyword có nhiều từ (có khoảng trắng) → tìm cụm từ chính xác
+  if (kw.indexOf(' ') !== -1) {
+    // Tách keyword thành các từ
+    var kwWords = kw.split(/\s+/).filter(function(w) { return w.length > 0; });
+    // Tách text thành các từ
+    var txtWords = txt.match(/[a-zA-Z0-9À-ỹ]+/g) || [];
+    
+    // Tìm cụm từ liên tiếp khớp với keyword
+    for (var i = 0; i <= txtWords.length - kwWords.length; i++) {
+      var match = true;
+      for (var j = 0; j < kwWords.length; j++) {
+        if (txtWords[i + j] !== kwWords[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return true;
+    }
+    return false;
+  }
+  
+  // Nếu keyword là 1 từ → so sánh từng token
   var tokens = txt.match(/[a-zA-Z0-9À-ỹ]+/g) || [];
   return tokens.some(function(t) { return t === kw; });
 }
@@ -763,7 +785,6 @@ function applyPlayerFilter() {
   }
 
   allItems.forEach(function(item) {
-    // ✅ Dùng so sánh theo từ trọn vẹn thay vì indexOf
     if (!textContainsWholeWord(item.textContent, PLAYER_FILTER)) {
       item.classList.add('filtered-out');
     } else {
@@ -1728,7 +1749,7 @@ function renderEventDetail() {
   var numGroups = groups.length;
 
   H += '<div class="search-bar" style="margin:12px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
-  H += '<input type="text" id="player-search" placeholder="🔍 Tìm tên VĐV (từ trọn vẹn, vd: hảo, thảo)..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
+  H += '<input type="text" id="player-search" placeholder="🔍 Tìm tên VĐV (từ đơn: hảo | cụm từ: đình phong)..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
   H += '<button class="btn btn-l" id="clear-search-btn" onclick="clearPlayerSearch()" style="' + (PLAYER_FILTER ? '' : 'display:none;') + '">✕ Xóa lọc</button>';
   H += '<span id="filter-count" style="font-size:11px; color:var(--mu);"></span>';
   H += '</div>';
