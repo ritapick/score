@@ -35,6 +35,8 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .match-card:active{transform:scale(.98)}
 .match-card.live{border-left:3px solid var(--rd)}
 .match-card.finished{border-left:3px solid var(--li);opacity:.85}
+/* ✅ CSS MỚI: Trận bị khóa (có đội đang live ở trận khác) */
+.match-card.disabled{opacity:0.35!important;pointer-events:none;cursor:not-allowed;filter:grayscale(0.6)}
 .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .match-code{font-family:monospace;font-weight:800;color:var(--pk);font-size:11px}
 .match-status{font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px}
@@ -181,27 +183,45 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ LOGIC MỚI: CHỈ DÙNG team_id DB, KHÔNG TỰ TÍNH TỪ bracket_position
-   (Giống hệt trang index - index chỉ đọc team_id từ DB)
+   ✅ LOGIC MỚI: KHÓA TRẬN KHI CÓ ĐỘI ĐANG LIVE Ở TRẬN KHÁC
    ===================================================================== */
 
-function getGroupIdByCode(code) {
-    var g = DATA.groups.find(function(x) { return x && x.code === code; });
-    return g ? g.id : null;
+/* Lấy Set các team_id đang có trận live */
+function getLiveTeams() {
+    var liveTeams = new Set();
+    DATA.matches.forEach(function(m) {
+        if (!m) return;
+        // Trạng thái live thực sự (đang được trọng tài mở modal ghi điểm)
+        if (m.match_status === 'live') {
+            if (m.home_team_id) liveTeams.add(m.home_team_id);
+            if (m.away_team_id) liveTeams.add(m.away_team_id);
+        }
+    });
+    return liveTeams;
 }
 
-function getMatchTeamName(teamId, bracketPos) {
-    if (!teamId) return bracketPos ? bracketPos : 'TBD';
-    var t = DATA.teams.find(function(x) { return x && x.id === teamId; });
-    return t ? (t.name || 'TBD') : 'TBD';
+/* Kiểm tra một trận có bị khóa không */
+function isMatchDisabled(match) {
+    // Trận đang live → KHÔNG bị khóa (vì chính nó là trận đang diễn ra)
+    if (match.match_status === 'live') return false;
+    
+    var liveTeams = getLiveTeams();
+    if (liveTeams.size === 0) return false;
+    
+    // Resolve team_id (có thể DB chưa có, phải tính từ bracket_position)
+    var homeId = resolveTeamId(match, true);
+    var awayId = resolveTeamId(match, false);
+    
+    // Nếu một trong 2 đội đang live ở trận khác → khóa trận này
+    if ((homeId && liveTeams.has(homeId)) || (awayId && liveTeams.has(awayId))) {
+        return true;
+    }
+    return false;
 }
 
-/* ✅ HÀM MỚI: Lấy tên đội - CHỈ DÙNG team_id TỪ DB */
-function getTeamName(match, isHome) {
-    var teamId = isHome ? match.home_team_id : match.away_team_id;
-    var bracketPos = isHome ? match.home_bracket_position : match.away_bracket_position;
-    return getMatchTeamName(teamId, bracketPos);
-}
+/* =====================================================================
+   ✅ LOGIC DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
+   ===================================================================== */
 
 function getGroupIdByCode(code) {
     var g = DATA.groups.find(function(x) { return x && x.code === code; });
@@ -304,12 +324,10 @@ function getDynamicTeamName(match, isHome) {
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
     var posStr = posRef ? String(posRef).trim() : "";
 
-    // ✅ BƯỚC 1: Nếu DB đã có team_id → dùng ngay (GIỐNG INDEX)
     if (dbTeamId) {
         return getMatchTeamName(dbTeamId, posRef);
     }
 
-    // ✅ BƯỚC 2: DB trống → tính từ bracket_position
     if (posStr === "" || posStr === "TBD") {
         return "TBD";
     }
@@ -624,6 +642,7 @@ function renderMatchesByRound(){
   el("matches-container").innerHTML=H;
 }
 
+/* ✅ SỬA: renderMatchCard - thêm logic disabled */
 function renderMatchCard(m){
   if(!m)return'';
   var status=m.match_status||'scheduled';
@@ -633,11 +652,20 @@ function renderMatchCard(m){
   var scoreText=(status==='finished')?(h+" - "+a):"vs";
   var scoreClass=(status==='finished')?'done':'';
   var matchCode=displayCode(m);
+  
+  // ✅ Kiểm tra trận có bị khóa không
+  var disabled = isMatchDisabled(m);
+  var disabledClass = disabled ? ' disabled' : '';
+  
   var isBracketHome = !resolveTeamId(m, true);
   var isBracketAway = !resolveTeamId(m, false);
   var homeClass=(isBracketHome)?'team-name bracket':'team-name home';
   var awayClass=(isBracketAway)?'team-name bracket':'team-name away';
-  var H='<div class="match-card '+status+'" onclick="openScoreModal(\''+m.id+'\')">';
+  
+  // ✅ Nếu bị khóa thì không gắn onclick
+  var clickAttr = disabled ? '' : (' onclick="openScoreModal(\''+m.id+'\')"');
+  
+  var H='<div class="match-card '+status+disabledClass+'"'+clickAttr+'>';
   H+='<div class="match-header"><div class="match-code">'+esc(matchCode)+'</div>';
   H+='<span class="match-status '+status+'">'+(status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳'))+'</span></div>';
   H+='<div class="match-teams"><div class="'+homeClass+'">'+esc(hn)+'</div>';
