@@ -35,6 +35,7 @@ main{max-width:100%;margin:0 auto;padding:8px;padding-bottom:40px}
 .match-card:active{transform:scale(.98)}
 .match-card.live{border-left:3px solid var(--rd)}
 .match-card.finished{border-left:3px solid var(--li);opacity:.85}
+.match-card.disabled{opacity:0.35!important;pointer-events:none;cursor:not-allowed;filter:grayscale(0.6)}
 .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .match-code{font-family:monospace;font-weight:800;color:var(--pk);font-size:11px}
 .match-status{font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px}
@@ -181,27 +182,61 @@ function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"
 function toast(msg){var t=el("toast");t.textContent=msg;t.className="toast show";if(window._tt)clearTimeout(window._tt);window._tt=setTimeout(function(){t.className="toast"},2500)}
 
 /* =====================================================================
-   ✅ LOGIC MỚI: CHỈ DÙNG team_id DB, KHÔNG TỰ TÍNH TỪ bracket_position
-   (Giống hệt trang index - index chỉ đọc team_id từ DB)
+   ✅ FIX: HÀM CHUẨN HÓA MATCH_STATUS - GIỮ NGUYÊN 'live' TỪ DB
+   ===================================================================== */
+function normalizeMatchStatus(match) {
+    var status = match.match_status;
+    if (status === 'live') {
+        // ✅ GIỮ NGUYÊN 'live' - không chuyển thành scheduled
+        return 'live';
+    }
+    if (status === 'finished' || status === 'completed') {
+        return 'finished';
+    }
+    if (status === 'bye') {
+        return 'finished';
+    }
+    // scheduled hoặc null
+    if (Number(match.home_score) > 0 || Number(match.away_score) > 0) {
+        return 'finished';
+    }
+    return 'scheduled';
+}
+
+/* =====================================================================
+   ✅ LOGIC KHÓA TRẬN KHI CÓ ĐỘI ĐANG LIVE Ở TRẬN KHÁC
    ===================================================================== */
 
-function getGroupIdByCode(code) {
-    var g = DATA.groups.find(function(x) { return x && x.code === code; });
-    return g ? g.id : null;
+function getLiveTeams() {
+    var liveTeams = new Set();
+    DATA.matches.forEach(function(m) {
+        if (!m) return;
+        if (m.match_status === 'live') {
+            if (m.home_team_id) liveTeams.add(m.home_team_id);
+            if (m.away_team_id) liveTeams.add(m.away_team_id);
+        }
+    });
+    return liveTeams;
 }
 
-function getMatchTeamName(teamId, bracketPos) {
-    if (!teamId) return bracketPos ? bracketPos : 'TBD';
-    var t = DATA.teams.find(function(x) { return x && x.id === teamId; });
-    return t ? (t.name || 'TBD') : 'TBD';
+function isMatchDisabled(match) {
+    if (match.match_status === 'live') return false;
+    
+    var liveTeams = getLiveTeams();
+    if (liveTeams.size === 0) return false;
+    
+    var homeId = resolveTeamId(match, true);
+    var awayId = resolveTeamId(match, false);
+    
+    if ((homeId && liveTeams.has(homeId)) || (awayId && liveTeams.has(awayId))) {
+        return true;
+    }
+    return false;
 }
 
-/* ✅ HÀM MỚI: Lấy tên đội - CHỈ DÙNG team_id TỪ DB */
-function getTeamName(match, isHome) {
-    var teamId = isHome ? match.home_team_id : match.away_team_id;
-    var bracketPos = isHome ? match.home_bracket_position : match.away_bracket_position;
-    return getMatchTeamName(teamId, bracketPos);
-}
+/* =====================================================================
+   ✅ LOGIC DYNAMIC RESOLUTION CHO VÒNG KNOCKOUT
+   ===================================================================== */
 
 function getGroupIdByCode(code) {
     var g = DATA.groups.find(function(x) { return x && x.code === code; });
@@ -304,12 +339,10 @@ function getDynamicTeamName(match, isHome) {
     var posRef = isHome ? match.home_bracket_position : match.away_bracket_position;
     var posStr = posRef ? String(posRef).trim() : "";
 
-    // ✅ BƯỚC 1: Nếu DB đã có team_id → dùng ngay (GIỐNG INDEX)
     if (dbTeamId) {
         return getMatchTeamName(dbTeamId, posRef);
     }
 
-    // ✅ BƯỚC 2: DB trống → tính từ bracket_position
     if (posStr === "" || posStr === "TBD") {
         return "TBD";
     }
@@ -443,12 +476,9 @@ async function loadMatches(){
     var m=await query.order("match_seq");
     if(m.error)return;
 
+    // ✅ FIX: Dùng normalizeMatchStatus để giữ nguyên 'live'
     DATA.matches=(m.data||[]).slice().map(function(match){
-      var status=match.match_status;
-      if(!status||status==='scheduled'||status==='live'){
-        if(Number(match.home_score)>0||Number(match.away_score)>0) match.match_status='finished';
-        else match.match_status='scheduled';
-      }else if(status==='bye'){ match.match_status='finished'; }
+      match.match_status = normalizeMatchStatus(match);
       return match;
     });
 
@@ -497,9 +527,7 @@ function isGroupComplete(gid){
   var exp=t.length*(t.length-1)/2;
   var finishedMatches=DATA.matches.filter(function(m){
     if(m.group_id!==gid)return false;
-    var status=m.match_status;
-    if(!status||status==='scheduled'||status==='live'){ if(Number(m.home_score)>0||Number(m.away_score)>0) status='finished'; }
-    return status==="finished"||status==="completed";
+    return m.match_status==="finished";
   });
   return t.length>=2&&finishedMatches.length>=exp;
 }
@@ -509,8 +537,7 @@ function standings(gid){
   var st={};
   t.forEach(function(x){st[x.id]={id:x.id,w:0,pf:0,pa:0,played:0}});
   DATA.matches.filter(function(m){
-    var status=m.match_status||((Number(m.home_score)>0||Number(m.away_score)>0)?"completed":"scheduled");
-    return m.group_id===gid&&(status==="completed"||status==="finished");
+    return m.group_id===gid&&(m.match_status==="finished");
   }).forEach(function(m){
     var h=st[m.home_team_id],a=st[m.away_team_id];
     if(!h||!a)return;
@@ -633,11 +660,18 @@ function renderMatchCard(m){
   var scoreText=(status==='finished')?(h+" - "+a):"vs";
   var scoreClass=(status==='finished')?'done':'';
   var matchCode=displayCode(m);
+  
+  var disabled = isMatchDisabled(m);
+  var disabledClass = disabled ? ' disabled' : '';
+  
   var isBracketHome = !resolveTeamId(m, true);
   var isBracketAway = !resolveTeamId(m, false);
   var homeClass=(isBracketHome)?'team-name bracket':'team-name home';
   var awayClass=(isBracketAway)?'team-name bracket':'team-name away';
-  var H='<div class="match-card '+status+'" onclick="openScoreModal(\''+m.id+'\')">';
+  
+  var clickAttr = disabled ? '' : (' onclick="openScoreModal(\''+m.id+'\')"');
+  
+  var H='<div class="match-card '+status+disabledClass+'"'+clickAttr+'>';
   H+='<div class="match-header"><div class="match-code">'+esc(matchCode)+'</div>';
   H+='<span class="match-status '+status+'">'+(status==='live'?'🔴 LIVE':(status==='finished'?'✅ FIN':'⏳'))+'</span></div>';
   H+='<div class="match-teams"><div class="'+homeClass+'">'+esc(hn)+'</div>';
@@ -647,8 +681,15 @@ function renderMatchCard(m){
 }
 
 async function openScoreModal(matchId){
+  // ✅ FIX: Kiểm tra lại xem trận có bị khóa không (tránh bypass)
+  var match = DATA.matches.find(function(x){return x&&x.id===matchId});
+  if (match && isMatchDisabled(match)) {
+    toast("⚠️ Trận này đang bị khóa vì có đội đang thi đấu");
+    return;
+  }
+  
   currentMatchId=matchId;
-  currentMatchData=DATA.matches.find(function(x){return x&&x.id===matchId});
+  currentMatchData=match;
   if(!currentMatchData){toast("❌ Không tìm thấy trận");return}
   var hn=getDynamicTeamName(currentMatchData, true);
   var an=getDynamicTeamName(currentMatchData, false);
@@ -850,6 +891,7 @@ function rollDice(){
   },2000);
 }
 
+/* ✅ FIX: Realtime giữ nguyên 'live' từ DB */
 function startRealtime(){
   stopRealtime();
   realtimeInterval=setInterval(async function(){
@@ -867,10 +909,9 @@ function startRealtime(){
           if(!old||old.home_score!==m.data[i].home_score||old.away_score!==m.data[i].away_score||old.match_status!==m.data[i].match_status||old.home_team_id!==m.data[i].home_team_id||old.away_team_id!==m.data[i].away_team_id){changed=true;break}
         }
         if(changed){
+          // ✅ FIX: Dùng normalizeMatchStatus để giữ nguyên 'live'
           DATA.matches=(m.data||[]).slice().map(function(match){
-            var status=match.match_status;
-            if(!status||status==='scheduled'||status==='live'){ if(Number(match.home_score)>0||Number(match.away_score)>0) match.match_status='finished'; else match.match_status='scheduled'; }
-            else if(status==='bye'){ match.match_status='finished'; }
+            match.match_status = normalizeMatchStatus(match);
             return match;
           });
           renderMatchesByRound();
