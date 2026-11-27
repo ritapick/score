@@ -98,7 +98,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-item.ck{border-left:3px solid var(--li);background:rgba(163,230,53,.05)}
 .match-item.tp{border-left:3px solid var(--or);background:rgba(251,146,60,.08)}
 .match-item.bye{border-left:3px solid var(--cy);background:rgba(34,211,238,.05)}
-/* ✅ Lọc VĐV: ẩn trận không khớp */
 .match-item.filtered-out { display: none !important; }
 @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 4px rgba(248,113,113,0)}}
 
@@ -109,7 +108,6 @@ td.pf{font-family:monospace;color:var(--cy)}
 .match-item.tp .m-code{color:var(--or);font-size:12px}
 .match-item.bye .m-code{color:var(--cy)}
 
-/* ✅ ĐỔI MÀU: winner=đỏ (thắng), loser=xanh lá (thua) */
 .match-main-row .m-team{font-weight:700;font-size:11px;min-width:0;transition:color .2s;word-break:break-word;white-space:normal;line-height:1.2}
 .match-main-row .m-team.home{text-align:right}
 .match-main-row .m-team.away{text-align:left}
@@ -415,7 +413,6 @@ var realtimeInterval = null;
 var currentTimelineMatchId = null;
 var durationInterval = null;
 
-// ✅ TÌM KIẾM VĐV
 var PLAYER_FILTER = "";
 
 function el(id) { return document.getElementById(id); }
@@ -718,9 +715,20 @@ function findLoserFromBK(positionRef) {
   return getLoserOfMatch(koMatchesByRound(3)[n - 1]);
 }
 
-// ✅ TÌM KIẾM VĐV
+// ✅✅ TÌM KIẾM VĐV - SO KHỚP THEO TỪ TRỌN VẸN (PHÂN BIỆT "hảo" / "thảo")
+// Tách text thành các token bằng ký tự phân cách, so sánh chính xác từng token với keyword.
+function textContainsWholeWord(text, keyword) {
+  if (!keyword) return false;
+  var kw = keyword.toLowerCase().trim();
+  if (!kw) return false;
+  var txt = String(text).toLowerCase();
+  // Tách thành các token: dãy ký tự "từ" (chữ cái, số, tiếng Việt có dấu)
+  var tokens = txt.match(/[a-zA-Z0-9À-ỹ]+/g) || [];
+  return tokens.some(function(t) { return t === kw; });
+}
+
 function onPlayerSearchInput(val) {
-  PLAYER_FILTER = (val || "").trim().toLowerCase();
+  PLAYER_FILTER = (val || "").trim();
   var clearBtn = el("clear-search-btn");
   if (clearBtn) clearBtn.style.display = PLAYER_FILTER ? "inline-flex" : "none";
   applyPlayerFilter();
@@ -755,15 +763,14 @@ function applyPlayerFilter() {
   }
 
   allItems.forEach(function(item) {
-    var text = item.textContent.toLowerCase();
-    if (text.indexOf(PLAYER_FILTER) === -1) {
+    // ✅ Dùng so sánh theo từ trọn vẹn thay vì indexOf
+    if (!textContainsWholeWord(item.textContent, PLAYER_FILTER)) {
       item.classList.add('filtered-out');
     } else {
       visibleCount++;
     }
   });
 
-  // Ẩn group/ko-group không còn trận nào visible
   document.querySelectorAll('.ko-group, .group-card').forEach(function(g) {
     var items = g.querySelectorAll('.match-item');
     var anyVisible = false;
@@ -773,7 +780,6 @@ function applyPlayerFilter() {
     g.style.display = anyVisible ? '' : 'none';
   });
 
-  // Ẩn ko-section nếu không còn group nào visible
   document.querySelectorAll('.ko-section').forEach(function(s) {
     var groups = s.querySelectorAll('.ko-group');
     var anyVisible = false;
@@ -798,7 +804,6 @@ function updateFilterCount(count) {
   }
 }
 
-// Event delegation cho search (không cần re-bind sau mỗi lần render)
 document.addEventListener('input', function(e) {
   if (e.target && e.target.id === 'player-search') {
     onPlayerSearchInput(e.target.value);
@@ -1093,7 +1098,6 @@ function updateMatchRowsDOM() {
       var awayIcon = (status === 'live' && m.serving_team === 'away') ? ' <span class="serve-icon">🏓</span>' : '';
       homeTeamEl.innerHTML = esc(hn) + homeIcon;
       awayTeamEl.innerHTML = esc(an) + awayIcon;
-      // ✅ Winner (đỏ) / Loser (xanh lá)
       homeTeamEl.classList.remove('winner', 'loser');
       awayTeamEl.classList.remove('winner', 'loser');
       if (status === "completed" || status === "finished" || status === "live") {
@@ -1723,9 +1727,8 @@ function renderEventDetail() {
   var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; }).sort(function(a,b){ return a.code.localeCompare(b.code); });
   var numGroups = groups.length;
 
-  // ✅ SEARCH BAR: chỉ hiện khi đang xem event
   H += '<div class="search-bar" style="margin:12px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
-  H += '<input type="text" id="player-search" placeholder="🔍 Tìm tên VĐV trong giải đấu này..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
+  H += '<input type="text" id="player-search" placeholder="🔍 Tìm tên VĐV (từ trọn vẹn, vd: hảo, thảo)..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
   H += '<button class="btn btn-l" id="clear-search-btn" onclick="clearPlayerSearch()" style="' + (PLAYER_FILTER ? '' : 'display:none;') + '">✕ Xóa lọc</button>';
   H += '<span id="filter-count" style="font-size:11px; color:var(--mu);"></span>';
   H += '</div>';
@@ -1872,7 +1875,6 @@ function renderMatchItem(m, isKO) {
   else if (status === 'finished' || status === 'completed') { statusText = "✅ FIN"; statusClass = "finished"; }
   else if (status === 'bye') { statusText = "🎟 BYE"; statusClass = "bye"; }
 
-  // ✅ Winner (đỏ) / Loser (xanh lá)
   var homeResultClass = "";
   var awayResultClass = "";
   if (status === "completed" || status === "finished" || status === "live") {
@@ -1916,7 +1918,6 @@ function renderKOGroup(title, cls, matches) {
 function render() {
   var H = DATA.tournament ? renderTournamentDetail() : renderTournamentList();
   el("content").innerHTML = H;
-  // ✅ Re-apply filter sau khi render (giữ trạng thái lọc)
   if (PLAYER_FILTER) {
     setTimeout(applyPlayerFilter, 0);
   }
