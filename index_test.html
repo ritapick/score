@@ -715,32 +715,38 @@ function findLoserFromBK(positionRef) {
   return getLoserOfMatch(koMatchesByRound(3)[n - 1]);
 }
 
-// ✅✅✅ TÌM KIẾM VĐV - ĐÃ SỬA LỖI CỤM TỪ
-// Chuẩn hóa text: thay tất cả ký tự không phải chữ/số tiếng Việt bằng space,
-// rồi so sánh cụm từ với word boundary rõ ràng.
+// ✅✅✅ TÌM KIẾM VĐV - ĐÃ SỬA TRIỆT ĐỂ LỖI CỤM TỪ
+// Nguyên nhân lỗi cũ: dùng "thay ký tự đặc biệt bằng space + tìm chuỗi con có space bao quanh",
+// cách này KHÔNG ĐỒNG NHẤT giữa các loại gạch nối (en-dash "–" vs hyphen "-") và khi cụm từ
+// nằm sát số/ký tự khác -> cùng 1 đội tên nhưng 2 trận cho kết quả khác nhau.
+// Cách mới: TOKENIZE bằng split(/[^0-9a-zà-ỹ]+/) -> MỌI ký tự phân cách đều là ranh giới như nhau,
+// nên "thanh" và "phong" luôn là 2 token riêng bất kể loại gạch. So khớp bằng sliding window.
+function tokenizeText(s) {
+  return String(s).toLowerCase().split(/[^0-9a-zà-ỹ]+/).filter(Boolean);
+}
+
 function textContainsWholeWord(text, keyword) {
   if (!keyword) return false;
   var kw = keyword.toLowerCase().trim();
   if (!kw) return false;
-  var txt = String(text).toLowerCase();
-  
-  // Hàm chuẩn hóa: giữ chữ cái (latin + tiếng Việt có dấu) và số, thay ký tự khác bằng space
-  function normalize(s) {
-    return s.replace(/[^a-z0-9à-ỹ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  var tokens = tokenizeText(text);
+  if (tokens.length === 0) return false;
+
+  var kwTokens = kw.split(/\s+/).filter(Boolean);
+  if (kwTokens.length === 0) return false;
+
+  // Từ đơn: khớp chính xác 1 token (phân biệt "hảo" vs "thảo")
+  if (kwTokens.length === 1) {
+    return tokens.indexOf(kwTokens[0]) !== -1;
   }
-  
-  var normTxt = ' ' + normalize(txt) + ' ';
-  var normKw = normalize(kw);
-  
-  if (normKw.indexOf(' ') !== -1) {
-    // Cụm từ: tìm chính xác chuỗi " kw " trong text đã chuẩn hóa
-    return normTxt.indexOf(' ' + normKw + ' ') !== -1;
-  }
-  
-  // Từ đơn: tìm token khớp chính xác
-  var tokens = normalize(txt).split(' ');
-  for (var i = 0; i < tokens.length; i++) {
-    if (tokens[i] === normKw) return true;
+
+  // Cụm từ: tìm dãy token liên tiếp khớp (vd "thanh phong" khớp cả en-dash lẫn hyphen)
+  for (var i = 0; i + kwTokens.length <= tokens.length; i++) {
+    var ok = true;
+    for (var j = 0; j < kwTokens.length; j++) {
+      if (tokens[i + j] !== kwTokens[j]) { ok = false; break; }
+    }
+    if (ok) return true;
   }
   return false;
 }
@@ -1752,7 +1758,7 @@ function renderEventDetail() {
   var numGroups = groups.length;
 
   H += '<div class="search-bar" style="margin:12px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
-  H += '<input type="text" id="player-search" placeholder="🔍 Tìm VĐV (từ đơn: hảo | cụm từ: đình phong) — áp dụng TẤT CẢ trận (vòng bảng + knockout)..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
+  H += '<input type="text" id="player-search" placeholder="🔍 Tìm VĐV (từ đơn: hảo | cụm từ: đình cao thanh phong) — áp dụng TẤT CẢ trận..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
   H += '<button class="btn btn-l" id="clear-search-btn" onclick="clearPlayerSearch()" style="' + (PLAYER_FILTER ? '' : 'display:none;') + '">✕ Xóa lọc</button>';
   H += '<span id="filter-count" style="font-size:11px; color:var(--mu);"></span>';
   H += '</div>';
