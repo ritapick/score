@@ -715,33 +715,34 @@ function findLoserFromBK(positionRef) {
   return getLoserOfMatch(koMatchesByRound(3)[n - 1]);
 }
 
-// ✅✅ TÌM KIẾM VĐV - SO KHỚP THEO TỪ TRỌN VẸN (PHÂN BIỆT "hảo" / "thảo")
+// ✅✅✅ TÌM KIẾM VĐV - ĐÃ SỬA LỖI CỤM TỪ
+// Chuẩn hóa text: thay tất cả ký tự không phải chữ/số tiếng Việt bằng space,
+// rồi so sánh cụm từ với word boundary rõ ràng.
 function textContainsWholeWord(text, keyword) {
   if (!keyword) return false;
   var kw = keyword.toLowerCase().trim();
   if (!kw) return false;
   var txt = String(text).toLowerCase();
-
-  // Nếu keyword có nhiều từ (có khoảng trắng) → tìm cụm từ chính xác
-  if (kw.indexOf(' ') !== -1) {
-    var kwWords = kw.split(/\s+/).filter(function(w) { return w.length > 0; });
-    var txtWords = txt.match(/[a-zA-Z0-9À-ỹ]+/g) || [];
-    for (var i = 0; i <= txtWords.length - kwWords.length; i++) {
-      var match = true;
-      for (var j = 0; j < kwWords.length; j++) {
-        if (txtWords[i + j] !== kwWords[j]) {
-          match = false;
-          break;
-        }
-      }
-      if (match) return true;
-    }
-    return false;
+  
+  // Hàm chuẩn hóa: giữ chữ cái (latin + tiếng Việt có dấu) và số, thay ký tự khác bằng space
+  function normalize(s) {
+    return s.replace(/[^a-z0-9à-ỹ\s]/g, ' ').replace(/\s+/g, ' ').trim();
   }
-
-  // Nếu keyword là 1 từ → so sánh từng token
-  var tokens = txt.match(/[a-zA-Z0-9À-ỹ]+/g) || [];
-  return tokens.some(function(t) { return t === kw; });
+  
+  var normTxt = ' ' + normalize(txt) + ' ';
+  var normKw = normalize(kw);
+  
+  if (normKw.indexOf(' ') !== -1) {
+    // Cụm từ: tìm chính xác chuỗi " kw " trong text đã chuẩn hóa
+    return normTxt.indexOf(' ' + normKw + ' ') !== -1;
+  }
+  
+  // Từ đơn: tìm token khớp chính xác
+  var tokens = normalize(txt).split(' ');
+  for (var i = 0; i < tokens.length; i++) {
+    if (tokens[i] === normKw) return true;
+  }
+  return false;
 }
 
 function onPlayerSearchInput(val) {
@@ -760,28 +761,23 @@ function clearPlayerSearch() {
   applyPlayerFilter();
 }
 
-// ✅✅ FILTER ÁP DỤNG CHO TẤT CẢ TRẬN (VÒNG BẢNG + KO), KHÔNG ẢNH HƯỞNG STANDINGS
 function applyPlayerFilter() {
   var allItems = document.querySelectorAll('.match-item');
   var visibleCount = 0;
   var totalCount = allItems.length;
 
-  // Reset tất cả trận về visible
   allItems.forEach(function(item) {
     item.classList.remove('filtered-out');
   });
 
-  // Không có từ khóa → hiện tất cả, giữ nguyên cấu trúc
   if (!PLAYER_FILTER) {
-    // Hiện lại tất cả group/ko-group/ko-section
     document.querySelectorAll('.ko-group, .group-card.has-matches, .ko-section').forEach(function(g) {
       g.style.display = '';
     });
-    updateFilterCount(visibleCount, totalCount);
+    updateFilterCount(totalCount, totalCount);
     return;
   }
 
-  // Lọc từng trận
   allItems.forEach(function(item) {
     if (!textContainsWholeWord(item.textContent, PLAYER_FILTER)) {
       item.classList.add('filtered-out');
@@ -790,8 +786,6 @@ function applyPlayerFilter() {
     }
   });
 
-  // Ẩn/hiện group chứa match-list (vòng bảng + KO) dựa trên còn trận visible không
-  // Chỉ xử lý các group CÓ chứa .match-list (không động vào standings)
   document.querySelectorAll('.ko-group').forEach(function(g) {
     var items = g.querySelectorAll('.match-item');
     var anyVisible = false;
@@ -810,7 +804,6 @@ function applyPlayerFilter() {
     g.style.display = anyVisible ? '' : 'none';
   });
 
-  // Ẩn ko-section nếu không còn group nào visible
   document.querySelectorAll('.ko-section').forEach(function(s) {
     var groups = s.querySelectorAll('.ko-group');
     var anyVisible = false;
@@ -1758,9 +1751,8 @@ function renderEventDetail() {
   var groups = DATA.groups.filter(function(g){ return g.stage_id === DATA.gStage.id; }).sort(function(a,b){ return a.code.localeCompare(b.code); });
   var numGroups = groups.length;
 
-  // ✅ SEARCH BAR: đặt ở đầu, trước cả standings
   H += '<div class="search-bar" style="margin:12px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
-  H += '<input type="text" id="player-search" placeholder="🔍 Tìm VĐV (từ đơn: hảo | cụm từ: đình phong) — áp dụng cho TẤT CẢ trận (vòng bảng + knockout)..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
+  H += '<input type="text" id="player-search" placeholder="🔍 Tìm VĐV (từ đơn: hảo | cụm từ: đình phong) — áp dụng TẤT CẢ trận (vòng bảng + knockout)..." value="' + esc(PLAYER_FILTER) + '" style="flex:1; min-width:200px; background:#0d1626; border:1px solid var(--ln); border-radius:8px; padding:8px 12px; color:var(--tx); font-size:13px;" />';
   H += '<button class="btn btn-l" id="clear-search-btn" onclick="clearPlayerSearch()" style="' + (PLAYER_FILTER ? '' : 'display:none;') + '">✕ Xóa lọc</button>';
   H += '<span id="filter-count" style="font-size:11px; color:var(--mu);"></span>';
   H += '</div>';
@@ -1774,7 +1766,6 @@ function renderEventDetail() {
       return m.group_id===g.id && (status==="completed" || status==="finished");
     }).length;
     var expected = expectedMatchesInGroup(g.id);
-    // ✅ group-card standings KHÔNG có class has-matches →不会被 filter ẩn
     H += '<div class="group-card" data-group-id="' + g.id + '"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + mb.length + ' đội · ' + completed + '/' + expected + ' trận</span></h4>';
     if (st.length) {
       H += '<table><thead><tr><th>#</th><th style="text-align:left">Đội</th><th>Tr</th><th>W</th><th>L</th><th>HS</th><th>GF</th></tr></thead><tbody>';
@@ -1796,7 +1787,6 @@ function renderEventDetail() {
   H += '<div class="section-title">📅 LỊCH VÒNG BẢNG</div>';
   groups.forEach(function(g) {
     var groupMatches = DATA.matches.filter(function(m){ return m.group_id === g.id; }).sort(function(a,b){ return Number(a.bracket_slot) - Number(b.bracket_slot); });
-    // ✅ group-card vòng bảng CÓ class has-matches →会被 filter xử lý
     H += '<div class="group-card has-matches" data-group-id="' + g.id + '"><h4>📋 Bảng ' + g.code + ' <span class="badge">' + groupMatches.length + ' trận</span></h4>';
     if (groupMatches.length) {
       H += '<div class="match-list">';
